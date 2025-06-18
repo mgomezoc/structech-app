@@ -1,0 +1,61 @@
+# Node.js dependencies
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# Capacitor build output
+www/
+dist/
+
+# Vite cache (if used)
+.vite/
+
+# Environment files
+.env
+.env.*
+
+# IDE / Editor folders
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# macOS
+.DS_Store
+
+# Android build files
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+
+# Android local config
+android/local.properties
+
+# Android plugins & wrapper
+android/capacitor-cordova-android-plugins/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/gradle-wrapper.properties
+android/gradle-wrapper.jar
+
+# Android keystores
+*.keystore
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+
+# iOS (if added later)
+ios/
+Pods/
+Podfile.lock
+xcuserdata/
+*.xcworkspace
+*.xcodeproj

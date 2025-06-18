@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">StructTech App</string>
+    <string name="title_activity_main">StructTech App</string>
+    <string name="package_name">com.structech.app</string>
+    <string name="custom_url_scheme">com.structech.app</string>
+</resources>

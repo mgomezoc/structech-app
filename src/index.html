@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>StructTech App</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 1rem;
+      }
+      #resultado {
+        margin-top: 1rem;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="btnScan">📷 Escanear INE</button>
+    <div id="resultado"></div>
+
+    <!-- Se carga como módulo ES; esto solo funca tras compilar en Android/iOS -->
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

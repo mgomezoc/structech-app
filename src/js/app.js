@@ -1,8 +1,9 @@
 import { Capacitor } from "@capacitor/core";
 import * as BlinkID from "@microblink/blinkid-capacitor";
+import "../css/style.less";
 
 const LICENSE =
-  "sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEF5TmpNME1qQTBPRGtzSWtOeVpXRjBaV1JHYjNJaU9pSmtOVGxoT1dFMU5DMWlOV1EzTFRFek56VXRNRFkyWVMxbVlURmhZemcyTkdaa1pqSWlmUT09bLATkl1ftQKgpSfNvfLD29qQQW85A2ZvLnY+ILLX1VhBLi1QVHev3d2y/qbuw55Z7xbwft1p+FHD61+Zwmm9ryd8xRyS5KcWQI3yScHZC/k+gt568pRAiFMLVvjB";
+  "sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEEwTVRjMk1EY3hPREVzSWtOeVpXRjBaV1JHYjNJaU9pSTVabVExT0RCa05pMHlaRFJpTFRSak5HWXRPVFUzTUMwMVpXVXlZV1EyTWpZMk5ERWlmUT098Er7cjB+qDKvj4bUcp/EE0Gl92iO/qtPJowZOAmJqazLqMSRnDwD6vCpAUYaRf53vP7WrSYMLcwOB2BeiyNoa3DdBaCH+P3ju2ixpiEEuIRGgB1eQaFhpVkiVdEB5sWN94u4mqp/6HglO50sKXXWcex0mw==";
 const btnScan = document.getElementById("btnScan");
 const resultado = document.getElementById("resultado");
 

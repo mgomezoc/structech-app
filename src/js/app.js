@@ -1,6 +1,9 @@
 import { Capacitor } from "@capacitor/core";
 import * as BlinkID from "@microblink/blinkid-capacitor";
+import lottie from "lottie-web";
 import "../css/style.less";
+import animationDataCamera from "../img/camara.json";
+import animationData from "../img/pp.json";
 
 const LICENSE =
   "sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEEwTVRjMk1EY3hPREVzSWtOeVpXRjBaV1JHYjNJaU9pSTVabVExT0RCa05pMHlaRFJpTFRSak5HWXRPVFUzTUMwMVpXVXlZV1EyTWpZMk5ERWlmUT098Er7cjB+qDKvj4bUcp/EE0Gl92iO/qtPJowZOAmJqazLqMSRnDwD6vCpAUYaRf53vP7WrSYMLcwOB2BeiyNoa3DdBaCH+P3ju2ixpiEEuIRGgB1eQaFhpVkiVdEB5sWN94u4mqp/6HglO50sKXXWcex0mw==";
@@ -11,6 +14,24 @@ const formPersona = document.getElementById("formPersona");
 // Inicializar eventos
 btnScan.addEventListener("click", scanINE);
 formPersona.addEventListener("submit", handleSubmit);
+
+document.addEventListener("DOMContentLoaded", () => {
+  lottie.loadAnimation({
+    container: document.getElementById("profilePlaceholder"),
+    renderer: "svg",
+    loop: true,
+    autoplay: true,
+    animationData: animationData,
+  });
+
+  lottie.loadAnimation({
+    container: document.getElementById("scanIcon"),
+    renderer: "svg",
+    loop: true,
+    autoplay: true,
+    animationData: animationDataCamera,
+  });
+});
 
 async function scanINE() {
   mostrarMensajeEstado("▶️ Solicitando permisos de cámara…");

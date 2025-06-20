@@ -23,9 +23,14 @@
         <!-- Sección de foto -->
         <div class="profile-section">
           <div class="profile-photo" id="profilePhoto">
+            <div
+              id="profilePlaceholder"
+              style="width: 430px; height: 430px"
+            ></div>
+
             <img
               id="profileImage"
-              src=""
+              src="img/profile.svg"
               alt=""
               style="
                 display: none;
@@ -35,7 +40,6 @@
                 border-radius: 50%;
               "
             />
-            <span id="profilePlaceholder">👤</span>
           </div>
         </div>
 
@@ -256,7 +260,9 @@
     </div>
 
     <!-- Botón flotante para escanear INE -->
-    <button id="btnScan" class="fab-scan">📷</button>
+    <button id="btnScan" class="fab-scan">
+      <div id="scanIcon" style="width: 64px; height: 64px"></div>
+    </button>
 
     <!-- Resultado del escaneo (ahora oculto ya que se puebla el form) -->
     <div id="resultado" style="display: none"></div>

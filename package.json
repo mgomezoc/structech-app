@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:apk": "npm run build && npm run sync && cd android && ./gradlew assembleDebug && cd ..",
     "preview": "vite preview",
     "serve": "npx live-server www",
     "sync": "npm run build && npx cap sync",
@@ -19,7 +20,8 @@
   "dependencies": {
     "@capacitor/camera": "^7.0.1",
     "@capacitor/core": "^7.3.0",
-    "@microblink/blinkid-capacitor": "^6.13.1"
+    "@microblink/blinkid-capacitor": "^6.13.1",
+    "lottie-web": "^5.13.0"
   },
   "devDependencies": {
     "@capacitor/android": "^7.3.0",

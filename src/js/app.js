@@ -85,34 +85,55 @@ function poblarFormulario(resultado) {
   const data = resultado.result || resultado;
   console.log("Datos recibidos del escaneo:", data);
 
-  // Nombre(s)
-  if (data.firstName?.value) {
-    document.getElementById("nombre").value = data.firstName.value;
-  }
+  // Función auxiliar para extraer valores
+  const getValue = (field) => field?.description || field?.latin || "";
 
-  // Apellidos - BlinkID puede devolver todo en lastName o separado
-  if (data.lastName?.value) {
-    // Intentar separar apellidos si vienen juntos
-    const apellidos = data.lastName.value.trim().split(" ");
-    if (apellidos.length >= 2) {
-      document.getElementById("apellidoPaterno").value = apellidos[0];
-      document.getElementById("apellidoMaterno").value = apellidos
-        .slice(1)
-        .join(" ");
+  // Nombre
+  const secondaryId = data?.mrzResult?.secondaryId;
+  const latinName = data?.fullName?.latin;
+
+  let nombre = "";
+
+  if (secondaryId || latinName) {
+    if (secondaryId && latinName) {
+      nombre = secondaryId.length >= latinName.length ? secondaryId : latinName;
     } else {
-      document.getElementById("apellidoPaterno").value = data.lastName.value;
+      nombre = secondaryId || latinName;
     }
   }
 
-  // CURP
-  if (data.personalIdNumber?.value) {
-    document.getElementById("curp").value = data.personalIdNumber.value;
+  document.getElementById("nombre").value = nombre;
+
+  // Apellidos - vienen separados en fathersName (paterno) y mothersName (materno)
+  if (data.fathersName) {
+    document.getElementById("apellidoPaterno").value = getValue(
+      data.fathersName
+    );
   }
 
-  // Clave de Elector - puede venir en documentNumber o en otro campo
-  if (data.documentNumber?.value) {
-    document.getElementById("claveElector").value = data.documentNumber.value;
-    document.getElementById("documentNumber").value = data.documentNumber.value;
+  if (data.mothersName) {
+    document.getElementById("apellidoMaterno").value = getValue(
+      data.mothersName
+    );
+  }
+
+  // CURP - viene en personalIdNumber
+  if (data.personalIdNumber) {
+    document.getElementById("curp").value = getValue(data.personalIdNumber);
+  }
+
+  // Clave de Elector - viene en documentAdditionalNumber
+  if (data.documentAdditionalNumber) {
+    document.getElementById("claveElector").value = getValue(
+      data.documentAdditionalNumber
+    );
+  }
+
+  // Número de documento
+  if (data.documentNumber) {
+    document.getElementById("documentNumber").value = getValue(
+      data.documentNumber
+    );
   }
 
   // Fecha de nacimiento
@@ -124,21 +145,38 @@ function poblarFormulario(resultado) {
   }
 
   // Género
-  if (data.sex?.value) {
-    const genero = data.sex.value.toUpperCase();
-    if (genero === "M" || genero === "MASCULINO") {
+
+  if (data.sex) {
+    const genero = getValue(data.sex).toUpperCase();
+    if (genero === "H") {
       document.getElementById("hombre").checked = true;
-    } else if (genero === "F" || genero === "FEMENINO") {
+    } else if (genero === "M") {
       document.getElementById("mujer").checked = true;
     }
   }
 
-  // Domicilio
-  if (data.address?.value) {
-    document.getElementById("domicilio").value = data.address.value;
-  } else if (data.placeOfBirth?.value) {
-    // A veces el domicilio viene en placeOfBirth
-    document.getElementById("domicilio").value = data.placeOfBirth.value;
+  // Domicilio - viene en address
+  if (data.address) {
+    const domicilio = getValue(data.address).replace(/\n/g, " ");
+    document.getElementById("domicilio").value = domicilio;
+  }
+
+  // Sección - extraer de mrz.sanitizedOpt1
+  const opt1 = data?.mrzResult?.sanitizedOpt1;
+  const docNumber = data?.documentNumber?.latin;
+
+  let seccion = "";
+
+  if (typeof opt1 === "string" && opt1.length >= 4) {
+    seccion = opt1.substring(0, 4);
+  } else if (typeof docNumber === "string" && docNumber.length >= 4) {
+    seccion = docNumber.substring(0, 4);
+  }
+
+  // Si existe el campo en el DOM, le asignamos el valor correspondiente
+  const seccionInput = document.getElementById("seccion");
+  if (seccionInput) {
+    seccionInput.value = seccion;
   }
 
   // Foto del rostro
@@ -169,52 +207,63 @@ function poblarFormulario(resultado) {
 
 function extraerDatosAdicionales(data) {
   // BlinkID puede devolver datos en diferentes estructuras
-  // Revisar campos MRZ
-  if (data.mrzResult) {
-    const mrz = data.mrzResult;
+  // Para INE mexicana, los datos vienen principalmente en los campos directos
 
+  // Verificar datos del MRZ para completar información faltante
+  if (data.mrz) {
+    const mrz = data.mrz;
+
+    // Verificar si tenemos el primaryId y secondaryId del MRZ
     if (mrz.primaryId && !document.getElementById("apellidoPaterno").value) {
+      // primaryId suele contener apellidos
       document.getElementById("apellidoPaterno").value = mrz.primaryId;
     }
 
     if (mrz.secondaryId && !document.getElementById("nombre").value) {
+      // secondaryId suele contener nombres
       document.getElementById("nombre").value = mrz.secondaryId;
     }
 
-    if (mrz.documentNumber && !document.getElementById("claveElector").value) {
-      document.getElementById("claveElector").value = mrz.documentNumber;
+    // Verificar género del MRZ
+    if (mrz.gender && !document.querySelector('input[name="genero"]:checked')) {
+      if (mrz.gender === "M") {
+        document.getElementById("hombre").checked = true;
+      } else if (mrz.gender === "F") {
+        document.getElementById("mujer").checked = true;
+      }
+    }
+
+    // Extraer sección de sanitizedOpt1 si no se ha extraído antes
+    if (mrz.sanitizedOpt1 && !document.getElementById("seccion").value) {
+      const seccion = mrz.sanitizedOpt1.substring(0, 4);
+      document.getElementById("seccion").value = seccion;
     }
   }
 
-  // Revisar campos VIZ (Visual Inspection Zone)
-  if (data.vizResult) {
-    const viz = data.vizResult;
-
-    if (viz.firstName && !document.getElementById("nombre").value) {
-      document.getElementById("nombre").value = viz.firstName;
-    }
-
-    if (viz.lastName && !document.getElementById("apellidoPaterno").value) {
-      document.getElementById("apellidoPaterno").value = viz.lastName;
-    }
-
-    if (
-      viz.additionalNameInformation &&
-      !document.getElementById("apellidoMaterno").value
-    ) {
-      document.getElementById("apellidoMaterno").value =
-        viz.additionalNameInformation;
-    }
-  }
-
-  // Para INE mexicana, intentar extraer CURP del código de barras
+  // Verificar si hay datos en el resultado del código de barras
   if (data.barcodeResult?.stringData) {
     const barcodeData = data.barcodeResult.stringData;
+    console.log("Datos del código de barras:", barcodeData);
+
     // El CURP en INE suele estar en una posición específica del código de barras
     const curpMatch = barcodeData.match(/[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d/);
     if (curpMatch && !document.getElementById("curp").value) {
       document.getElementById("curp").value = curpMatch[0];
     }
+  }
+
+  // Si no se encontró el domicilio en address, buscar en otros campos
+  if (!document.getElementById("domicilio").value) {
+    // A veces el domicilio completo viene en campos adicionales
+    if (data.additionalAddressInformation) {
+      const domicilio = getValue(data.additionalAddressInformation);
+      document.getElementById("domicilio").value = domicilio;
+    }
+  }
+
+  // Función auxiliar para extraer valores
+  function getValue(field) {
+    return field?.description || field?.latin || "";
   }
 }
 

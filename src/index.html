@@ -19,167 +19,238 @@
 
     <!-- Container principal -->
     <div class="container">
-      <!-- Sección de foto -->
-      <div class="profile-section">
-        <div class="profile-photo">👤</div>
-        <div class="camera-icon">📷</div>
-      </div>
-
-      <!-- Formulario -->
-      <div class="form-section">
-        <div class="form-group">
-          <label>Selecciona Estructura*</label>
-          <select class="form-control">
-            <option value="">Sin selección</option>
-            <option value="1">Estructura 1</option>
-            <option value="2">Estructura 2</option>
-          </select>
+      <form id="formPersona" method="POST">
+        <!-- Sección de foto -->
+        <div class="profile-section">
+          <div class="profile-photo" id="profilePhoto">
+            <img
+              id="profileImage"
+              src=""
+              alt=""
+              style="
+                display: none;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 50%;
+              "
+            />
+            <span id="profilePlaceholder">👤</span>
+          </div>
+          <div class="camera-icon">📷</div>
         </div>
 
-        <div class="form-group">
-          <label>Selecciona SubEstructura*</label>
-          <select class="form-control">
-            <option value="">Sin selección</option>
-            <option value="1">SubEstructura 1</option>
-            <option value="2">SubEstructura 2</option>
-          </select>
-        </div>
+        <!-- Formulario -->
+        <div class="form-section">
+          <div class="form-group">
+            <label>Selecciona Estructura*</label>
+            <select
+              class="form-control"
+              id="estructura"
+              name="estructura"
+              required
+            >
+              <option value="">Sin selección</option>
+              <option value="1">Estructura 1</option>
+              <option value="2">Estructura 2</option>
+            </select>
+          </div>
 
-        <div class="form-group">
-          <label>Nombre*</label>
-          <input type="text" class="form-control" placeholder="LUZ ANGELA" />
-        </div>
+          <div class="form-group">
+            <label>Selecciona SubEstructura*</label>
+            <select
+              class="form-control"
+              id="subestructura"
+              name="subestructura"
+              required
+            >
+              <option value="">Sin selección</option>
+              <option value="1">SubEstructura 1</option>
+              <option value="2">SubEstructura 2</option>
+            </select>
+          </div>
 
-        <div class="form-group">
-          <label>Apellido Paterno</label>
-          <input type="text" class="form-control" placeholder="GALARZA" />
-        </div>
+          <div class="form-group">
+            <label>Nombre*</label>
+            <input
+              type="text"
+              class="form-control"
+              id="nombre"
+              name="nombre"
+              placeholder="Nombre(s)"
+              required
+            />
+          </div>
 
-        <div class="form-group">
-          <label>Apellido Materno</label>
-          <input type="text" class="form-control" placeholder="HERNANDEZ" />
-        </div>
+          <div class="form-group">
+            <label>Apellido Paterno</label>
+            <input
+              type="text"
+              class="form-control"
+              id="apellidoPaterno"
+              name="apellidoPaterno"
+              placeholder="Apellido Paterno"
+            />
+          </div>
 
-        <div class="form-group">
-          <label>Fecha de Nacimiento</label>
-          <input type="date" class="form-control" value="1990-05-05" />
-        </div>
+          <div class="form-group">
+            <label>Apellido Materno</label>
+            <input
+              type="text"
+              class="form-control"
+              id="apellidoMaterno"
+              name="apellidoMaterno"
+              placeholder="Apellido Materno"
+            />
+          </div>
 
-        <div class="form-group">
-          <label>Género</label>
-          <div class="gender-group">
-            <div class="gender-option">
-              <input type="radio" id="hombre" name="genero" value="hombre" />
-              <label for="hombre">👨 Hombre</label>
+          <div class="form-group">
+            <label>Fecha de Nacimiento</label>
+            <input
+              type="date"
+              class="form-control"
+              id="fechaNacimiento"
+              name="fechaNacimiento"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Género</label>
+            <div class="gender-group">
+              <div class="gender-option">
+                <input type="radio" id="hombre" name="genero" value="M" />
+                <label for="hombre">👨 Hombre</label>
+              </div>
+              <div class="gender-option">
+                <input type="radio" id="mujer" name="genero" value="F" />
+                <label for="mujer">👩 Mujer</label>
+              </div>
             </div>
-            <div class="gender-option">
-              <input
-                type="radio"
-                id="mujer"
-                name="genero"
-                value="mujer"
-                checked
+          </div>
+
+          <div class="form-group">
+            <label>CURP</label>
+            <input
+              type="text"
+              class="form-control"
+              id="curp"
+              name="curp"
+              placeholder="CURP"
+              maxlength="18"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Clave de Elector</label>
+            <input
+              type="text"
+              class="form-control"
+              id="claveElector"
+              name="claveElector"
+              placeholder="Clave de Elector"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Domicilio</label>
+            <input
+              type="text"
+              class="form-control"
+              id="domicilio"
+              name="domicilio"
+              placeholder="Domicilio completo"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Observación</label>
+            <textarea
+              class="form-control"
+              id="observacion"
+              name="observacion"
+              rows="3"
+              placeholder="Agregar observaciones..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input
+              type="tel"
+              class="form-control"
+              id="telefono"
+              name="telefono"
+              placeholder="Número de teléfono"
+            />
+          </div>
+
+          <!-- Sección de firma -->
+          <div class="signature-section">
+            <label>Firma de Autorización</label>
+            <div class="signature-box" id="signatureBox">
+              <img
+                id="signatureImage"
+                src=""
+                alt=""
+                style="display: none; max-width: 100%; height: auto"
               />
-              <label for="mujer">👩 Mujer</label>
+              <div class="signature-placeholder" id="signaturePlaceholder">
+                ✏️
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="form-group">
-          <label>CURP</label>
-          <input
-            type="text"
-            class="form-control"
-            placeholder="GAHL900505MNLLRZ01"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Clave de Elector</label>
-          <input
-            type="text"
-            class="form-control"
-            placeholder="GLHRLZ90050519M400"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Domicilio</label>
-          <input
-            type="text"
-            class="form-control"
-            placeholder="C TULIPAN 452 COL JARDINES DE SANTA..."
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Observación</label>
-          <textarea
-            class="form-control"
-            rows="3"
-            placeholder="Agregar observaciones..."
-          ></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Teléfono</label>
-          <input
-            type="tel"
-            class="form-control"
-            placeholder="Número de teléfono"
-          />
-        </div>
-
-        <!-- Sección de firma -->
-        <div class="signature-section">
-          <label>Firma de Autorización</label>
-          <div class="signature-box">
-            <div class="signature-placeholder">✏️</div>
+          <!-- Sección de audio -->
+          <div class="audio-section">
+            <button type="button" class="audio-button" id="audioBtn">▶️</button>
+            <div class="audio-timer" id="audioTimer">00:00:00</div>
+            <button
+              type="button"
+              id="audioDelete"
+              style="
+                background: none;
+                border: none;
+                color: #e74c3c;
+                cursor: pointer;
+                font-size: 24px;
+              "
+            >
+              🗑️
+            </button>
           </div>
-        </div>
 
-        <!-- Sección de audio -->
-        <div class="audio-section">
-          <button class="audio-button">▶️</button>
-          <div class="audio-timer">00:00:02</div>
-          <button
-            style="
-              background: none;
-              border: none;
-              color: #e74c3c;
-              cursor: pointer;
-              font-size: 24px;
-            "
-          >
-            🗑️
-          </button>
-        </div>
+          <!-- Campos ocultos para datos adicionales del escaneo -->
+          <input type="hidden" id="documentNumber" name="documentNumber" />
+          <input
+            type="hidden"
+            id="fullDocumentFrontImage"
+            name="fullDocumentFrontImage"
+          />
+          <input
+            type="hidden"
+            id="fullDocumentBackImage"
+            name="fullDocumentBackImage"
+          />
+          <input type="hidden" id="faceImageData" name="faceImageData" />
+          <input
+            type="hidden"
+            id="signatureImageData"
+            name="signatureImageData"
+          />
 
-        <!-- Botón guardar -->
-        <button class="save-button">Guardar</button>
-      </div>
+          <!-- Botón guardar -->
+          <button type="submit" class="save-button">Guardar</button>
+        </div>
+      </form>
     </div>
 
     <!-- Botón flotante para escanear INE -->
     <button id="btnScan" class="fab-scan">📷</button>
 
-    <!-- Resultado del escaneo -->
-    <div id="resultado"></div>
+    <!-- Resultado del escaneo (ahora oculto ya que se puebla el form) -->
+    <div id="resultado" style="display: none"></div>
 
     <!-- Script -->
     <script type="module" src="js/app.js"></script>
-
-    <script>
-      // Mostrar/ocultar resultado al escanear
-      document.getElementById("btnScan").addEventListener("click", function () {
-        const resultado = document.getElementById("resultado");
-        if (!resultado.classList.contains("show")) {
-          resultado.classList.add("show");
-          setTimeout(() => {
-            resultado.classList.remove("show");
-          }, 5000);
-        }
-      });
-    </script>
   </body>
 </html>

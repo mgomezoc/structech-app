@@ -16,7 +16,7 @@ btnScan.addEventListener("click", scanINE);
 formPersona.addEventListener("submit", handleSubmit);
 
 document.addEventListener("DOMContentLoaded", () => {
-  lottie.loadAnimation({
+  const profileAnim = lottie.loadAnimation({
     container: document.getElementById("profilePlaceholder"),
     renderer: "svg",
     loop: true,
@@ -24,13 +24,16 @@ document.addEventListener("DOMContentLoaded", () => {
     animationData: animationData,
   });
 
-  lottie.loadAnimation({
+  profileAnim.setSpeed(0.4);
+
+  const scanAnim = lottie.loadAnimation({
     container: document.getElementById("scanIcon"),
     renderer: "svg",
     loop: true,
     autoplay: true,
     animationData: animationDataCamera,
   });
+  scanAnim.setSpeed(0.3);
 });
 
 async function scanINE() {

@@ -11,7 +11,10 @@
     "sync": "npm run build && npx cap sync",
     "android": "npx cap open android",
     "run:android": "npm run sync && npx cap run android",
-    "clean": "rm -rf www node_modules/.vite"
+    "clean": "rm -rf www node_modules/.vite",
+    "resources:android": "cordova-res android --skip-config --copy --copy-to android/app/src/main/res",
+    "resources:ios": "cordova-res ios    --skip-config --copy --copy-to ios/App/App/Assets.xcassets",
+    "resources": "npm run resources:android && npm run resources:ios"
   },
   "keywords": [],
   "author": "",
@@ -20,12 +23,14 @@
   "dependencies": {
     "@capacitor/camera": "^7.0.1",
     "@capacitor/core": "^7.3.0",
+    "@capacitor/splash-screen": "^7.0.1",
     "@microblink/blinkid-capacitor": "^6.13.1",
     "lottie-web": "^5.13.0"
   },
   "devDependencies": {
     "@capacitor/android": "^7.3.0",
     "@capacitor/cli": "^7.3.0",
+    "cordova-res": "^0.15.4",
     "less": "^4.3.0",
     "vite": "^6.3.5"
   }

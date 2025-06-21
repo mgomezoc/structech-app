@@ -438,3 +438,74 @@ body {
   display: inline-block;
   vertical-align: middle;
 }
+
+// Estilos para la sección de firma
+.signature-section {
+  margin-top: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 500;
+    color: #333;
+  }
+}
+
+.signature-box {
+  position: relative;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 4px;
+
+  canvas {
+    touch-action: none; // Importante para móviles
+    cursor: crosshair;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.signature-controls {
+  button {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #f8f9fa;
+      border-color: #0ea5e9;
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  .btn-clear-signature {
+    color: #ef4444;
+
+    &:hover {
+      background: #fef2f2;
+      border-color: #ef4444;
+    }
+  }
+
+  .btn-undo-signature {
+    color: #3b82f6;
+
+    &:hover {
+      background: #eff6ff;
+      border-color: #3b82f6;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .signature-box canvas {
+    height: 120px !important;
+  }
+}

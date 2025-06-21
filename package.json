@@ -25,7 +25,8 @@
     "@capacitor/core": "^7.3.0",
     "@capacitor/splash-screen": "^7.0.1",
     "@microblink/blinkid-capacitor": "^6.13.1",
-    "lottie-web": "^5.13.0"
+    "lottie-web": "^5.13.0",
+    "signature_pad": "^5.0.10"
   },
   "devDependencies": {
     "@capacitor/android": "^7.3.0",

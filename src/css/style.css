@@ -318,3 +318,58 @@ select.form-control {
   display: inline-block;
   vertical-align: middle;
 }
+.signature-section {
+  margin-top: 20px;
+}
+.signature-section label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 500;
+  color: #333;
+}
+.signature-box {
+  position: relative;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 4px;
+}
+.signature-box canvas {
+  touch-action: none;
+  cursor: crosshair;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.signature-controls button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.signature-controls button:hover {
+  background: #f8f9fa;
+  border-color: #0ea5e9;
+}
+.signature-controls button:active {
+  transform: scale(0.98);
+}
+.signature-controls .btn-clear-signature {
+  color: #ef4444;
+}
+.signature-controls .btn-clear-signature:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+.signature-controls .btn-undo-signature {
+  color: #3b82f6;
+}
+.signature-controls .btn-undo-signature:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+@media (max-width: 768px) {
+  .signature-box canvas {
+    height: 120px !important;
+  }
+}

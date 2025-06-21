@@ -4,7 +4,7 @@ import lottie from "lottie-web";
 import "../css/style.less";
 import animationDataCamera from "../img/camara.json";
 import animationData from "../img/pp.json";
-
+import { signatureManager } from "./signature.js";
 const LICENSE =
   "sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEEwTVRjMk1EY3hPREVzSWtOeVpXRjBaV1JHYjNJaU9pSTVabVExT0RCa05pMHlaRFJpTFRSak5HWXRPVFUzTUMwMVpXVXlZV1EyTWpZMk5ERWlmUT098Er7cjB+qDKvj4bUcp/EE0Gl92iO/qtPJowZOAmJqazLqMSRnDwD6vCpAUYaRf53vP7WrSYMLcwOB2BeiyNoa3DdBaCH+P3ju2ixpiEEuIRGgB1eQaFhpVkiVdEB5sWN94u4mqp/6HglO50sKXXWcex0mw==";
 
@@ -34,6 +34,11 @@ document.addEventListener("DOMContentLoaded", () => {
     animationData: animationDataCamera,
   });
   scanAnim.setSpeed(0.3);
+
+  signatureManager.init();
+  signatureManager.signaturePad.penColor = "rgb(0, 0, 139)";
+  signatureManager.signaturePad.minWidth = 1;
+  signatureManager.signaturePad.maxWidth = 2;
 });
 
 async function scanINE() {
@@ -365,17 +370,49 @@ function mostrarMensajeEstado(mensaje, duracion = 0) {
 async function handleSubmit(e) {
   e.preventDefault();
 
+  // Validar que haya firma si es requerida
+  if (!signatureManager.hasSignature()) {
+    mostrarMensajeEstado("⚠️ Por favor, proporcione su firma", 3000);
+    return;
+  }
+
   // Recopilar todos los datos del formulario
   const formData = new FormData(formPersona);
   const data = Object.fromEntries(formData.entries());
 
+  // Agregar datos de la firma
+  const signatureData = signatureManager.getSignatureData();
+  data.signatureData = signatureData.data;
+  data.signatureType = signatureData.type;
+  data.signatureTimestamp = signatureData.timestamp;
+
   console.log("Datos del formulario:", data);
 
-  // Aquí puedes agregar la lógica para enviar los datos a tu servidor
-  // Por ejemplo:
-  // await enviarDatosAlServidor(data);
+  // Mostrar animación de guardado
+  const saveButton = e.target.querySelector(".save-button");
+  const originalText = saveButton.textContent;
+  saveButton.disabled = true;
+  saveButton.textContent = "Guardando...";
 
-  mostrarMensajeEstado("✅ Datos guardados correctamente", 3000);
+  try {
+    // Simular envío (reemplazar con tu API real)
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    mostrarMensajeEstado("✅ Datos guardados correctamente", 3000);
+
+    // Limpiar formulario
+    formPersona.reset();
+    signatureManager.clear();
+
+    // Resetear la foto de perfil
+    document.getElementById("profileImage").style.display = "none";
+    document.getElementById("profilePlaceholder").style.display = "block";
+  } catch (error) {
+    mostrarMensajeEstado("❌ Error al guardar: " + error.message, 5000);
+  } finally {
+    saveButton.disabled = false;
+    saveButton.textContent = originalText;
+  }
 }
 
 // Función placeholder para envío de datos

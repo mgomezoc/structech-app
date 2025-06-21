@@ -203,15 +203,64 @@
           <div class="signature-section">
             <label>Firma de Autorización</label>
             <div class="signature-box" id="signatureBox">
+              <!-- Canvas para dibujar la firma -->
+              <canvas
+                id="signatureCanvas"
+                style="
+                  display: block;
+                  width: 100%;
+                  height: 150px;
+                  border: 1px solid #ddd;
+                  border-radius: 8px;
+                  background: white;
+                "
+              >
+              </canvas>
+
+              <!-- Imagen de firma escaneada (oculta por defecto) -->
               <img
                 id="signatureImage"
                 src=""
                 alt=""
-                style="display: none; max-width: 100%; height: auto"
+                style="
+                  display: none;
+                  max-width: 100%;
+                  height: auto;
+                  border-radius: 8px;
+                "
               />
-              <div class="signature-placeholder" id="signaturePlaceholder">
+
+              <!-- Placeholder cuando no hay firma -->
+              <div
+                class="signature-placeholder"
+                id="signaturePlaceholder"
+                style="display: none"
+              >
                 ✏️
               </div>
+            </div>
+
+            <!-- Controles de firma -->
+            <div
+              class="signature-controls"
+              style="margin-top: 10px; display: flex; gap: 10px"
+            >
+              <button
+                type="button"
+                class="btn-clear-signature"
+                id="clearSignature"
+                style="flex: 1"
+              >
+                Limpiar Firma
+              </button>
+              <button
+                type="button"
+                class="btn-undo-signature"
+                id="undoSignature"
+                style="flex: 1"
+              >
+                Deshacer
+              </button>
             </div>
           </div>
 

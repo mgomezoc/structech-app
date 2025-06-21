@@ -4,7 +4,9 @@ import lottie from "lottie-web";
 import "../css/style.less";
 import animationDataCamera from "../img/camara.json";
 import animationData from "../img/pp.json";
+import { audioRecorder } from "./audioRecorder.js";
 import { signatureManager } from "./signature.js";
+
 const LICENSE =
   "sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEEwTVRjMk1EY3hPREVzSWtOeVpXRjBaV1JHYjNJaU9pSTVabVExT0RCa05pMHlaRFJpTFRSak5HWXRPVFUzTUMwMVpXVXlZV1EyTWpZMk5ERWlmUT098Er7cjB+qDKvj4bUcp/EE0Gl92iO/qtPJowZOAmJqazLqMSRnDwD6vCpAUYaRf53vP7WrSYMLcwOB2BeiyNoa3DdBaCH+P3ju2ixpiEEuIRGgB1eQaFhpVkiVdEB5sWN94u4mqp/6HglO50sKXXWcex0mw==";
 
@@ -15,7 +17,7 @@ const formPersona = document.getElementById("formPersona");
 btnScan.addEventListener("click", scanINE);
 formPersona.addEventListener("submit", handleSubmit);
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const profileAnim = lottie.loadAnimation({
     container: document.getElementById("profilePlaceholder"),
     renderer: "svg",
@@ -39,6 +41,8 @@ document.addEventListener("DOMContentLoaded", () => {
   signatureManager.signaturePad.penColor = "rgb(0, 0, 139)";
   signatureManager.signaturePad.minWidth = 1;
   signatureManager.signaturePad.maxWidth = 2;
+
+  await audioRecorder.init();
 });
 
 async function scanINE() {
@@ -385,6 +389,12 @@ async function handleSubmit(e) {
   data.signatureData = signatureData.data;
   data.signatureType = signatureData.type;
   data.signatureTimestamp = signatureData.timestamp;
+
+  // Agregar datos del audio si existe
+  if (audioRecorder.hasRecording()) {
+    const audioData = audioRecorder.getAudioData();
+    data.audioMessage = audioData;
+  }
 
   console.log("Datos del formulario:", data);
 

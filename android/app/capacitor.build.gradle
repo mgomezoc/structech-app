@@ -12,6 +12,7 @@ dependencies {
     implementation project(':capacitor-camera')
     implementation project(':capacitor-splash-screen')
     implementation project(':microblink-blinkid-capacitor')
+    implementation project(':capacitor-voice-recorder')
 
 }
 

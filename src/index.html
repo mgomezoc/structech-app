@@ -266,21 +266,28 @@
 
           <!-- Sección de audio -->
           <div class="audio-section">
-            <button type="button" class="audio-button" id="audioBtn">▶️</button>
-            <div class="audio-timer" id="audioTimer">00:00:00</div>
-            <button
-              type="button"
-              id="audioDelete"
-              style="
-                background: none;
-                border: none;
-                color: #e74c3c;
-                cursor: pointer;
-                font-size: 24px;
-              "
-            >
-              🗑️
-            </button>
+            <div class="audio-controls">
+              <button type="button" class="audio-button" id="audioBtn">
+                🎤
+              </button>
+              <div class="audio-info">
+                <div class="audio-timer" id="audioTimer">00:00:00</div>
+                <span class="audio-hint" id="audioHint"
+                  >Mantén presionado para grabar</span
+                >
+              </div>
+              <button
+                type="button"
+                id="audioDelete"
+                class="audio-delete"
+                style="display: none"
+              >
+                🗑️
+              </button>
+            </div>
+            <div class="audio-wave" id="audioWave" style="display: none">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
           </div>
 
           <!-- Campos ocultos para datos adicionales del escaneo -->

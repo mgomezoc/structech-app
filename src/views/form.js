@@ -254,6 +254,8 @@ export default class FormView {
 
     // Cargar datos si es necesario
     await this.loadInitialData();
+
+    window.poblarFormulario = this.poblarFormulario.bind(this);
   }
 
   async initializeModules() {
@@ -441,8 +443,113 @@ export default class FormView {
     scanAnim.setSpeed(0.3);
   }
 
+  poblarFormulario(scanResult) {
+    const data = scanResult.result || scanResult;
+    const getLatin = (field) => field?.description || field?.latin || "";
+
+    // **Nombre** (igual que antes)…
+    const secondary = data.mrzResult?.secondaryId;
+    const latinName = data.fullName?.latin;
+    let nombre =
+      secondary && latinName
+        ? secondary.length >= latinName.length
+          ? secondary
+          : latinName
+        : secondary || latinName || "";
+    document.getElementById("nombre").value = nombre;
+
+    // **Apellidos**: usa fatherName / motherName
+    document.getElementById("apellidoPaterno").value = getLatin(
+      data.fathersName
+    );
+    document.getElementById("apellidoMaterno").value = getLatin(
+      data.mothersName
+    );
+
+    // **CURP**
+    document.getElementById("curp").value = getLatin(data.personalIdNumber);
+
+    // **Clave de elector**
+    document.getElementById("claveElector").value = getLatin(
+      data.documentAdditionalNumber
+    );
+
+    // **Número de documento (hidden)**
+    document.getElementById("documentNumber").value = getLatin(
+      data.documentNumber
+    );
+
+    // **Fecha de nacimiento**
+    if (data.dateOfBirth) {
+      const { day, month, year } = data.dateOfBirth;
+      const mm = String(month).padStart(2, "0");
+      const dd = String(day).padStart(2, "0");
+      document.getElementById("fechaNacimiento").value = `${year}-${mm}-${dd}`;
+    }
+
+    // **Género**
+    const sex = getLatin(data.sex).toUpperCase();
+    if (sex === "H") document.getElementById("hombre").checked = true;
+    if (sex === "M") document.getElementById("mujer").checked = true;
+
+    // **Domicilio**
+    if (data.address) {
+      document.getElementById("domicilio").value = data.address.latin.replace(
+        /\n/g,
+        " "
+      );
+    }
+
+    // **Sección (MRZ)**
+    const opt1 = data.mrzResult?.sanitizedOpt1 || "";
+    if (opt1.length >= 4) {
+      document.getElementById("seccion").value = opt1.slice(0, 4);
+    }
+
+    // **Foto de perfil**
+    if (data.faceImage) {
+      this.mostrarFotoPerfil(data.faceImage);
+      document.getElementById("faceImageData").value = data.faceImage;
+    }
+
+    // **Firma escaneada**
+    if (data.signatureImage) {
+      this.mostrarFirma(data.signatureImage);
+      document.getElementById("signatureImageData").value = data.signatureImage;
+    }
+
+    // **Documento completo – front/back**
+    if (data.fullDocumentFrontImage) {
+      document.getElementById("fullDocumentFrontImage").value =
+        data.fullDocumentFrontImage;
+    }
+    if (data.fullDocumentBackImage) {
+      document.getElementById("fullDocumentBackImage").value =
+        data.fullDocumentBackImage;
+    }
+  }
+
+  // Helper para mostrar la foto
+  mostrarFotoPerfil(imageBase64) {
+    const img = document.getElementById("profileImage");
+    const placeholder = document.getElementById("profilePlaceholder");
+    img.src = `data:image/png;base64,${imageBase64}`;
+    img.style.display = "block";
+    placeholder.style.display = "none";
+  }
+
+  // Helper para mostrar la firma
+  mostrarFirma(imageBase64) {
+    const img = document.getElementById("signatureImage");
+    const placeholder = document.getElementById("signaturePlaceholder");
+    img.src = `data:image/png;base64,${imageBase64}`;
+    img.style.display = "block";
+    placeholder.style.display = "none";
+  }
+
   cleanup() {
+    // Si quieres limpiar la referencia al salir de la vista:
+    window.poblarFormulario = null;
     console.log("Limpiando vista del formulario");
-    // Limpiar event listeners si es necesario
   }
 }

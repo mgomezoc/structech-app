@@ -28,72 +28,37 @@ class DatosService {
     }
   }
 
-  // Enviar datos del formulario completo
+  /**
+   * Enviar todo el objeto formData stringify dentro de { Data: "..." }
+   */
   async enviarFormularioPersona(formData) {
     try {
       console.log("📤 Enviando formulario de persona:", formData);
 
-      // Preparar datos para enviar
-      const dataToSend = {
-        // Datos personales
-        estructura: formData.estructura,
-        subestructura: formData.subestructura,
-        nombre: formData.nombre,
-        apellidoPaterno: formData.apellidoPaterno,
-        apellidoMaterno: formData.apellidoMaterno,
-        fechaNacimiento: formData.fechaNacimiento,
-        genero: formData.genero,
-        curp: formData.curp,
-        claveElector: formData.claveElector,
-        domicilio: formData.domicilio,
-        seccion: formData.seccion,
-        telefono: formData.telefono,
-        observacion: formData.observacion,
+      // Si quisieras validar campos, lo harías acá…
 
-        // Datos de escaneo INE
-        documentNumber: formData.documentNumber,
+      // 1) Serializar TODO el objecto formData (o bien dataToSend si lo transformas)
+      const serialized = JSON.stringify(formData);
 
-        // Imágenes en base64 (si las necesitas enviar)
-        imagenes: {
-          rostro: formData.faceImageData,
-          firma: formData.signatureImageData,
-          documentoFrente: formData.fullDocumentFrontImage,
-          documentoReverso: formData.fullDocumentBackImage,
-        },
+      // 2) Empaquetar en la propiedad "Data"
+      const payload = { Data: serialized };
 
-        // Audio si existe
-        audioMensaje: formData.audioData
-          ? JSON.parse(formData.audioData)
-          : null,
-
-        // Firma digital
-        firmaDigital: formData.signatureData,
-
-        // Metadata
-        fechaRegistro: new Date().toISOString(),
-        dispositivoInfo: {
-          platform: window.navigator.platform,
-          userAgent: window.navigator.userAgent,
-        },
-      };
-
-      // Enviar a tu endpoint específico
-      // Ajusta la URL según tu API
+      // 3) Hacer POST a /api/datos/consulta
       const response = await apiService.post(
-        "/api/personas/registro",
-        dataToSend
+        API_CONFIG.ENDPOINTS.CONSULTA,
+        payload
       );
+
+      console.log("✅ Consulta exitosa:", response.data);
 
       return {
         success: true,
         data: response.data,
-        id: response.data.id || response.data.personaId,
       };
     } catch (error) {
-      console.error("Error al enviar formulario:", error);
+      console.error("❌ Error al enviar formulario:", error);
 
       let errorMessage = "Error al guardar los datos";
-
       if (error.response) {
         switch (error.response.status) {
           case 400:
@@ -109,6 +74,8 @@ class DatosService {
           default:
             errorMessage = error.response.data?.message || errorMessage;
         }
+      } else if (error.request) {
+        errorMessage = "No hubo respuesta del servidor.";
       }
 
       return {

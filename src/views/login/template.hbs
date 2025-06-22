@@ -1,0 +1,48 @@
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <img src="img/logo-icono-structech.png" class="login-logo" alt="StructTech">
+            <h2>{{title}}</h2>
+            <p>{{subtitle}}</p>
+        </div>
+
+        <form id="loginForm" class="login-form">
+            <div class="form-group">
+                <label for="email">Correo electrónico</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="{{emailPlaceholder}}"
+                    required autocomplete="email" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="password" name="password" class="form-control"
+                        placeholder="{{passwordPlaceholder}}" required autocomplete="current-password" />
+                    <button type="button" id="togglePassword" class="toggle-password">👁️</button>
+                </div>
+            </div>
+
+            <div class="form-options">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="remember" name="remember" />
+                    <span>Recordarme</span>
+                </label>
+                <a href="#/forgot-password" class="forgot-link">{{forgotLinkText}}</a>
+            </div>
+
+            <button type="submit" class="btn-primary" id="submitBtn">
+                <span id="btnText">{{buttonText}}</span>
+                <span id="btnLoader" style="display: none;">
+                    <span class="spinner-small"></span>
+                    {{loadingText}}
+                </span>
+            </button>
+
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+        </form>
+
+        <div class="login-footer">
+            <p>{{footerText}} <a href="#/register">{{registerLinkText}}</a></p>
+        </div>
+    </div>
+</div>

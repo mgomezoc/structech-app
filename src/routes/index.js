@@ -64,18 +64,12 @@ export function setupRoutes() {
   });
 
   // Login (pública) con guardia en before
-  router.on(ROUTES.LOGIN, () => loadView("login"), {
-    before(done /*, match*/) {
-      authService.checkAuth().then((isAuth) => {
-        if (isAuth) {
-          // Si ya está logueado, lo mandamos al dashboard
-          this.navigate(ROUTES.DASHBOARD);
-          done(false); // cancelar la carga de /login
-        } else {
-          done(); // continuar a /login
-        }
-      });
-    },
+  router.on(ROUTES.LOGIN, async () => {
+    const module = await import("../views/login/index.js");
+    const View = module.default;
+    const view = new View();
+    document.getElementById("app").innerHTML = view.render();
+    await view.afterRender();
   });
 
   // Dashboard (privada)

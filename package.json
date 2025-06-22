@@ -28,6 +28,7 @@
     "@microblink/blinkid-capacitor": "^6.13.1",
     "axios": "^1.10.0",
     "capacitor-voice-recorder": "^7.0.6",
+    "handlebars": "^4.7.8",
     "lottie-web": "^5.13.0",
     "mitt": "^3.0.1",
     "navigo": "^8.11.1",

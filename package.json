@@ -23,10 +23,14 @@
   "dependencies": {
     "@capacitor/camera": "^7.0.1",
     "@capacitor/core": "^7.3.0",
+    "@capacitor/preferences": "^7.0.1",
     "@capacitor/splash-screen": "^7.0.1",
     "@microblink/blinkid-capacitor": "^6.13.1",
+    "axios": "^1.10.0",
     "capacitor-voice-recorder": "^7.0.6",
     "lottie-web": "^5.13.0",
+    "mitt": "^3.0.1",
+    "navigo": "^8.11.1",
     "signature_pad": "^5.0.10"
   },
   "devDependencies": {

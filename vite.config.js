@@ -1,3 +1,4 @@
+import { resolve } from "path";
 import { defineConfig } from "vite";
 
 export default defineConfig({
@@ -7,21 +8,21 @@ export default defineConfig({
     outDir: "../www",
     emptyOutDir: true,
     rollupOptions: {
-      input: "src/index.html",
+      input: {
+        main: resolve(__dirname, "src/index.html"),
+      },
     },
-    // Optimización de assets
-    assetsInlineLimit: 4096, // Archivos menores a 4kb se incrustan como base64
+    //assetsInlineLimit: 4096,
     chunkSizeWarningLimit: 1000,
   },
   server: {
     port: 3000,
-    open: true, // Abre el navegador automáticamente
-    host: true, // Permite acceso desde tu red local
+    open: true,
+    host: true,
   },
   css: {
     preprocessorOptions: {
       less: {
-        // Opciones de LESS si las necesitas
         javascriptEnabled: true,
       },
     },
@@ -29,6 +30,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": "/src",
+      "@services": "/src/services",
+      "@views": "/src/views",
+      "@routes": "/src/routes",
+      "@utils": "/src/utils",
       "@img": "/src/img",
       "@css": "/src/css",
       "@js": "/src/js",

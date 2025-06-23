@@ -1,0 +1,53 @@
+<div class="dashboard-container">
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <img src="{{imgHeader}}" alt="StructTech" class="header-logo" />
+                <h1>StructTech Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <span class="user-name">
+                        {{#if user.name}}{{user.name}}{{else if user.email}}{{user.email}}{{else}}Usuario{{/if}}
+                    </span>
+                    <button id="logoutBtn" class="btn-logout" title="Cerrar sesión">🚪</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+        <div class="welcome-section">
+            <h2>Bienvenido, {{#if user.name}}{{user.name}}{{else}}Usuario{{/if}}</h2>
+            <p>Selecciona una opción para continuar</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Escanear INE -->
+            <div class="dashboard-card" id="scanCard">
+                <div class="card-icon">📷</div>
+                <h3>Escanear INE</h3>
+                <p>Captura los datos de una INE mexicana</p>
+                <button class="btn-card">Ir al formulario</button>
+            </div>
+            
+            <!-- Configuración -->
+            <div class="dashboard-card" id="settingsCard">
+                <div class="card-icon">⚙️</div>
+                <h3>Configuración</h3>
+                <p>Ajusta las preferencias de la app</p>
+                <button class="btn-card">Configurar</button>
+            </div>
+        </div>
+
+        <!-- Actividad Reciente -->
+        <div class="recent-activity">
+            <h3>Actividad Reciente</h3>
+            <div id="activityList" class="activity-list">
+                <p class="loading-text">Cargando actividad...</p>
+            </div>
+        </div>
+    </main>
+</div>

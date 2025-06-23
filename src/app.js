@@ -162,7 +162,7 @@ async function scanINE() {
     const overlay = new BlinkID.BlinkIdOverlaySettings();
     overlay.language = "es";
     overlay.country = "MX";
-    overlay.showIntroductionDialog = true;
+    overlay.showIntroductionDialog = false;
     overlay.showOnboardingInfo = true;
     overlay.showDocumentNotSupportedDialog = true;
     overlay.showFlashlightWarning = true;

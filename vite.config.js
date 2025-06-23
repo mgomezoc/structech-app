@@ -1,5 +1,6 @@
 import { resolve } from "path";
 import { defineConfig } from "vite";
+import handlebars from "vite-plugin-handlebars";
 
 export default defineConfig({
   root: "src",
@@ -28,6 +29,7 @@ export default defineConfig({
     },
   },
   assetsInclude: ["**/*.hbs"],
+  plugins: [handlebars({})],
   resolve: {
     alias: {
       "@": "/src",

@@ -1,6 +1,9 @@
+// src/views/login/index.js
+
 import Handlebars from "handlebars";
+import logoUrl from "../../img/logo-icono-structech.png";
 import { authService } from "../../services/auth.service.js";
-import "./style.css";
+import "./style.less";
 import tplSource from "./template.hbs?raw";
 
 const template = Handlebars.compile(tplSource);
@@ -10,7 +13,7 @@ export default class LoginView {
     this.isLoading = false;
   }
 
-  // Renderiza el HTML con el view-model
+  // Renderiza el HTML a partir del template compilado
   render() {
     return template({
       title: "Iniciar Sesión",
@@ -19,31 +22,30 @@ export default class LoginView {
       passwordPlaceholder: "••••••••",
       forgotLinkText: "¿Olvidaste tu contraseña?",
       buttonText: "Iniciar Sesión",
-      loadingText: "Iniciando...",
+      loadingText: "Iniciando…",
       footerText: "¿No tienes cuenta?",
       registerLinkText: "Regístrate aquí",
+      logoUrl, // disponible en el template como {{logoUrl}}
     });
   }
 
-  // Después de inyectar el HTML en el DOM, configura eventos
+  // Después de inyectar el HTML, vinculamos eventos
   async afterRender() {
     const form = document.getElementById("loginForm");
     const emailInput = document.getElementById("email");
     const passwordInput = document.getElementById("password");
     const togglePassword = document.getElementById("togglePassword");
-    const submitBtn = document.getElementById("submitBtn");
-    const btnText = document.getElementById("btnText");
-    const btnLoader = document.getElementById("btnLoader");
     const errorMessage = document.getElementById("errorMessage");
     const rememberCheckbox = document.getElementById("remember");
 
+    // Mostrar/ocultar contraseña
     togglePassword.addEventListener("click", () => {
       const type = passwordInput.type === "password" ? "text" : "password";
       passwordInput.type = type;
       togglePassword.textContent = type === "password" ? "👁️" : "👁️‍🗨️";
     });
 
-    // recordarme
+    // Pre-cargar email si “recordarme” estaba activo
     const saved = localStorage.getItem("remembered_email");
     if (saved) {
       emailInput.value = saved;
@@ -56,6 +58,7 @@ export default class LoginView {
 
       const email = emailInput.value.trim();
       const password = passwordInput.value;
+
       if (!email || !password) {
         return this._showError("Por favor completa todos los campos");
       }
@@ -71,28 +74,32 @@ export default class LoginView {
           localStorage.removeItem("remembered_email");
         }
         window.mostrarMensajeEstado?.("✅ ¡Bienvenido!", 2000);
-        // auth:login se encarga de la navegación
+        // El evento auth:login se encarga de la navegación
       } else {
         this._showError(result.error);
       }
+
       this._setLoading(false);
     });
 
-    // foco inicial
+    // Foco en el primer campo vacío
     (!emailInput.value ? emailInput : passwordInput).focus();
   }
 
+  // Activa/desactiva el estado de carga en el botón
   _setLoading(on) {
     this.isLoading = on;
     const submitBtn = document.getElementById("submitBtn");
     const btnText = document.getElementById("btnText");
     const btnLoader = document.getElementById("btnLoader");
     if (!submitBtn) return;
+
     submitBtn.disabled = on;
     btnText.style.display = on ? "none" : "inline";
     btnLoader.style.display = on ? "inline-flex" : "none";
   }
 
+  // Muestra un mensaje de error bajo el formulario
   _showError(msg) {
     const errorMessage = document.getElementById("errorMessage");
     errorMessage.textContent = msg;
@@ -100,7 +107,8 @@ export default class LoginView {
     setTimeout(() => (errorMessage.style.display = "none"), 5000);
   }
 
+  // Cleanup si fuera necesario
   cleanup() {
-    // si necesitas quitar listeners manualmente
+    // aquí podrías eliminar event listeners globales si los hubieras añadido
   }
 }

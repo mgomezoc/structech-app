@@ -4,18 +4,21 @@ import { eventBus } from "../services/api.service.js";
 import { authService } from "../services/auth.service.js";
 import { ROUTES } from "../utils/constants.js";
 
-// Crear instancia del router con hash routing
+// Creamos el router en modo hash
 export const router = new Navigo("/", { hash: true });
 
-// Contenedor principal de la app
+// Contenedor principal
 const appContainer = document.getElementById("app") || document.body;
 
-// Helper para cargar vistas dinámicamente
+/**
+ * Helper para cargar vistas dinámicamente desde
+ * src/views/{viewName}/index.js
+ */
 async function loadView(viewName, context = {}) {
   try {
     console.log(`📄 Cargando vista: ${viewName}`);
 
-    // Loader mientras carga la vista
+    // Loader mientras carga
     appContainer.innerHTML = `
       <div class="view-loader">
         <div class="spinner"></div>
@@ -23,21 +26,21 @@ async function loadView(viewName, context = {}) {
       </div>
     `;
 
-    // Importar módulo de la vista
-    const module = await import(`../views/${viewName}.js`);
+    // <- Aquí cambiamos la extensión .js por /index.js
+    const module = await import(`../views/${viewName}/index.js`);
     const View = module.default;
     const view = new View(context);
 
-    // Renderizar HTML
+    // Renderizamos la vista
     const content = await view.render();
     appContainer.innerHTML = content;
 
-    // Ejecutar lógica post-render si existe
+    // Lógica post-render
     if (view.afterRender) {
       await view.afterRender();
     }
 
-    // Registrar hook de leave para cleanup de la vista
+    // Hook para cleanup al salir de la ruta
     router.hooks({
       leave: () => {
         if (view.cleanup) view.cleanup();
@@ -55,42 +58,50 @@ async function loadView(viewName, context = {}) {
   }
 }
 
-// Configuración de rutas
 export function setupRoutes() {
-  // Ruta raíz: redirige al dashboard si ya hay sesión, o al login si no
+  // Ruta raíz
   router.on(ROUTES.HOME, async () => {
     const isAuth = await authService.checkAuth();
     router.navigate(isAuth ? ROUTES.DASHBOARD : ROUTES.LOGIN);
   });
 
-  // Login (pública) con guardia en before
+  // Login (pública)
   router.on(ROUTES.LOGIN, async () => {
     const module = await import("../views/login/index.js");
     const View = module.default;
     const view = new View();
-    document.getElementById("app").innerHTML = view.render();
-    await view.afterRender();
+    appContainer.innerHTML = await view.render();
+    if (view.afterRender) await view.afterRender();
   });
 
   // Dashboard (privada)
-  router.on(ROUTES.DASHBOARD, () => loadView("dashboard"), {
-    before(done) {
-      authService.checkAuth().then((isAuth) => {
-        if (!isAuth) {
-          this.navigate(ROUTES.LOGIN);
-          done(false);
-        } else {
-          done();
-        }
-      });
-    },
-  });
+  router.on(
+    ROUTES.DASHBOARD,
+    // handler
+    () => loadView("dashboard"),
+    // guard (before hook)
+    {
+      before(done) {
+        authService.checkAuth().then((isAuth) => {
+          if (!isAuth) {
+            // guardamos para redirigir después del login
+            sessionStorage.setItem("redirectAfterLogin", ROUTES.DASHBOARD);
+            this.navigate(ROUTES.LOGIN);
+            done(false);
+          } else {
+            done();
+          }
+        });
+      },
+    }
+  );
 
-  // Formulario (privado)
+  // Formulario (privada)
   router.on(ROUTES.FORM, () => loadView("form"), {
     before(done) {
       authService.checkAuth().then((isAuth) => {
         if (!isAuth) {
+          sessionStorage.setItem("redirectAfterLogin", ROUTES.FORM);
           this.navigate(ROUTES.LOGIN);
           done(false);
         } else {
@@ -100,7 +111,7 @@ export function setupRoutes() {
     },
   });
 
-  // Admin (requiere rol "admin")
+  // Admin (requiere rol admin)
   router.on("/admin", () => loadView("admin"), {
     before(done) {
       authService.checkAuth().then((isAuth) => {
@@ -132,7 +143,7 @@ export function setupRoutes() {
     `;
   });
 
-  // Escuchar eventos globales de Auth
+  // Eventos globales de autenticación
   eventBus.on("auth:logout", () => {
     router.navigate(ROUTES.LOGIN);
   });
@@ -146,11 +157,11 @@ export function setupRoutes() {
     }
   });
 
-  // Resolver ruta inicial
+  // Resolución inicial
   router.resolve();
 }
 
-// Helpers para navegación y params
+// Helpers
 export function navigateTo(path, data = {}) {
   router.navigate(path, data);
 }

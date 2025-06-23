@@ -1,0 +1,457 @@
+.header {
+  background: #0ea5e9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.header-nav h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ffffff;
+  font-size: 20px;
+  margin: 0;
+}
+.header-nav .logo {
+  width: 32px;
+  height: 32px;
+}
+.btn-back {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.btn-back:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.user-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+.profile-section {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.profile-section .profile-photo {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+}
+.profile-section #profilePlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-section #profileImage {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 4px solid #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.form-section {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.form-group {
+  margin-bottom: 20px;
+}
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+}
+.form-group .form-control {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: all 0.2s;
+  background-color: #ffffff;
+}
+.form-group .form-control:focus {
+  outline: none;
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+.form-group .form-control.error {
+  border-color: #ef4444;
+}
+.form-group .form-control[disabled] {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+.form-group textarea.form-control {
+  resize: vertical;
+  min-height: 80px;
+}
+.gender-group {
+  display: flex;
+  gap: 24px;
+}
+.gender-group .gender-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.gender-group .gender-option input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+.gender-group .gender-option label {
+  margin-bottom: 0;
+  font-weight: normal;
+  cursor: pointer;
+  user-select: none;
+}
+.signature-section {
+  margin-top: 32px;
+}
+.signature-section label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+}
+.signature-box {
+  position: relative;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 12px;
+}
+.signature-box #signatureCanvas {
+  display: block;
+  width: 100%;
+  height: 150px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: crosshair;
+  touch-action: none;
+}
+.signature-box #signatureImage {
+  display: none;
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+.signature-box #signaturePlaceholder {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  color: #e5e7eb;
+  pointer-events: none;
+}
+.signature-controls {
+  display: flex;
+  gap: 10px;
+}
+.signature-controls button {
+  flex: 1;
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.signature-controls button:hover {
+  background: #f3f4f6;
+}
+.signature-controls button#clearSignature {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+.signature-controls button#clearSignature:hover {
+  background: #fef2f2;
+}
+.signature-controls button#undoSignature {
+  color: #0ea5e9;
+  border-color: #0ea5e9;
+}
+.signature-controls button#undoSignature:hover {
+  background: #eff6ff;
+}
+.audio-section {
+  margin-top: 32px;
+}
+.audio-section label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 500;
+  color: #374151;
+}
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.audio-controls #audioBtn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  background: #0ea5e9;
+  color: #ffffff;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.3s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.audio-controls #audioBtn:hover {
+  background: #0b83b9;
+  transform: scale(1.05);
+}
+.audio-controls #audioBtn:active {
+  transform: scale(0.95);
+}
+.audio-controls #audioBtn.recording {
+  background: #ef4444;
+  animation: pulse 1.5s infinite;
+}
+.audio-controls .audio-info {
+  flex: 1;
+}
+.audio-controls .audio-info #audioTimer {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  font-variant-numeric: tabular-nums;
+}
+.audio-controls .audio-info #audioHint {
+  font-size: 12px;
+  color: #6b7280;
+  display: block;
+  margin-top: 4px;
+}
+.audio-controls #audioDelete {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.audio-controls #audioDelete:hover {
+  background: #fef2f2;
+}
+.audio-wave {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 40px;
+}
+.audio-wave span {
+  display: block;
+  width: 3px;
+  height: 100%;
+  background: #0ea5e9;
+  border-radius: 3px;
+  animation: wave 1.2s ease-in-out infinite;
+}
+.audio-wave span:nth-child(1) {
+  animation-delay: -1.2s;
+}
+.audio-wave span:nth-child(2) {
+  animation-delay: -1.1s;
+}
+.audio-wave span:nth-child(3) {
+  animation-delay: -1s;
+}
+.audio-wave span:nth-child(4) {
+  animation-delay: -0.9s;
+}
+.audio-wave span:nth-child(5) {
+  animation-delay: -0.8s;
+}
+@keyframes wave {
+  0%,
+  40%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  20% {
+    transform: scaleY(1);
+  }
+}
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+.save-button {
+  width: 100%;
+  padding: 12px 24px;
+  background: #0ea5e9;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  margin-top: 32px;
+}
+.save-button:hover:not(:disabled) {
+  background: #0b83b9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
+.save-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+.save-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.save-button.loading {
+  color: transparent;
+}
+.save-button.loading::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  top: 50%;
+  left: 50%;
+  margin-left: -10px;
+  margin-top: -10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.fab-scan {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #0ea5e9;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.3s;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fab-scan:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+.fab-scan:active {
+  transform: translateY(0);
+}
+.fab-scan #scanIcon {
+  width: 48px;
+  height: 48px;
+}
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  .form-section {
+    padding: 16px;
+  }
+  .header-nav h1 {
+    font-size: 18px;
+  }
+  .header-nav h1 .logo {
+    width: 28px;
+    height: 28px;
+  }
+  .user-badge {
+    display: none;
+  }
+}
+.error-message {
+  background: #fef2f2;
+  color: #ef4444;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 16px;
+  font-size: 14px;
+  text-align: center;
+}
+.success-message {
+  background: #f0fdf4;
+  color: #10b981;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 16px;
+  font-size: 14px;
+  text-align: center;
+}

@@ -18,7 +18,7 @@ window.mostrarMensajeEstado = mostrarMensajeEstado;
 
 // Tu licencia de BlinkID
 const LICENSE =
-  "sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEEwTVRjMk1EY3hPREVzSWtOeVpXRjBaV1JHYjNJaU9pSTVabVExT0RCa05pMHlaRFJpTFRSak5HWXRPVFUzTUMwMVpXVXlZV1EyTWpZMk5ERWlmUT098Er7cjB+qDKvj4bUcp/EE0Gl92iO/qtPJowZOAmJqazLqMSRnDwD6vCpAUYaRf53vP7WrSYMLcwOB2BeiyNoa3DdBaCH+P3ju2ixpiEEuIRGgB1eQaFhpVkiVdEB5sWN94u4mqp/6HglO50sKXXWcex0mw==";
+  "sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEEyT0RjNE5UTXpORGdzSWtOeVpXRjBaV1JHYjNJaU9pSmtOVGxoT1dFMU5DMWlOV1EzTFRFek56VXRNRFkyWVMxbVlURmhZemcyTkdaa1pqSWlmUT09K5ZB12XvNfWakJN2x47CRJwF0oSGcF16bKfyRoB8L3L6cosgaXW2pCmyW9k5r+8al2MdRdf2/oLknazvBA/5PqICqpwic3+mjGl5aZcNm63iM/MA1FZx85cKqLZCw+RHY7Zt/VkBQaRfjbRlcRr2vow/EJLOp1TM";
 
 // Función principal de inicialización
 async function initializeApp() {
@@ -145,16 +145,22 @@ async function scanINE() {
     const plugin = new BlinkID.BlinkIDPlugin();
     const recognizer = new BlinkID.BlinkIdMultiSideRecognizer();
 
-    // Ajustes de calidad / filtrado
+    // imágenes completas / faciales / firma
     recognizer.returnFullDocumentImage = true;
     recognizer.returnFaceImage = true;
     recognizer.returnSignatureImage = true;
-    recognizer.allowBarcodeScanOnly = true;
+
+    // filtrado de mala calidad
     recognizer.enableBlurFilter = true;
     recognizer.enableGlareFilter = true;
-    recognizer.fullDocumentImageDpi = 150;
-    recognizer.faceImageDpi = 150;
-    recognizer.signatureImageDpi = 150;
+
+    // NO restringir solo a barcode (activar OCR + barcode)
+    recognizer.allowBarcodeScanOnly = false;
+
+    // ajustes de DPI
+    recognizer.fullDocumentImageDpi = 250; // buena calidad sin ser excesivo
+    recognizer.faceImageDpi = 150; // suficiente para detección de rostro
+    recognizer.signatureImageDpi = 250; // detalle de trazos fino en firma
 
     const rc = new BlinkID.RecognizerCollection([recognizer]);
 
@@ -179,7 +185,7 @@ async function scanINE() {
     const keys = {
       android: LICENSE,
       ios: LICENSE,
-      showTimeLimitedLicenseKeyWarning: true,
+      showTimeLimitedLicenseKeyWarning: false,
     };
 
     console.log("► Lanzando scanWithCamera…", { recognizer, overlay });

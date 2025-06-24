@@ -1,6 +1,7 @@
 // src/views/login/index.js
 
 import Handlebars from "handlebars";
+import videoUrl from "../../img/login3.mp4";
 import logoUrl from "../../img/logo-icono-structech.png";
 import { authService } from "../../services/auth.service.js";
 import "./style.less";
@@ -25,7 +26,8 @@ export default class LoginView {
       loadingText: "Iniciando…",
       footerText: "¿No tienes cuenta?",
       registerLinkText: "Regístrate aquí",
-      logoUrl, // disponible en el template como {{logoUrl}}
+      logoUrl,
+      videoUrl,
     });
   }
 
@@ -37,6 +39,12 @@ export default class LoginView {
     const togglePassword = document.getElementById("togglePassword");
     const errorMessage = document.getElementById("errorMessage");
     const rememberCheckbox = document.getElementById("remember");
+
+    // Ralentizar vídeo al 50%
+    const bgVideo = document.getElementById("bgVideo");
+    if (bgVideo) {
+      bgVideo.playbackRate = 0.8;
+    }
 
     // Mostrar/ocultar contraseña
     togglePassword.addEventListener("click", () => {

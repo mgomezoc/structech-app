@@ -192,11 +192,6 @@ export default class FormView {
     }
 
     if (data.signatureImage) {
-      this._showImage(
-        "signatureImage",
-        "signaturePlaceholder",
-        data.signatureImage
-      );
       document.getElementById("signatureImageData").value = data.signatureImage;
     }
 

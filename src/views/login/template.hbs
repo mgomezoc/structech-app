@@ -1,7 +1,10 @@
+{{!-- src/views/login/template.hbs --}}
 <div class="login-page">
     <div class="video-bg">
-        <video id="bgVideo" autoplay muted loop playsinline src="{{videoUrl}}"></video>
+        <video id="bgVideo" autoplay muted loop playsinline src="{{videoUrl}}">
+        </video>
     </div>
+
     <div class="login-container">
         <img src="{{logoUrl}}" alt="StructTech" class="logo" />
 
@@ -9,21 +12,36 @@
         <p class="subtitle">Inicia sesión en tu cuenta</p>
 
         <form id="loginForm" class="login-form">
+            {{!-- Email --}}
             <div class="input-group">
-                <span class="icon">👤</span>
+                <span class="icon">
+                    <lord-icon src="https://cdn.lordicon.com/ozlkyfxg.json" trigger="in"
+                        colors="primary:#0ea5e9,secondary:#6b7280" style="width:24px;height:24px">
+                    </lord-icon>
+                </span>
                 <input type="email" id="email" name="email" placeholder="Correo electrónico" autocomplete="email"
                     required />
             </div>
 
+            {{!-- Contraseña --}}
             <div class="input-group">
-                <span class="icon">🔒</span>
+                <span class="icon">
+                    <lord-icon src="https://cdn.lordicon.com/kpfqbkcv.json" trigger="in"
+                        colors="primary:#0ea5e9,secondary:#6b7280" style="width:24px;height:24px">
+                    </lord-icon>
+                </span>
                 <input type="password" id="password" name="password" placeholder="Contraseña"
                     autocomplete="current-password" required />
+
+                {{!-- Toggle mostrar/ocultar --}}
                 <button type="button" id="togglePassword" class="toggle-password">
-                    👁️
+                    <lord-icon src="https://cdn.lordicon.com/tqbntcar.json" trigger="in"
+                        colors="primary:#0ea5e9,secondary:#6b7280" style="width:24px;height:24px">
+                    </lord-icon>
                 </button>
             </div>
 
+            {{!-- Botón de envío --}}
             <button type="submit" class="btn-primary" id="submitBtn">
                 <span id="btnText">Iniciar Sesión</span>
                 <span id="btnLoader" style="display: none;">
@@ -31,7 +49,8 @@
                     Iniciando…
                 </span>
             </button>
-            
+
+            {{!-- Opciones extra --}}
             <div class="options">
                 <label class="checkbox-wrapper">
                     <input type="checkbox" id="remember" name="remember" />
@@ -42,11 +61,5 @@
 
             <div id="errorMessage" class="error-message"></div>
         </form>
-        <!--
-        <div class="footer">
-            ¿No tienes cuenta?
-            <a href="#/register">Regístrate aquí</a>
-        </div>
     </div>
-    -->
-    </div>
+</div>

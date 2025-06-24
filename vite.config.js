@@ -30,6 +30,12 @@ export default defineConfig({
   },
   assetsInclude: ["**/*.hbs"],
   plugins: [handlebars({})],
+  optimizeDeps: {
+    include: [
+      "@lordicon/element", // obliga a Vite a pre-compilarlo
+      "lottie-web",
+    ],
+  },
   resolve: {
     alias: {
       "@": "/src",

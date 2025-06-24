@@ -8,6 +8,7 @@ import { eventBus } from "./services/api.service.js";
 import { authService } from "./services/auth.service.js";
 
 // Importar tu código de escaneo existente
+import { defineElement } from "@lordicon/element";
 import * as BlinkID from "@microblink/blinkid-capacitor";
 import lottie from "lottie-web";
 import "./css/style.less";
@@ -15,6 +16,8 @@ import "./css/style.less";
 // Hacer disponibles funciones globales que necesitas
 window.lottie = lottie;
 window.mostrarMensajeEstado = mostrarMensajeEstado;
+
+defineElement(lottie.loadAnimation);
 
 // Tu licencia de BlinkID
 const LICENSE =

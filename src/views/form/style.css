@@ -169,14 +169,6 @@
   cursor: crosshair;
   touch-action: none;
 }
-.signature-box #signatureImage {
-  display: none;
-  width: 100%;
-  height: auto;
-  max-height: 150px;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-}
 .signature-box #signaturePlaceholder {
   display: none;
   position: absolute;

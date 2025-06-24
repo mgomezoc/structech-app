@@ -142,7 +142,7 @@ async function scanINE() {
     return;
   }
 
-  mostrarMensajeEstado("🔎 Iniciando BlinkID…");
+  //mostrarMensajeEstado("🔎 Iniciando BlinkID…");
 
   try {
     const plugin = new BlinkID.BlinkIDPlugin();
@@ -162,28 +162,46 @@ async function scanINE() {
 
     // ajustes de DPI
     recognizer.fullDocumentImageDpi = 250; // buena calidad sin ser excesivo
-    recognizer.faceImageDpi = 150; // suficiente para detección de rostro
+    recognizer.faceImageDpi = 250; // suficiente para detección de rostro
     recognizer.signatureImageDpi = 250; // detalle de trazos fino en firma
 
     const rc = new BlinkID.RecognizerCollection([recognizer]);
 
     // Overlay con instrucciones en español
     const overlay = new BlinkID.BlinkIdOverlaySettings();
+    // Configuración básica
     overlay.language = "es";
     overlay.country = "MX";
-    overlay.showIntroductionDialog = false;
-    overlay.showOnboardingInfo = true;
+
+    // DESACTIVA TODOS LOS ELEMENTOS DE BRANDING
+    overlay.showOnboardingInfo = false; // Oculta la pantalla inicial
+    overlay.showIntroductionDialog = false; // Oculta el diálogo introductorio
+    overlay.showMicroblinkLogo = false; // Oculta el logo
+    overlay.showBrandLogo = false; // Oculta logos adicionales
+    overlay.showExitAnimation = false; // Oculta animación al salir
+    overlay.showResultScreen = false; // Oculta pantalla de resultados
+    overlay.showSuccessFrame = false; // Oculta marco de éxito
+    overlay.showCameraListButton = false; // Oculta selector de cámara
+
+    // Texto personalizado (vacío para quitar "Powered by")
+    overlay.poweredByText = "STRUCTECH"; // Elimina el texto de crédito
+
+    // Solo mostrar lo necesario
     overlay.showDocumentNotSupportedDialog = true;
     overlay.showFlashlightWarning = true;
+    overlay.showTorchButton = true;
+    overlay.showCancelButton = true;
+
+    // Textos personalizados
     overlay.firstSideInstructionsText =
       "Coloca el FRENTE de tu INE dentro del marco";
     overlay.flipInstructions = "Ahora voltea tu INE y escanea el REVERSO";
+
+    // Resolución de cámara
     overlay.androidCameraResolutionPreset =
       BlinkID.AndroidCameraResolutionPreset.PresetFullHD;
     overlay.iosCameraResolutionPreset =
       BlinkID.iOSCameraResolutionPreset.PresetFullHD;
-    overlay.showTorchButton = true;
-    overlay.showCancelButton = true;
 
     const keys = {
       android: LICENSE,

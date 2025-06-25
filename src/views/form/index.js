@@ -112,8 +112,11 @@ export default class FormView {
 
       const data = Object.fromEntries(new FormData(e.target).entries());
       data.signatureData = signatureManager.getSignatureAsBase64();
+
       if (audioRecorder.hasRecording()) {
-        data.audioData = JSON.stringify(audioRecorder.getAudioData());
+        const audio = audioRecorder.getAudioData();
+        data.audioData = audio.data; // <-- solo la cadena Base64
+        data.audioMimeType = audio.mimeType; // opcional, si tu API la necesita
       }
 
       const result = await datosService.enviarFormularioPersona(data);

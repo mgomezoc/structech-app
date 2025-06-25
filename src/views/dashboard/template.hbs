@@ -4,14 +4,18 @@
         <div class="header-content">
             <div class="header-left">
                 <img src="{{imgHeader}}" alt="StructTech" class="header-logo" />
-                <h1>StructTech Dashboard</h1>
+                <h1>StructTech</h1>
             </div>
             <div class="header-right">
                 <div class="user-info">
                     <span class="user-name">
                         {{#if user.name}}{{user.name}}{{else if user.email}}{{user.email}}{{else}}Usuario{{/if}}
                     </span>
-                    <button id="logoutBtn" class="btn-logout" title="Cerrar sesión">🚪</button>
+                    <button id="logoutBtn" class="btn-logout" title="Cerrar sesión">
+                        <lord-icon src="https://cdn.lordicon.com/gwvmctbb.json" trigger="hover" colors="primary:#ffffff"
+                            style="width:20px;height:20px">
+                        </lord-icon>
+                    </button>
                 </div>
             </div>
         </div>
@@ -21,30 +25,102 @@
     <main class="dashboard-main">
         <div class="welcome-section">
             <h2>Bienvenido, {{#if user.name}}{{user.name}}{{else}}Usuario{{/if}}</h2>
-            <p>Selecciona una opción para continuar</p>
+            <p>Selecciona el tipo de registro que deseas realizar</p>
         </div>
 
         <div class="dashboard-grid">
-            <!-- Escanear INE -->
-            <div class="dashboard-card" id="scanCard">
-                <div class="card-icon">📷</div>
-                <h3>Escanear INE</h3>
-                <p>Captura los datos de una INE mexicana</p>
-                <button class="btn-card">Ir al formulario</button>
+            <!-- Registro con INE -->
+            <div class="dashboard-card primary-card" id="scanCard">
+                <div class="card-icon">
+                    <lord-icon src="https://cdn.lordicon.com/fgkmrslx.json" trigger="hover" colors="primary:#0ea5e9"
+                        style="width:64px;height:64px">
+                    </lord-icon>
+                </div>
+                <h3>Registro con Escaneo de INE</h3>
+                <p>Captura automáticamente los datos escaneando una INE oficial mexicana. La forma más rápida y precisa
+                    de registrar.</p>
+                <div class="card-features">
+                    <span class="feature-tag">✓ Escaneo automático</span>
+                    <span class="feature-tag">✓ Mayor precisión</span>
+                </div>
+                <button class="btn-card primary">Iniciar Registro</button>
             </div>
-            
-            <!-- Configuración -->
-            <div class="dashboard-card" id="settingsCard">
-                <div class="card-icon">⚙️</div>
-                <h3>Configuración</h3>
-                <p>Ajusta las preferencias de la app</p>
-                <button class="btn-card">Configurar</button>
+
+            <!-- Registro sin INE -->
+            <div class="dashboard-card" id="manualCard">
+                <div class="card-icon">
+                    <lord-icon src="https://cdn.lordicon.com/kulwmpzs.json" trigger="hover" colors="primary:#10b981"
+                        style="width:64px;height:64px">
+                    </lord-icon>
+                </div>
+                <h3>Registro Manual</h3>
+                <p>Ingresa manualmente los datos del ciudadano. Ideal cuando no se cuenta con la INE física disponible.
+                </p>
+                <div class="card-features">
+                    <span class="feature-tag">✓ Sin requisitos</span>
+                    <span class="feature-tag">✓ Flexible</span>
+                </div>
+                <button class="btn-card secondary">Registro Manual</button>
+            </div>
+
+            <!-- Copia de INE -->
+            <div class="dashboard-card" id="copyCard">
+                <div class="card-icon">
+                    <lord-icon src="https://cdn.lordicon.com/depeqmsz.json" trigger="hover" colors="primary:#8b5cf6"
+                        style="width:64px;height:64px">
+                    </lord-icon>
+                </div>
+                <h3>Registro con Copia de INE</h3>
+                <p>Adjunta una foto o archivo de la INE. Útil cuando tienes una imagen digital del documento.</p>
+                <div class="card-features">
+                    <span class="feature-tag">✓ Desde galería</span>
+                    <span class="feature-tag">✓ Archivo digital</span>
+                </div>
+                <button class="btn-card tertiary">Subir Copia</button>
+            </div>
+        </div>
+
+        <!-- Estadísticas Rápidas -->
+        <div class="stats-section">
+            <div class="stat-card">
+                <lord-icon src="https://cdn.lordicon.com/kbtmbyzy.json" trigger="loop" delay="2000"
+                    colors="primary:#0ea5e9" style="width:32px;height:32px">
+                </lord-icon>
+                <div class="stat-content">
+                    <h4>Registros Hoy</h4>
+                    <p class="stat-number">12</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <lord-icon src="https://cdn.lordicon.com/fhtaantg.json" trigger="loop" delay="2500"
+                    colors="primary:#10b981" style="width:32px;height:32px">
+                </lord-icon>
+                <div class="stat-content">
+                    <h4>Total Registros</h4>
+                    <p class="stat-number">248</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <lord-icon src="https://cdn.lordicon.com/jxhgzthg.json" trigger="loop" delay="3000"
+                    colors="primary:#8b5cf6" style="width:32px;height:32px">
+                </lord-icon>
+                <div class="stat-content">
+                    <h4>Última Sincronización</h4>
+                    <p class="stat-time">Hace 5 min</p>
+                </div>
             </div>
         </div>
 
         <!-- Actividad Reciente -->
         <div class="recent-activity">
-            <h3>Actividad Reciente</h3>
+            <div class="activity-header">
+                <h3>Actividad Reciente</h3>
+                <button class="btn-refresh" id="refreshActivity">
+                    <lord-icon src="https://cdn.lordicon.com/sihdhmit.json" trigger="click" target="#refreshActivity"
+                        colors="primary:#6b7280" style="width:20px;height:20px">
+                    </lord-icon>
+                </button>
+            </div>
             <div id="activityList" class="activity-list">
                 <p class="loading-text">Cargando actividad...</p>
             </div>

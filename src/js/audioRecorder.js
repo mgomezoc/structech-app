@@ -1,30 +1,27 @@
-// audioRecorder.js - Módulo para manejar grabación de audio
+// src/js/audioRecorder.js
 import { VoiceRecorder } from "capacitor-voice-recorder";
 
 class AudioRecorderManager {
   constructor() {
     this.isRecording = false;
-    this.isPaused = false;
-    this.recordingStartTime = null;
     this.recordingData = null;
     this.audioPlayer = null;
     this.timerInterval = null;
     this.elapsedTime = 0;
   }
 
+  /** Inicializa el módulo: pide permisos y conecta listeners */
   async init() {
-    // Solicitar permisos
     const hasPermission = await this.checkPermissions();
     if (!hasPermission) {
-      console.log("No se otorgaron permisos de audio");
+      console.warn("No se otorgaron permisos de audio");
       return false;
     }
-
-    // Configurar eventos de los botones
     this.setupEventListeners();
     return true;
   }
 
+  /** Verifica o solicita permisos de micrófono */
   async checkPermissions() {
     try {
       const { value } = await VoiceRecorder.hasAudioRecordingPermission();
@@ -40,27 +37,22 @@ class AudioRecorderManager {
     }
   }
 
+  /** Conecta los botones de la UI a sus handlers */
   setupEventListeners() {
-    const audioBtn = document.getElementById("audioBtn");
-    const audioDelete = document.getElementById("audioDelete");
-    const audioTimer = document.getElementById("audioTimer");
+    const btn = document.getElementById("audioBtn");
+    const del = document.getElementById("audioDelete");
 
-    if (audioBtn) {
-      let isHolding = false;
+    if (btn) {
       let holdTimeout = null;
+      let isHolding = false;
 
-      // Función para iniciar grabación
-      const startHoldRecording = (e) => {
+      const startHold = (e) => {
         e.preventDefault();
-
-        // Si ya hay una grabación, reproducir en lugar de grabar
+        // si ya hay grabación, togglear reproducción
         if (this.recordingData && !this.isRecording) {
-          this.togglePlayback();
-          return;
+          return this.togglePlayback();
         }
-
         isHolding = true;
-        // Pequeño delay para diferenciar entre click y hold
         holdTimeout = setTimeout(() => {
           if (isHolding && !this.recordingData) {
             this.startRecording();
@@ -68,126 +60,84 @@ class AudioRecorderManager {
         }, 200);
       };
 
-      // Función para detener grabación
-      const stopHoldRecording = (e) => {
+      const stopHold = (e) => {
         e.preventDefault();
-
-        if (holdTimeout) {
-          clearTimeout(holdTimeout);
-          holdTimeout = null;
+        clearTimeout(holdTimeout);
+        holdTimeout = null;
+        if (isHolding && this.isRecording) {
+          this.stopRecording();
         }
-
-        if (isHolding) {
-          isHolding = false;
-          if (this.isRecording) {
-            this.stopRecording();
-          }
-        }
+        isHolding = false;
       };
 
-      // Eventos para mouse
-      audioBtn.addEventListener("mousedown", startHoldRecording);
-      audioBtn.addEventListener("mouseup", stopHoldRecording);
-      audioBtn.addEventListener("mouseleave", stopHoldRecording);
-
-      // Eventos para touch (móvil)
-      audioBtn.addEventListener("touchstart", startHoldRecording, {
-        passive: false,
-      });
-      audioBtn.addEventListener("touchend", stopHoldRecording, {
-        passive: false,
-      });
-      audioBtn.addEventListener("touchcancel", stopHoldRecording);
-
-      // Prevenir el comportamiento por defecto del click
-      audioBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      });
+      // mouse
+      btn.addEventListener("mousedown", startHold);
+      btn.addEventListener("mouseup", stopHold);
+      btn.addEventListener("mouseleave", stopHold);
+      // touch
+      btn.addEventListener("touchstart", startHold, { passive: false });
+      btn.addEventListener("touchend", stopHold, { passive: false });
+      btn.addEventListener("touchcancel", stopHold);
+      // evitar click normal
+      btn.addEventListener("click", (e) => e.preventDefault());
     }
 
-    if (audioDelete) {
-      audioDelete.addEventListener("click", () => this.deleteRecording());
+    if (del) {
+      del.addEventListener("click", () => this.deleteRecording());
     }
   }
 
+  /** Inicia la grabación */
   async startRecording() {
     if (this.isRecording) return;
-
     try {
-      // Verificar permisos nuevamente
-      const hasPermission = await this.checkPermissions();
-      if (!hasPermission) {
-        this.showMessage("❌ Permisos de micrófono denegados");
-        return;
+      if (!(await this.checkPermissions())) {
+        return this.showMessage("❌ Permisos de micrófono denegados");
       }
 
-      // Limpiar grabación anterior si existe
-      if (this.recordingData) {
-        this.deleteRecording();
-      }
+      // limpiar anterior
+      if (this.recordingData) this.deleteRecording();
 
-      // Iniciar grabación
       const { value } = await VoiceRecorder.startRecording();
-      if (!value) {
-        throw new Error("No se pudo iniciar la grabación");
-      }
+      if (!value) throw new Error("No se pudo iniciar la grabación");
 
       this.isRecording = true;
-      this.recordingStartTime = Date.now();
-
-      // Actualizar UI
+      this.elapsedTime = 0;
       this.updateRecordingUI(true);
-
-      // Iniciar timer
       this.startTimer();
-
-      // Vibrar al iniciar (feedback táctil)
-      if ("vibrate" in navigator) {
-        navigator.vibrate(50);
-      }
-    } catch (error) {
-      console.error("Error al iniciar grabación:", error);
+      navigator.vibrate?.(50);
+    } catch (err) {
+      console.error("Error al iniciar grabación:", err);
       this.showMessage("❌ Error al iniciar grabación");
     }
   }
 
+  /** Detiene la grabación y guarda los datos en memoria */
   async stopRecording() {
     if (!this.isRecording) return;
-
     try {
-      // Detener grabación
       const { value } = await VoiceRecorder.stopRecording();
-      if (!value) {
-        throw new Error("No se pudo detener la grabación");
-      }
+      if (!value) throw new Error("No se pudo detener la grabación");
 
       this.isRecording = false;
-
-      // Guardar datos de la grabación
       this.recordingData = {
         recordDataBase64: value.recordDataBase64,
         mimeType: value.mimeType || "audio/aac",
         msDuration: value.msDuration || this.elapsedTime * 1000,
-        format: value.format || "aac",
       };
 
-      // Detener timer
-      this.stopTimer();
+      // Mostrar en consola el Base64 completo para debug
+      console.log("🔊 Audio Base64:", this.recordingData.recordDataBase64);
 
-      // Actualizar UI
+      this.stopTimer();
       this.updateRecordingUI(false);
       this.showDeleteButton(true);
+      navigator.vibrate?.(30);
 
-      // Vibrar al terminar
-      if ("vibrate" in navigator) {
-        navigator.vibrate(30);
-      }
-
-      // Guardar en el campo oculto del formulario
+      // guardar el Base64 en el formulario
       this.saveToForm();
-    } catch (error) {
-      console.error("Error al detener grabación:", error);
+    } catch (err) {
+      console.error("Error al detener grabación:", err);
       this.showMessage("❌ Error al detener grabación");
       this.isRecording = false;
       this.stopTimer();
@@ -195,197 +145,148 @@ class AudioRecorderManager {
     }
   }
 
+  /** Inicia el contador de tiempo */
   startTimer() {
-    this.elapsedTime = 0;
-    const timerElement = document.getElementById("audioTimer");
-
+    const display = document.getElementById("audioTimer");
     this.timerInterval = setInterval(() => {
       this.elapsedTime++;
-      if (timerElement) {
-        timerElement.textContent = this.formatTime(this.elapsedTime);
-      }
+      if (display) display.textContent = this.formatTime(this.elapsedTime);
     }, 1000);
   }
 
+  /** Detiene el contador */
   stopTimer() {
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
-    }
+    clearInterval(this.timerInterval);
+    this.timerInterval = null;
   }
 
-  formatTime(seconds) {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    return `${hrs.toString().padStart(2, "0")}:${mins
+  /** Formatea segundos a HH:MM:SS */
+  formatTime(sec) {
+    const h = Math.floor(sec / 3600)
       .toString()
-      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+      .padStart(2, "0");
+    const m = Math.floor((sec % 3600) / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = (sec % 60).toString().padStart(2, "0");
+    return `${h}:${m}:${s}`;
   }
 
+  /** Actualiza la UI del botón según estado */
   updateRecordingUI(isRecording) {
-    const audioBtn = document.getElementById("audioBtn");
-    const audioTimer = document.getElementById("audioTimer");
-    const audioHint = document.getElementById("audioHint");
-    const audioWave = document.getElementById("audioWave");
+    const btn = document.getElementById("audioBtn");
+    const hint = document.getElementById("audioHint");
+    const wave = document.getElementById("audioWave");
 
-    if (audioBtn) {
+    if (btn) {
       if (isRecording) {
-        audioBtn.textContent = "⏹️";
-        audioBtn.classList.add("recording");
-        audioBtn.style.background = "#ef4444";
-        audioBtn.style.cursor = "pointer";
+        btn.textContent = "⏹️";
+        btn.style.background = "#ef4444";
       } else if (this.recordingData) {
-        audioBtn.textContent = "▶️";
-        audioBtn.classList.remove("recording");
-        audioBtn.style.background = "#10b981";
-        audioBtn.style.cursor = "pointer";
+        btn.textContent = "▶️";
+        btn.style.background = "#10b981";
       } else {
-        audioBtn.textContent = "🎤";
-        audioBtn.classList.remove("recording");
-        audioBtn.style.background = "#3b82f6";
-        audioBtn.style.cursor = "pointer";
+        btn.textContent = "🎤";
+        btn.style.background = "#3b82f6";
       }
     }
-
-    if (audioHint) {
-      if (isRecording) {
-        audioHint.textContent = "Suelta para detener";
-      } else if (this.recordingData) {
-        audioHint.textContent = "Toca para reproducir";
-      } else {
-        audioHint.textContent = "Mantén presionado para grabar";
-      }
+    if (hint) {
+      hint.textContent = isRecording
+        ? "Suelta para detener"
+        : this.recordingData
+        ? "Toca para reproducir"
+        : "Mantén presionado para grabar";
     }
-
-    if (audioWave) {
-      audioWave.style.display = isRecording ? "flex" : "none";
+    if (wave) {
+      wave.style.display = isRecording ? "flex" : "none";
     }
-
-    if (audioTimer && !isRecording && !this.recordingData) {
-      audioTimer.textContent = "00:00:00";
+    const timer = document.getElementById("audioTimer");
+    if (timer && !isRecording && !this.recordingData) {
+      timer.textContent = "00:00:00";
     }
   }
 
+  /** Muestra u oculta el botón de eliminar */
   showDeleteButton(show) {
-    const deleteBtn = document.getElementById("audioDelete");
-    if (deleteBtn) {
-      deleteBtn.style.display = show ? "block" : "none";
-    }
+    const del = document.getElementById("audioDelete");
+    if (del) del.style.display = show ? "block" : "none";
   }
 
+  /** Reproduce o pausa la grabación */
   async togglePlayback() {
     if (!this.recordingData) return;
-
-    const audioBtn = document.getElementById("audioBtn");
-
+    const btn = document.getElementById("audioBtn");
     if (this.audioPlayer && !this.audioPlayer.paused) {
-      // Pausar
       this.audioPlayer.pause();
-      audioBtn.textContent = "▶️";
+      btn.textContent = "▶️";
     } else {
-      // Reproducir
       if (!this.audioPlayer) {
-        // Crear el audio con el formato correcto
-        const mimeType = this.recordingData.mimeType || "audio/aac";
+        const mime = this.recordingData.mimeType;
         this.audioPlayer = new Audio(
-          `data:${mimeType};base64,${this.recordingData.recordDataBase64}`
+          `data:${mime};base64,${this.recordingData.recordDataBase64}`
         );
-
         this.audioPlayer.addEventListener("ended", () => {
-          audioBtn.textContent = "▶️";
-        });
-
-        this.audioPlayer.addEventListener("error", (e) => {
-          console.error("Error al reproducir audio:", e);
-          this.showMessage("❌ Error al reproducir audio");
+          btn.textContent = "▶️";
         });
       }
-
       try {
         await this.audioPlayer.play();
-        audioBtn.textContent = "⏸️";
-      } catch (error) {
-        console.error("Error al reproducir:", error);
+        btn.textContent = "⏸️";
+      } catch (err) {
+        console.error("Error al reproducir audio:", err);
         this.showMessage("❌ Error al reproducir audio");
       }
     }
   }
 
+  /** Elimina la grabación actual */
   deleteRecording() {
-    // Detener reproducción si está activa
-    if (this.audioPlayer) {
-      this.audioPlayer.pause();
-      this.audioPlayer = null;
-    }
-
-    // Limpiar datos
+    this.audioPlayer?.pause();
+    this.audioPlayer = null;
     this.recordingData = null;
     this.elapsedTime = 0;
-
-    // Actualizar UI
     this.updateRecordingUI(false);
     this.showDeleteButton(false);
-    document.getElementById("audioTimer").textContent = "00:00:00";
-
-    // Limpiar campo del formulario
-    const audioField = document.getElementById("audioData");
-    if (audioField) {
-      audioField.value = "";
-    }
-
+    const timerEl = document.getElementById("audioTimer");
+    if (timerEl) timerEl.textContent = "00:00:00";
+    // limpiar campo oculto
+    const fld = document.getElementById("audioData");
+    if (fld) fld.value = "";
     this.showMessage("🗑️ Audio eliminado");
   }
 
+  /** Inserta un campo oculto con SOLO el Base64 para el backend */
   saveToForm() {
     if (!this.recordingData) return;
-
-    // Buscar o crear campo oculto para el audio
-    let audioField = document.getElementById("audioData");
-    if (!audioField) {
-      audioField = document.createElement("input");
-      audioField.type = "hidden";
-      audioField.id = "audioData";
-      audioField.name = "audioData";
-      document.getElementById("formPersona").appendChild(audioField);
+    let fld = document.getElementById("audioData");
+    if (!fld) {
+      fld = document.createElement("input");
+      fld.type = "hidden";
+      fld.id = "audioData";
+      fld.name = "audioData";
+      document.getElementById("formPersona").appendChild(fld);
     }
-
-    // Guardar datos del audio
-    audioField.value = JSON.stringify({
-      data: this.recordingData.recordDataBase64,
-      mimeType: this.recordingData.mimeType,
-      format: this.recordingData.format,
-      duration: Math.floor(this.recordingData.msDuration / 1000),
-      timestamp: new Date().toISOString(),
-    });
+    fld.value = this.recordingData.recordDataBase64;
   }
 
-  showMessage(message) {
-    // Reutilizar tu función mostrarMensajeEstado
-    if (window.mostrarMensajeEstado) {
-      window.mostrarMensajeEstado(message, 2000);
-    } else {
-      console.log(message);
-    }
-  }
-
-  // Obtener datos del audio para enviar
+  /** Obtiene info de la grabación */
   getAudioData() {
     if (!this.recordingData) return null;
-
     return {
       data: this.recordingData.recordDataBase64,
       mimeType: this.recordingData.mimeType,
-      format: this.recordingData.format,
       duration: Math.floor(this.recordingData.msDuration / 1000),
-      size: Math.round(this.recordingData.recordDataBase64.length * 0.75), // Aproximado
-      timestamp: new Date().toISOString(),
     };
   }
 
+  /** Indica si hay grabación lista */
   hasRecording() {
     return !!this.recordingData;
+  }
+
+  /** Toast interno */
+  showMessage(msg) {
+    window.mostrarMensajeEstado?.(msg, 2000) || console.log(msg);
   }
 }
 

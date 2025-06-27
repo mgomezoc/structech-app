@@ -5,6 +5,7 @@ import Handlebars from "handlebars";
 import videoUrl from "../../img/login3.mp4";
 import logoUrl from "../../img/logo-icono-structech.png";
 import { authService } from "../../services/auth.service.js";
+import { dialogService } from "../../services/dialog.service.js";
 import { hapticsService } from "../../services/haptics.service.js";
 import "./style.less";
 import tplSource from "./template.hbs?raw";
@@ -96,7 +97,11 @@ export default class LoginView {
 
     if (!email || !password) {
       await hapticsService.error();
-      return this._showError("Por favor completa todos los campos");
+      await dialogService.alert(
+        "Campos Requeridos",
+        "Por favor completa todos los campos para continuar."
+      );
+      return;
     }
 
     await hapticsService.light();
@@ -110,8 +115,20 @@ export default class LoginView {
       coords = await this._getCoordinates();
     } catch (err) {
       console.error("Error al obtener ubicación:", err);
-      this._showError("Necesitamos acceso a tu ubicación para iniciar sesión.");
+
+      const shouldContinue = await dialogService.errorWithAction(
+        "Ubicación Requerida",
+        "Necesitamos acceso a tu ubicación para iniciar sesión. ¿Deseas intentar de nuevo?",
+        "Reintentar",
+        "Cancelar"
+      );
+
       this._setLoading(false);
+
+      if (shouldContinue) {
+        return this._handleSubmit(e);
+      }
+
       return;
     }
 
@@ -141,7 +158,10 @@ export default class LoginView {
       // auth:login disparará la navegación
     } else {
       await hapticsService.error();
-      this._showError(result.error);
+      await dialogService.alert(
+        "Error de Acceso",
+        result.error || "No se pudo iniciar sesión. Verifica tus credenciales."
+      );
     }
 
     this._setLoading(false);

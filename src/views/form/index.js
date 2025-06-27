@@ -8,6 +8,7 @@ import logoUrl from "../../img/logo-icono-structech.png";
 import { navigateTo } from "../../routes/index.js";
 import { authService } from "../../services/auth.service.js";
 import { datosService } from "../../services/datos.service.js";
+import { dialogService } from "../../services/dialog.service.js";
 import { hapticsService } from "../../services/haptics.service.js";
 import { ROUTES } from "../../utils/constants.js";
 
@@ -70,8 +71,11 @@ export default class FormView {
 
   setupEventListeners() {
     document.getElementById("backBtn")?.addEventListener("click", async () => {
-      await hapticsService.light();
-      navigateTo(ROUTES.DASHBOARD);
+      const canGoBack = await this.confirmBackWithData();
+      if (canGoBack) {
+        await hapticsService.light();
+        navigateTo(ROUTES.DASHBOARD);
+      }
     });
 
     document
@@ -141,7 +145,23 @@ export default class FormView {
     try {
       if (!signatureManager.hasSignature()) {
         await hapticsService.error();
-        throw new Error("Por favor proporcione su firma");
+
+        await dialogService.alert(
+          "Firma Requerida",
+          "Por favor proporcione su firma antes de continuar."
+        );
+        return;
+      }
+
+      const shouldSubmit = await dialogService.confirm(
+        "Confirmar Registro",
+        "¿Estás seguro que deseas guardar este registro? Verifica que toda la información sea correcta.",
+        "Guardar",
+        "Revisar"
+      );
+
+      if (!shouldSubmit) {
+        return; // Usuario canceló
       }
 
       await hapticsService.medium();
@@ -161,14 +181,28 @@ export default class FormView {
 
       await hapticsService.success();
 
-      window.mostrarMensajeEstado?.("✅ Datos guardados correctamente", 3000);
+      const shouldContinue = await dialogService.successWithContinue(
+        "¡Registro Guardado!",
+        "Los datos se han guardado correctamente en el sistema.",
+        "Crear Otro",
+        "Volver al Dashboard"
+      );
+
       e.target.reset();
       signatureManager.clear();
       audioRecorder.deleteRecording();
-      setTimeout(() => navigateTo(ROUTES.DASHBOARD), 2000);
+
+      if (shouldContinue) {
+        window.location.reload();
+      } else {
+        setTimeout(() => navigateTo(ROUTES.DASHBOARD), 1000);
+      }
     } catch (err) {
       await hapticsService.error();
-      window.mostrarMensajeEstado?.(`❌ ${err.message}`, 5000);
+      await dialogService.alert(
+        "Error Inesperado",
+        `Ha ocurrido un error: ${err.message}`
+      );
     } finally {
       btn.disabled = false;
       btn.classList.remove("loading");
@@ -186,6 +220,36 @@ export default class FormView {
     } else {
       document.getElementById("curp").classList.remove("error");
     }
+  }
+
+  // Confirmación antes de volver atrás si hay datos
+  async confirmBackWithData() {
+    const form = document.getElementById("formPersona");
+    const formData = new FormData(form);
+
+    // Verificar si hay datos en el formulario
+    let hasData = false;
+    for (const [key, value] of formData.entries()) {
+      if (value && value.toString().trim()) {
+        hasData = true;
+        break;
+      }
+    }
+
+    if (
+      hasData ||
+      signatureManager.hasSignature() ||
+      audioRecorder.hasRecording()
+    ) {
+      return await dialogService.confirm(
+        "Datos sin Guardar",
+        "Tienes información sin guardar. ¿Estás seguro que deseas salir?",
+        "Salir sin Guardar",
+        "Quedarme"
+      );
+    }
+
+    return true; // No hay datos, puede salir libremente
   }
 
   poblarFormulario(scanResult) {

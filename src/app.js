@@ -97,31 +97,50 @@ function showErrorScreen(message) {
 // Configurar listeners globales
 function setupGlobalListeners() {
   // Manejar errores no capturados
-  window.addEventListener("unhandledrejection", (event) => {
+  window.addEventListener("unhandledrejection", async (event) => {
     console.error("Error no manejado:", event.reason);
-    mostrarMensajeEstado("❌ Ha ocurrido un error inesperado", 3000);
+
+    await dialogService
+      .errorWithAction(
+        "Error Inesperado",
+        "Ha ocurrido un error inesperado en la aplicación.",
+        "Recargar",
+        "Continuar"
+      )
+      .then(async (shouldReload) => {
+        if (shouldReload) {
+          await hapticsService.medium();
+          window.location.reload();
+        }
+      });
   });
 
   // Manejar cambios de conectividad
-  window.addEventListener("online", () => {
+  window.addEventListener("online", async () => {
+    await hapticsService.success();
     mostrarMensajeEstado("✅ Conexión restaurada", 2000);
   });
 
-  window.addEventListener("offline", () => {
-    mostrarMensajeEstado("❌ Sin conexión a internet", 3000);
+  window.addEventListener("offline", async () => {
+    await hapticsService.warning();
+    await dialogService.alert(
+      "Sin Conexión",
+      "Se ha perdido la conexión a internet. Algunas funciones podrían no estar disponibles."
+    );
   });
 
   // Manejar botón atrás en Android
   if (Capacitor.isNativePlatform()) {
-    document.addEventListener("backbutton", () => {
-      // Si estamos en login o dashboard, preguntar si salir
+    document.addEventListener("backbutton", async () => {
       const currentPath = window.location.hash;
       if (
         currentPath === "#/login" ||
         currentPath === "#/dashboard" ||
         currentPath === "#/"
       ) {
-        if (confirm("¿Deseas salir de la aplicación?")) {
+        // Usar diálogo nativo para confirmar salida
+        const shouldExit = await dialogService.confirmExit();
+        if (shouldExit) {
           navigator.app?.exitApp();
         }
       } else {

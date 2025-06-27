@@ -8,6 +8,7 @@ import logoUrl from "../../img/logo-icono-structech.png";
 import { navigateTo } from "../../routes/index.js";
 import { authService } from "../../services/auth.service.js";
 import { datosService } from "../../services/datos.service.js";
+import { hapticsService } from "../../services/haptics.service.js";
 import { ROUTES } from "../../utils/constants.js";
 
 import lottie from "lottie-web";
@@ -68,9 +69,10 @@ export default class FormView {
   }
 
   setupEventListeners() {
-    document
-      .getElementById("backBtn")
-      ?.addEventListener("click", () => navigateTo(ROUTES.DASHBOARD));
+    document.getElementById("backBtn")?.addEventListener("click", async () => {
+      await hapticsService.light();
+      navigateTo(ROUTES.DASHBOARD);
+    });
 
     document
       .getElementById("formPersona")
@@ -83,14 +85,17 @@ export default class FormView {
       }
     });
 
-    document
-      .getElementById("btnScan")
-      ?.addEventListener("click", () => window.scanINE?.());
+    document.getElementById("btnScan")?.addEventListener("click", async () => {
+      await hapticsService.medium();
+      window.scanINE?.();
+    });
 
     // Cuando el usuario selecciona una Estructura, cargar sus SubEstructuras
     document
       .getElementById("estructura")
       ?.addEventListener("change", async (e) => {
+        await hapticsService.light();
+
         const estructuraId = e.target.value;
         const subSel = document.getElementById("subestructura");
         // Reiniciar opciones
@@ -100,10 +105,13 @@ export default class FormView {
         // Llamar al servicio y poblar
         const res = await datosService.obtenerSubestructuras(estructuraId);
         if (res.success) {
+          await hapticsService.light();
+
           res.data.forEach((s) => {
             subSel.innerHTML += `<option value="${s.iSubCatalogId}">${s.vcSubCatalog}</option>`;
           });
         } else {
+          await hapticsService.error();
           window.mostrarMensajeEstado?.(`⚠️ ${res.error}`, 3000);
         }
       });
@@ -132,8 +140,11 @@ export default class FormView {
 
     try {
       if (!signatureManager.hasSignature()) {
+        await hapticsService.error();
         throw new Error("Por favor proporcione su firma");
       }
+
+      await hapticsService.medium();
 
       const data = Object.fromEntries(new FormData(e.target).entries());
 
@@ -148,12 +159,15 @@ export default class FormView {
       const result = await datosService.enviarFormularioPersona(data);
       if (!result.success) throw new Error(result.error);
 
+      await hapticsService.success();
+
       window.mostrarMensajeEstado?.("✅ Datos guardados correctamente", 3000);
       e.target.reset();
       signatureManager.clear();
       audioRecorder.deleteRecording();
       setTimeout(() => navigateTo(ROUTES.DASHBOARD), 2000);
     } catch (err) {
+      await hapticsService.error();
       window.mostrarMensajeEstado?.(`❌ ${err.message}`, 5000);
     } finally {
       btn.disabled = false;
@@ -175,6 +189,7 @@ export default class FormView {
   }
 
   poblarFormulario(scanResult) {
+    hapticsService.light();
     const data = scanResult.result || scanResult;
     const getVal = (f) => f?.description || f?.latin || "";
 

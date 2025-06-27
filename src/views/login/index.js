@@ -5,6 +5,7 @@ import Handlebars from "handlebars";
 import videoUrl from "../../img/login3.mp4";
 import logoUrl from "../../img/logo-icono-structech.png";
 import { authService } from "../../services/auth.service.js";
+import { hapticsService } from "../../services/haptics.service.js";
 import "./style.less";
 import tplSource from "./template.hbs?raw";
 
@@ -61,7 +62,9 @@ export default class LoginView {
 
   _attachEventListeners() {
     // Toggle password
-    this.togglePasswordBtn.addEventListener("click", () => {
+    this.togglePasswordBtn.addEventListener("click", async () => {
+      await hapticsService.light();
+
       const isPwd = this.passwordInput.type === "password";
       this.passwordInput.type = isPwd ? "text" : "password";
 
@@ -92,8 +95,11 @@ export default class LoginView {
     const password = this.passwordInput.value;
 
     if (!email || !password) {
+      await hapticsService.error();
       return this._showError("Por favor completa todos los campos");
     }
+
+    await hapticsService.light();
 
     this._setLoading(true);
     this.errorMessage.style.display = "none";
@@ -124,6 +130,8 @@ export default class LoginView {
     }
 
     if (result.success) {
+      await hapticsService.success();
+
       if (this.rememberCheckbox.checked) {
         localStorage.setItem("remembered_email", email);
       } else {
@@ -132,6 +140,7 @@ export default class LoginView {
       window.mostrarMensajeEstado?.("✅ ¡Bienvenido!", 2000);
       // auth:login disparará la navegación
     } else {
+      await hapticsService.error();
       this._showError(result.error);
     }
 

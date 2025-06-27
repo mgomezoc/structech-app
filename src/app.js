@@ -6,6 +6,7 @@ import { SplashScreen } from "@capacitor/splash-screen";
 import { setupRoutes } from "./routes/index.js";
 import { eventBus } from "./services/api.service.js";
 import { authService } from "./services/auth.service.js";
+import { hapticsService } from "./services/haptics.service.js";
 
 // Importar tu código de escaneo existente
 import { defineElement } from "@lordicon/element";
@@ -133,11 +134,14 @@ function setupGlobalListeners() {
 
 // Tu función de escaneo existente (adaptada)
 async function scanINE() {
+  await hapticsService.light();
+
   mostrarMensajeEstado("▶️ Solicitando permisos de cámara…");
 
   const { Camera } = Capacitor.Plugins;
   const perm = await Camera.requestPermissions();
   if (perm.camera !== "granted") {
+    await hapticsService.error();
     mostrarMensajeEstado("❌ Permiso de cámara denegado", 3000);
     return;
   }
@@ -214,8 +218,10 @@ async function scanINE() {
     console.log("► Resultados:", results);
 
     if (!results.length) {
+      await hapticsService.warning();
       mostrarMensajeEstado("⚠️ Usuario canceló el escaneo", 3000);
     } else {
+      await hapticsService.warning();
       // Emitir evento con los resultados
       eventBus.emit("scan:complete", results[0]);
 
@@ -227,6 +233,7 @@ async function scanINE() {
       mostrarMensajeEstado("✅ ¡Documento escaneado exitosamente!", 3000);
     }
   } catch (e) {
+    await hapticsService.error();
     console.error("Error en scanINE:", e);
     mostrarMensajeEstado(`❌ Error al escanear: ${e.message || e}`, 5000);
   }
@@ -234,7 +241,16 @@ async function scanINE() {
 
 // Función para mostrar mensajes de estado (tu implementación actual)
 function mostrarMensajeEstado(mensaje, duracion = 0) {
-  // Crear un toast notification
+  // Añadir haptic basado en el tipo de mensaje
+  if (mensaje.includes("✅")) {
+    hapticsService.light(); // Feedback ligero para éxitos
+  } else if (mensaje.includes("❌")) {
+    hapticsService.error(); // Feedback de error
+  } else if (mensaje.includes("⚠️")) {
+    hapticsService.warning(); // Feedback de advertencia
+  }
+
+  // Crear un toast notification (resto igual)
   const toast = document.createElement("div");
   toast.className = "toast-message";
   toast.textContent = mensaje;

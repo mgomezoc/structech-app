@@ -176,3 +176,183 @@
   color: #0ea5e9;
   font-weight: 500;
 }
+.btn-secondary {
+  width: 100%;
+  padding: 14px 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.btn-secondary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+.btn-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(14, 165, 233, 0.3);
+}
+.btn-secondary:hover::before {
+  left: 100%;
+}
+.btn-secondary:hover lord-icon {
+  transform: scale(1.1);
+}
+.btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 15px rgba(14, 165, 233, 0.2);
+}
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+.btn-secondary:disabled:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  transform: none;
+  box-shadow: none;
+}
+.btn-secondary lord-icon {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.btn-secondary span {
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.btn-secondary.loading {
+  pointer-events: none;
+}
+.btn-secondary.loading::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+#biometricBtn {
+  border: 2px solid rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+}
+#biometricBtn:hover {
+  border-color: rgba(102, 126, 234, 0.6);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.25) 0%, rgba(118, 75, 162, 0.25) 100%);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+#biometricBtn.pulse {
+  animation: biometricPulse 2s ease-in-out infinite;
+}
+.login-divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  opacity: 0.7;
+}
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.3);
+}
+.login-divider span {
+  padding: 0 16px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 400;
+}
+.biometric-options {
+  margin-top: 16px;
+}
+.biometric-options .biometric-label {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-weight: 400;
+}
+@keyframes biometricPulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    border-color: rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    border-color: rgba(102, 126, 234, 0.6);
+  }
+}
+@keyframes spin {
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+@media (max-width: 480px) {
+  .btn-secondary {
+    font-size: 15px;
+    padding: 12px 16px;
+  }
+  .btn-secondary lord-icon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .login-divider {
+    margin: 16px 0;
+  }
+  .login-divider span {
+    font-size: 13px;
+    padding: 0 12px;
+  }
+}
+.btn-secondary.fade-in {
+  animation: fadeInUp 0.5s ease-out;
+}
+.btn-secondary.fade-out {
+  animation: fadeOut 0.3s ease-out forwards;
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}

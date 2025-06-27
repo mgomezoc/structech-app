@@ -19,21 +19,13 @@ export default class LoginView {
 
   render() {
     return template({
-      title: "Iniciar Sesión",
-      subtitle: "Ingresa tus credenciales para continuar",
-      emailPlaceholder: "correo@ejemplo.com",
-      passwordPlaceholder: "••••••••",
-      forgotLinkText: "¿Olvidaste tu contraseña?",
-      buttonText: "Iniciar Sesión",
-      loadingText: "Iniciando…",
-      footerText: "¿No tienes cuenta?",
-      registerLinkText: "Regístrate aquí",
       logoUrl,
       videoUrl,
     });
   }
 
   async afterRender() {
+    // Referencias DOM
     this.form = document.getElementById("loginForm");
     this.emailInput = document.getElementById("email");
     this.passwordInput = document.getElementById("password");
@@ -41,6 +33,10 @@ export default class LoginView {
     this.toggleIcon = document.getElementById("toggleIcon");
     this.errorMessage = document.getElementById("errorMessage");
     this.rememberCheckbox = document.getElementById("remember");
+    this.submitBtn = document.getElementById("submitBtn");
+    this.btnText = document.getElementById("btnText");
+    this.btnLoader = document.getElementById("btnLoader");
+    this.biometricBtn = document.getElementById("biometricBtn");
     this.bgVideo = document.getElementById("bgVideo");
 
     this._attachEventListeners();
@@ -50,7 +46,7 @@ export default class LoginView {
       this.bgVideo.playbackRate = 0.8;
     }
 
-    // Si "recordarme" estaba activo, precarga el email
+    // Precarga “recordarme”
     const saved = localStorage.getItem("remembered_email");
     if (saved) {
       this.emailInput.value = saved;
@@ -59,33 +55,57 @@ export default class LoginView {
 
     // Foco inicial
     (!this.emailInput.value ? this.emailInput : this.passwordInput).focus();
+
+    // Mostrar/ocultar botón biométrico
+    if (
+      (await authService.isBiometricAvailable()) &&
+      (await authService.isBiometricEnabled())
+    ) {
+      this.biometricBtn.style.display = "flex";
+      this.biometricBtn.addEventListener("click", () =>
+        this._handleBiometricLogin()
+      );
+    } else {
+      this.biometricBtn.style.display = "none";
+    }
+
+    if (Capacitor.isNativePlatform()) {
+      const available = await authService.isBiometricAvailable();
+      const enabled = await authService.isBiometricEnabled();
+      console.log("🔒 Biométrico disponible:", available);
+      console.log("🔑 Biométrico habilitado:", enabled);
+    }
   }
 
   _attachEventListeners() {
-    // Toggle password
+    // Toggle mostrar/ocultar contraseña
     this.togglePasswordBtn.addEventListener("click", async () => {
       await hapticsService.light();
-
       const isPwd = this.passwordInput.type === "password";
       this.passwordInput.type = isPwd ? "text" : "password";
-
-      if (isPwd) {
-        // mostramos el ojo abierto
-        this.toggleIcon.setAttribute(
-          "src",
-          "https://cdn.lordicon.com/dicvhxpz.json" // ojo abierto
-        );
-      } else {
-        // volvemos al fantasma (ojo cerrado)
-        this.toggleIcon.setAttribute(
-          "src",
-          "https://cdn.lordicon.com/tqbntcar.json" // tu icono original
-        );
-      }
+      this.toggleIcon.setAttribute(
+        "src",
+        isPwd
+          ? "https://cdn.lordicon.com/knitbwfa.json"
+          : "https://cdn.lordicon.com/lalzjnnh.json"
+      );
     });
 
-    // Submit form
+    // Envío de formulario
     this.form.addEventListener("submit", (e) => this._handleSubmit(e));
+  }
+
+  async _handleBiometricLogin() {
+    await hapticsService.light();
+    const result = await authService.loginWithBiometric();
+    if (result.success) {
+      await hapticsService.success();
+      window.mostrarMensajeEstado?.("✅ ¡Bienvenido!", 2000);
+      // La navegación se dispara en el evento auth:login
+    } else {
+      await hapticsService.error();
+      await dialogService.alert("Error biométrico", result.error);
+    }
   }
 
   async _handleSubmit(e) {
@@ -105,34 +125,27 @@ export default class LoginView {
     }
 
     await hapticsService.light();
-
     this._setLoading(true);
     this.errorMessage.style.display = "none";
 
-    // 1) Obtengo coordenadas
+    // 1) Obtener coordenadas
     let coords;
     try {
       coords = await this._getCoordinates();
     } catch (err) {
       console.error("Error al obtener ubicación:", err);
-
-      const shouldContinue = await dialogService.errorWithAction(
+      const retry = await dialogService.errorWithAction(
         "Ubicación Requerida",
         "Necesitamos acceso a tu ubicación para iniciar sesión. ¿Deseas intentar de nuevo?",
         "Reintentar",
         "Cancelar"
       );
-
       this._setLoading(false);
-
-      if (shouldContinue) {
-        return this._handleSubmit(e);
-      }
-
+      if (retry) return this._handleSubmit(e);
       return;
     }
 
-    // 2) Llamo al servicio de login enviando lat / lng
+    // 2) Llamar al servicio de login
     let result;
     try {
       result = await authService.login(
@@ -149,13 +162,31 @@ export default class LoginView {
     if (result.success) {
       await hapticsService.success();
 
+      // Guardar “recordarme”
       if (this.rememberCheckbox.checked) {
         localStorage.setItem("remembered_email", email);
       } else {
         localStorage.removeItem("remembered_email");
       }
-      window.mostrarMensajeEstado?.("✅ ¡Bienvenido!", 2000);
-      // auth:login disparará la navegación
+
+      // Preguntar si habilitar biometría
+      if (await authService.isBiometricAvailable()) {
+        const enable = await dialogService.confirm(
+          "Autenticación Biométrica",
+          "¿Deseas habilitar inicio con huella la próxima vez?"
+        );
+        if (enable) {
+          try {
+            await authService.enableBiometric();
+            window.mostrarMensajeEstado("🔒 Biometría habilitada", 2000);
+          } catch (err) {
+            window.mostrarMensajeEstado(`❌ ${err.message}`, 3000);
+          }
+        }
+      }
+
+      window.mostrarMensajeEstado("✅ ¡Bienvenido!", 2000);
+      // La navegación se dispara en el evento auth:login
     } else {
       await hapticsService.error();
       await dialogService.alert(
@@ -167,30 +198,22 @@ export default class LoginView {
     this._setLoading(false);
   }
 
-  /**
-   * Intenta primero con Capacitor.Geolocation y si falla
-   * (Not implemented on web) recurre a navigator.geolocation
-   */
+  /** Fallback de geolocalización */
   async _getCoordinates() {
-    // Intento con Capacitor
     try {
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
         timeout: 10000,
       });
       return pos.coords;
-    } catch (err) {
-      console.warn("Capacitor.geolocation falló, usando fallback web", err);
-      // Fallback al API nativa del navegador
-      return await new Promise((resolve, reject) => {
+    } catch {
+      return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
-          return reject(
-            new Error("Geolocalización no soportada en este navegador")
-          );
+          return reject(new Error("Geolocalización no soportada"));
         }
         navigator.geolocation.getCurrentPosition(
           (pos) => resolve(pos.coords),
-          (err2) => reject(err2),
+          (err) => reject(err),
           { enableHighAccuracy: true, timeout: 10000 }
         );
       });
@@ -199,23 +222,12 @@ export default class LoginView {
 
   _setLoading(on) {
     this.isLoading = on;
-    const submitBtn = document.getElementById("submitBtn");
-    const btnText = document.getElementById("btnText");
-    const btnLoader = document.getElementById("btnLoader");
-    if (!submitBtn) return;
-
-    submitBtn.disabled = on;
-    btnText.style.display = on ? "none" : "inline";
-    btnLoader.style.display = on ? "inline-flex" : "none";
-  }
-
-  _showError(msg) {
-    this.errorMessage.textContent = msg;
-    this.errorMessage.style.display = "block";
-    setTimeout(() => (this.errorMessage.style.display = "none"), 5000);
+    this.submitBtn.disabled = on;
+    this.btnText.style.display = on ? "none" : "inline";
+    this.btnLoader.style.display = on ? "inline-flex" : "none";
   }
 
   cleanup() {
-    // Si tuvieras listeners globales, aquí los removerías
+    // Remover listeners si fuera necesario
   }
 }

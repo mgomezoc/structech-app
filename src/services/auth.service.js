@@ -37,18 +37,23 @@ class AuthService {
   }
 
   // Login
-  async login(email, password) {
+  async login(email, password, latitude = null, longitude = null) {
     try {
       console.log("🔐 Intentando login...");
+
+      const payload = { email, password };
+
+      // Si recibimos coords, las agregamos
+      if (latitude != null && longitude != null) {
+        payload.latitude = latitude.toString();
+        payload.longitude = longitude.toString();
+      }
 
       // Hacer petición de login (sin token)
       const response = await apiService.publicRequest(
         "post",
         API_CONFIG.ENDPOINTS.LOGIN,
-        {
-          email,
-          password,
-        }
+        payload
       );
 
       const data = response.data;

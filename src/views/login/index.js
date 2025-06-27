@@ -1,5 +1,6 @@
 // src/views/login/index.js
 
+import { Geolocation } from "@capacitor/geolocation";
 import Handlebars from "handlebars";
 import videoUrl from "../../img/login3.mp4";
 import logoUrl from "../../img/logo-icono-structech.png";
@@ -14,7 +15,6 @@ export default class LoginView {
     this.isLoading = false;
   }
 
-  // Renderiza el HTML a partir del template compilado
   render() {
     return template({
       title: "Iniciar Sesión",
@@ -31,70 +31,143 @@ export default class LoginView {
     });
   }
 
-  // Después de inyectar el HTML, vinculamos eventos
   async afterRender() {
-    const form = document.getElementById("loginForm");
-    const emailInput = document.getElementById("email");
-    const passwordInput = document.getElementById("password");
-    const togglePassword = document.getElementById("togglePassword");
-    const errorMessage = document.getElementById("errorMessage");
-    const rememberCheckbox = document.getElementById("remember");
+    this.form = document.getElementById("loginForm");
+    this.emailInput = document.getElementById("email");
+    this.passwordInput = document.getElementById("password");
+    this.togglePasswordBtn = document.getElementById("togglePassword");
+    this.toggleIcon = document.getElementById("toggleIcon");
+    this.errorMessage = document.getElementById("errorMessage");
+    this.rememberCheckbox = document.getElementById("remember");
+    this.bgVideo = document.getElementById("bgVideo");
 
-    // Ralentizar vídeo al 50%
-    const bgVideo = document.getElementById("bgVideo");
-    if (bgVideo) {
-      bgVideo.playbackRate = 0.8;
+    this._attachEventListeners();
+
+    // Ralentiza el video de fondo
+    if (this.bgVideo) {
+      this.bgVideo.playbackRate = 0.8;
     }
 
-    // Mostrar/ocultar contraseña
-    togglePassword.addEventListener("click", () => {
-      const type = passwordInput.type === "password" ? "text" : "password";
-      passwordInput.type = type;
-      togglePassword.textContent = type === "password" ? "👁️" : "👁️‍🗨️";
-    });
-
-    // Pre-cargar email si “recordarme” estaba activo
+    // Si "recordarme" estaba activo, precarga el email
     const saved = localStorage.getItem("remembered_email");
     if (saved) {
-      emailInput.value = saved;
-      rememberCheckbox.checked = true;
+      this.emailInput.value = saved;
+      this.rememberCheckbox.checked = true;
     }
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (this.isLoading) return;
-
-      const email = emailInput.value.trim();
-      const password = passwordInput.value;
-
-      if (!email || !password) {
-        return this._showError("Por favor completa todos los campos");
-      }
-
-      this._setLoading(true);
-      errorMessage.style.display = "none";
-
-      const result = await authService.login(email, password);
-      if (result.success) {
-        if (rememberCheckbox.checked) {
-          localStorage.setItem("remembered_email", email);
-        } else {
-          localStorage.removeItem("remembered_email");
-        }
-        window.mostrarMensajeEstado?.("✅ ¡Bienvenido!", 2000);
-        // El evento auth:login se encarga de la navegación
-      } else {
-        this._showError(result.error);
-      }
-
-      this._setLoading(false);
-    });
-
-    // Foco en el primer campo vacío
-    (!emailInput.value ? emailInput : passwordInput).focus();
+    // Foco inicial
+    (!this.emailInput.value ? this.emailInput : this.passwordInput).focus();
   }
 
-  // Activa/desactiva el estado de carga en el botón
+  _attachEventListeners() {
+    // Toggle password
+    this.togglePasswordBtn.addEventListener("click", () => {
+      const isPwd = this.passwordInput.type === "password";
+      this.passwordInput.type = isPwd ? "text" : "password";
+
+      if (isPwd) {
+        // mostramos el ojo abierto
+        this.toggleIcon.setAttribute(
+          "src",
+          "https://cdn.lordicon.com/dicvhxpz.json" // ojo abierto
+        );
+      } else {
+        // volvemos al fantasma (ojo cerrado)
+        this.toggleIcon.setAttribute(
+          "src",
+          "https://cdn.lordicon.com/tqbntcar.json" // tu icono original
+        );
+      }
+    });
+
+    // Submit form
+    this.form.addEventListener("submit", (e) => this._handleSubmit(e));
+  }
+
+  async _handleSubmit(e) {
+    e.preventDefault();
+    if (this.isLoading) return;
+
+    const email = this.emailInput.value.trim();
+    const password = this.passwordInput.value;
+
+    if (!email || !password) {
+      return this._showError("Por favor completa todos los campos");
+    }
+
+    this._setLoading(true);
+    this.errorMessage.style.display = "none";
+
+    // 1) Obtengo coordenadas
+    let coords;
+    try {
+      coords = await this._getCoordinates();
+    } catch (err) {
+      console.error("Error al obtener ubicación:", err);
+      this._showError("Necesitamos acceso a tu ubicación para iniciar sesión.");
+      this._setLoading(false);
+      return;
+    }
+
+    // 2) Llamo al servicio de login enviando lat / lng
+    let result;
+    try {
+      result = await authService.login(
+        email,
+        password,
+        coords.latitude,
+        coords.longitude
+      );
+    } catch (err) {
+      console.error("Error en authService.login:", err);
+      result = { success: false, error: "Error inesperado" };
+    }
+
+    if (result.success) {
+      if (this.rememberCheckbox.checked) {
+        localStorage.setItem("remembered_email", email);
+      } else {
+        localStorage.removeItem("remembered_email");
+      }
+      window.mostrarMensajeEstado?.("✅ ¡Bienvenido!", 2000);
+      // auth:login disparará la navegación
+    } else {
+      this._showError(result.error);
+    }
+
+    this._setLoading(false);
+  }
+
+  /**
+   * Intenta primero con Capacitor.Geolocation y si falla
+   * (Not implemented on web) recurre a navigator.geolocation
+   */
+  async _getCoordinates() {
+    // Intento con Capacitor
+    try {
+      const pos = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 10000,
+      });
+      return pos.coords;
+    } catch (err) {
+      console.warn("Capacitor.geolocation falló, usando fallback web", err);
+      // Fallback al API nativa del navegador
+      return await new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          return reject(
+            new Error("Geolocalización no soportada en este navegador")
+          );
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve(pos.coords),
+          (err2) => reject(err2),
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      });
+    }
+  }
+
   _setLoading(on) {
     this.isLoading = on;
     const submitBtn = document.getElementById("submitBtn");
@@ -107,16 +180,13 @@ export default class LoginView {
     btnLoader.style.display = on ? "inline-flex" : "none";
   }
 
-  // Muestra un mensaje de error bajo el formulario
   _showError(msg) {
-    const errorMessage = document.getElementById("errorMessage");
-    errorMessage.textContent = msg;
-    errorMessage.style.display = "block";
-    setTimeout(() => (errorMessage.style.display = "none"), 5000);
+    this.errorMessage.textContent = msg;
+    this.errorMessage.style.display = "block";
+    setTimeout(() => (this.errorMessage.style.display = "none"), 5000);
   }
 
-  // Cleanup si fuera necesario
   cleanup() {
-    // aquí podrías eliminar event listeners globales si los hubieras añadido
+    // Si tuvieras listeners globales, aquí los removerías
   }
 }

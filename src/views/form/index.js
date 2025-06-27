@@ -86,6 +86,27 @@ export default class FormView {
     document
       .getElementById("btnScan")
       ?.addEventListener("click", () => window.scanINE?.());
+
+    // Cuando el usuario selecciona una Estructura, cargar sus SubEstructuras
+    document
+      .getElementById("estructura")
+      ?.addEventListener("change", async (e) => {
+        const estructuraId = e.target.value;
+        const subSel = document.getElementById("subestructura");
+        // Reiniciar opciones
+        subSel.innerHTML = `<option value="">Sin selección</option>`;
+        if (!estructuraId) return;
+
+        // Llamar al servicio y poblar
+        const res = await datosService.obtenerSubestructuras(estructuraId);
+        if (res.success) {
+          res.data.forEach((s) => {
+            subSel.innerHTML += `<option value="${s.iSubCatalogId}">${s.vcSubCatalog}</option>`;
+          });
+        } else {
+          window.mostrarMensajeEstado?.(`⚠️ ${res.error}`, 3000);
+        }
+      });
   }
 
   async loadInitialData() {
@@ -94,8 +115,12 @@ export default class FormView {
       const sel = document.getElementById("estructura");
       sel.innerHTML = `<option value="">Sin selección</option>`;
       res.data.forEach((e) => {
-        sel.innerHTML += `<option value="${e.id}">${e.nombre}</option>`;
+        sel.innerHTML += `<option value="${e.iCatalogId}">${e.vcCatalog}</option>`;
       });
+      // Asegurarse de limpiar el select de subestructura al inicio
+      document.getElementById(
+        "subestructura"
+      ).innerHTML = `<option value="">Sin selección</option>`;
     }
   }
 
@@ -111,6 +136,7 @@ export default class FormView {
       }
 
       const data = Object.fromEntries(new FormData(e.target).entries());
+
       data.signatureData = signatureManager.getSignatureAsBase64();
 
       if (audioRecorder.hasRecording()) {
@@ -204,6 +230,11 @@ export default class FormView {
     if (data.fullDocumentBackImage)
       document.getElementById("fullDocumentBackImage").value =
         data.fullDocumentBackImage;
+
+    //idMex
+    if (data.documentNumber.description) {
+      document.getElementById("idMex").value = data.documentNumber.description;
+    }
   }
 
   _showImage(imgId, placeholderId, base64) {

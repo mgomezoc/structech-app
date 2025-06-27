@@ -9,6 +9,10 @@ export const API_CONFIG = {
     CONSULTA: "/api/datos/consulta",
     REFRESH_TOKEN: "/api/auth/refresh",
     LOGOUT: "/api/auth/logout",
+    ENROLLMENT: "/api/enrollment/ine",
+    NEIGHBORHOODS: "/api/combos/Neighborhoods", // + /{postalCode}
+    CATALOGS: "/api/combos/Catalogs",
+    SUBCATALOGS: "/api/combos/SubCatalogs", // + /{catalogId}
   },
   TIMEOUT: 30000, // 30 segundos
 };

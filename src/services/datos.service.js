@@ -45,7 +45,7 @@ class DatosService {
 
       // 3) Hacer POST a /api/datos/consulta
       const response = await apiService.post(
-        API_CONFIG.ENDPOINTS.CONSULTA,
+        API_CONFIG.ENDPOINTS.ENROLLMENT,
         payload
       );
 
@@ -88,17 +88,11 @@ class DatosService {
   // Obtener lista de estructuras (si tu API lo proporciona)
   async obtenerEstructuras() {
     try {
-      const response = await apiService.get("/api/estructuras");
-      return {
-        success: true,
-        data: response.data,
-      };
+      const response = await apiService.get(API_CONFIG.ENDPOINTS.CATALOGS);
+      return { success: true, data: response.data };
     } catch (error) {
       console.error("Error al obtener estructuras:", error);
-      return {
-        success: false,
-        error: "No se pudieron cargar las estructuras",
-      };
+      return { success: false, error: "No se pudieron cargar las estructuras" };
     }
   }
 
@@ -106,18 +100,49 @@ class DatosService {
   async obtenerSubestructuras(estructuraId) {
     try {
       const response = await apiService.get(
-        `/api/estructuras/${estructuraId}/subestructuras`
+        `${API_CONFIG.ENDPOINTS.SUBCATALOGS}/${estructuraId}`
       );
+      const payload = response.data;
+
+      // 1) Si es array: ok
+      if (Array.isArray(payload)) {
+        return { success: true, data: payload };
+      }
+
+      // 2) Si viene un objeto con éxito=false
+      if (payload && payload.success === false) {
+        return {
+          success: false,
+          error: payload.message || "No se encontraron sub-catalogos.",
+        };
+      }
+
+      // 3) Cualquier otra forma inesperada
       return {
-        success: true,
-        data: response.data,
+        success: false,
+        error: "Respuesta inesperada de sub-catalogos.",
       };
     } catch (error) {
       console.error("Error al obtener subestructuras:", error);
       return {
         success: false,
-        error: "No se pudieron cargar las subestructuras",
+        error:
+          error.response?.data?.message ||
+          "No se pudieron cargar las subestructuras",
       };
+    }
+  }
+
+  // Método para obtener colonias por código postal
+  async obtenerColoniasPorCP(codigoPostal) {
+    try {
+      const response = await apiService.get(
+        `${API_CONFIG.ENDPOINTS.NEIGHBORHOODS}/${codigoPostal}`
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error("Error al obtener colonias:", error);
+      return { success: false, error: "No se pudieron cargar las colonias" };
     }
   }
 

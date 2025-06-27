@@ -18,7 +18,7 @@ async function loadView(viewName, context = {}) {
   try {
     console.log(`📄 Cargando vista: ${viewName}`);
 
-    // Loader mientras carga
+    // 1) Muestra tu loader habitual
     appContainer.innerHTML = `
       <div class="view-loader">
         <div class="spinner"></div>
@@ -26,26 +26,30 @@ async function loadView(viewName, context = {}) {
       </div>
     `;
 
-    // <- Aquí cambiamos la extensión .js por /index.js
+    // 2) Importa dinámicamente y renderiza
     const module = await import(`../views/${viewName}/index.js`);
     const View = module.default;
     const view = new View(context);
-
-    // Renderizamos la vista
     const content = await view.render();
-    appContainer.innerHTML = content;
 
-    // Lógica post-render
-    if (view.afterRender) {
-      await view.afterRender();
+    // 3) Prepara el commit de la transición
+    const commit = async () => {
+      appContainer.innerHTML = content;
+      if (view.afterRender) {
+        await view.afterRender();
+      }
+      // registra cleanup para la próxima ruta
+      router.hooks({
+        leave: () => view.cleanup?.(),
+      });
+    };
+
+    // 4) Si la API está disponible, úsala; si no, haz el commit a secas
+    if (document.startViewTransition) {
+      document.startViewTransition(commit);
+    } else {
+      await commit();
     }
-
-    // Hook para cleanup al salir de la ruta
-    router.hooks({
-      leave: () => {
-        if (view.cleanup) view.cleanup();
-      },
-    });
   } catch (error) {
     console.error(`Error al cargar vista ${viewName}:`, error);
     appContainer.innerHTML = `

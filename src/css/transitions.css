@@ -1,0 +1,205 @@
+::view-transition-group(*) {
+  animation-duration: 350ms;
+  animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+::view-transition-old(root) {
+  animation: slideOutLeft 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+::view-transition-new(root) {
+  animation: slideInRight 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.view-transition-back ::view-transition-old(root) {
+  animation: slideOutRight 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.view-transition-back ::view-transition-new(root) {
+  animation: slideInLeft 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.view-transition-modal ::view-transition-old(root) {
+  animation: scaleDownFade 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.view-transition-modal ::view-transition-new(root) {
+  animation: slideUpModal 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.view-transition-fade ::view-transition-group(*) {
+  animation-duration: 200ms;
+}
+.view-transition-fade ::view-transition-old(root) {
+  animation: fadeOut 200ms ease-out;
+}
+.view-transition-fade ::view-transition-new(root) {
+  animation: fadeIn 200ms ease-out;
+}
+.view-transition-auth ::view-transition-old(root) {
+  animation: zoomOutFade 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.view-transition-auth ::view-transition-new(root) {
+  animation: zoomInFade 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.view-transition-dashboard ::view-transition-old(root) {
+  animation: slideOutDown 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.view-transition-dashboard ::view-transition-new(root) {
+  animation: slideInUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.view-transition-scan ::view-transition-old(root) {
+  animation: rotateScaleOut 450ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+.view-transition-scan ::view-transition-new(root) {
+  animation: rotateScaleIn 450ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes slideOutDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+@keyframes slideUpModal {
+  from {
+    transform: translateY(100%) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes zoomInFade {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes zoomOutFade {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+@keyframes scaleDownFade {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95);
+    opacity: 0.3;
+  }
+}
+@keyframes rotateScaleIn {
+  from {
+    transform: rotate(-10deg) scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes rotateScaleOut {
+  from {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: rotate(10deg) scale(0.8);
+    opacity: 0;
+  }
+}
+@media (max-width: 768px) {
+  ::view-transition-group(*) {
+    animation-duration: 250ms;
+  }
+  .view-transition-modal ::view-transition-group(*) {
+    animation-duration: 300ms;
+  }
+}
+.route-login ::view-transition-new(root) {
+  animation: zoomInFade 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.route-dashboard ::view-transition-new(root) {
+  animation: slideInUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.route-form ::view-transition-new(root) {
+  animation: slideUpModal 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.route-scan ::view-transition-new(root) {
+  animation: rotateScaleIn 450ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}

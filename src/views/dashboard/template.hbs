@@ -1,3 +1,5 @@
+{{!-- src/views/dashboard/template.hbs --}}
+
 <div class="dashboard-container">
     <!-- Header -->
     <header class="dashboard-header">
@@ -29,7 +31,7 @@
         </div>
 
         <div class="dashboard-grid">
-            <!-- Registro con INE -->
+            <!-- Registro con Escaneo de INE -->
             <div class="dashboard-card primary-card" id="scanCard">
                 <div class="card-icon">
                     <lord-icon src="https://cdn.lordicon.com/fgkmrslx.json" trigger="hover" colors="primary:#0ea5e9"
@@ -37,8 +39,10 @@
                     </lord-icon>
                 </div>
                 <h3>Registro con Escaneo de INE</h3>
-                <p>Captura automáticamente los datos escaneando una INE oficial mexicana. La forma más rápida y precisa
-                    de registrar.</p>
+                <p>
+                    Captura automáticamente los datos escaneando una INE oficial mexicana.
+                    La forma más rápida y precisa de registrar.
+                </p>
                 <div class="card-features">
                     <span class="feature-tag">✓ Escaneo automático</span>
                     <span class="feature-tag">✓ Mayor precisión</span>
@@ -46,7 +50,23 @@
                 <button class="btn-card primary">Iniciar Registro</button>
             </div>
 
-            <!-- Registro sin INE -->
+            <!-- Enrolamiento Manual -->
+            <div class="dashboard-card secondary-card" id="enrollCard" onclick="navigateTo(ROUTES.ENROLLMENT_MANUAL)">
+                <div class="card-icon">
+                    <lord-icon src="https://cdn.lordicon.com/ulgefjgj.json" trigger="hover" colors="primary:#f59e0b"
+                        style="width:64px;height:64px">
+                    </lord-icon>
+                </div>
+                <h3>Enrolamiento Manual</h3>
+                <p>Registrar usuario sin escaneo de INE</p>
+                <div class="card-features">
+                    <span class="feature-tag">✓ Selección de estructura</span>
+                    <span class="feature-tag">✓ Previsualización de imagen</span>
+                </div>
+                <button class="btn-card secondary">Enrolar Manual</button>
+            </div>
+
+            <!-- Registro Manual (sin INE) -->
             <div class="dashboard-card" id="manualCard">
                 <div class="card-icon">
                     <lord-icon src="https://cdn.lordicon.com/kulwmpzs.json" trigger="hover" colors="primary:#10b981"
@@ -54,13 +74,15 @@
                     </lord-icon>
                 </div>
                 <h3>Registro Manual</h3>
-                <p>Ingresa manualmente los datos del ciudadano. Ideal cuando no se cuenta con la INE física disponible.
+                <p>
+                    Ingresa manualmente los datos del ciudadano. Ideal cuando no se cuenta
+                    con la INE física disponible.
                 </p>
                 <div class="card-features">
                     <span class="feature-tag">✓ Sin requisitos</span>
                     <span class="feature-tag">✓ Flexible</span>
                 </div>
-                <button class="btn-card secondary">Registro Manual</button>
+                <button class="btn-card tertiary">Registro Manual</button>
             </div>
 
             <!-- Copia de INE -->
@@ -71,7 +93,10 @@
                     </lord-icon>
                 </div>
                 <h3>Registro con Copia de INE</h3>
-                <p>Adjunta una foto o archivo de la INE. Útil cuando tienes una imagen digital del documento.</p>
+                <p>
+                    Adjunta una foto o archivo de la INE. Útil cuando tienes una imagen
+                    digital del documento.
+                </p>
                 <div class="card-features">
                     <span class="feature-tag">✓ Desde galería</span>
                     <span class="feature-tag">✓ Archivo digital</span>

@@ -10,6 +10,7 @@ export const API_CONFIG = {
     REFRESH_TOKEN: "/api/auth/refresh",
     LOGOUT: "/api/auth/logout",
     ENROLLMENT: "/api/enrollment/ine",
+    ENROLLMENT_MANUAL: "/api/enrollment/manual",
     NEIGHBORHOODS: "/api/combos/Neighborhoods", // + /{postalCode}
     CATALOGS: "/api/combos/Catalogs",
     SUBCATALOGS: "/api/combos/SubCatalogs", // + /{catalogId}
@@ -29,6 +30,7 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
   HOME: "/",
   FORM: "/form",
+  ENROLLMENT_MANUAL: "/enrollment-manual",
 };
 
 export const ERROR_MESSAGES = {

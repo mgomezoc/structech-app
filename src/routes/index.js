@@ -128,6 +128,23 @@ export function setupRoutes() {
     },
   });
 
+  router.on(ROUTES.ENROLLMENT_MANUAL, () => loadView("enrollment-manual"), {
+    before(done) {
+      authService.checkAuth().then((isAuth) => {
+        if (!isAuth) {
+          sessionStorage.setItem(
+            "redirectAfterLogin",
+            ROUTES.ENROLLMENT_MANUAL
+          );
+          this.navigate(ROUTES.LOGIN);
+          done(false);
+        } else {
+          done();
+        }
+      });
+    },
+  });
+
   // Admin (requiere rol admin)
   router.on("/admin", () => loadView("admin"), {
     before(done) {

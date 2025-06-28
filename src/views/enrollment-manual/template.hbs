@@ -1,0 +1,123 @@
+{{!-- src/views/enrollment-manual/template.hbs --}}
+<div class="header">
+    <div class="header-nav">
+        <button id="backBtn" class="btn-back" title="Volver al dashboard">
+            ← Volver
+        </button>
+        <h1>
+            <img src="{{logoUrl}}" alt="StructTech" class="logo" />
+            Enrolamiento Manual
+        </h1>
+    </div>
+</div>
+
+<div class="container">
+    <form id="enrollForm" class="form-section">
+        {{!-- Estructura --}}
+        <div class="form-group">
+            <label for="estructura">Selecciona Estructura*</label>
+            <select id="estructura" name="estructura" class="form-control" required>
+                <option value="">Sin selección</option>
+            </select>
+        </div>
+
+        {{!-- SubEstructura --}}
+        <div class="form-group">
+            <label for="subestructura">Selecciona SubEstructura*</label>
+            <select id="subestructura" name="subestructura" class="form-control" required>
+                <option value="">Sin selección</option>
+            </select>
+        </div>
+
+        {{!-- Nombre y apellidos --}}
+        <div class="form-group">
+            <label for="nombre">Nombre</label>
+            <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Nombre(s)" required />
+        </div>
+        <div class="form-group">
+            <label for="apellidoPaterno">Apellido Paterno</label>
+            <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control"
+                placeholder="Apellido Paterno" required />
+        </div>
+        <div class="form-group">
+            <label for="apellidoMaterno">Apellido Materno</label>
+            <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control"
+                placeholder="Apellido Materno" required />
+        </div>
+
+        {{!-- Fecha y género --}}
+        <div class="form-group">
+            <label for="fechaNacimiento">Fecha de Nacimiento</label>
+            <input type="date" id="fechaNacimiento" name="fechaNacimiento" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label>Género</label>
+            <div class="gender-group">
+                <div class="gender-option">
+                    <input type="radio" id="hombre" name="genero" value="M" />
+                    <label for="hombre">👨 Hombre</label>
+                </div>
+                <div class="gender-option">
+                    <input type="radio" id="mujer" name="genero" value="F" />
+                    <label for="mujer">👩 Mujer</label>
+                </div>
+            </div>
+        </div>
+
+        {{!-- CURP --}}
+        <div class="form-group">
+            <label for="curp">CURP</label>
+            <input type="text" id="curp" name="curp" class="form-control" maxlength="18" placeholder="CURP" required />
+        </div>
+
+        {{!-- Código Postal --}}
+        <div class="form-group">
+            <label for="codigoPostal">Código Postal</label>
+            <input type="number" id="codigoPostal" name="codigoPostal" class="form-control" placeholder="Código Postal" required />
+        </div>
+
+        {{!-- Colonia --}}
+        <div class="form-group">
+            <label for="colonia">Colonia</label>
+            <select id="colonia" name="colonia" class="form-control" required>
+                <option value="">Selecciona una colonia</option>
+            </select>
+        </div>
+
+        {{!-- Dirección --}}
+        <div class="form-group">
+            <label>Dirección (calle y número)*</label>
+            <input type="text" id="calleNumero" placeholder="Ej: Morelos 426" required />
+        </div>
+
+
+        {{!-- Observación --}}
+        <div class="form-group">
+            <label for="observacion">Observación</label>
+            <textarea id="observacion" name="observacion" class="form-control" rows="3"
+                placeholder="Agregar observaciones..."></textarea>
+        </div>
+
+        {{!-- Teléfono --}}
+        <div class="form-group">
+            <label for="telefono">Teléfono</label>
+            <input type="tel" id="telefono" name="telefono" class="form-control" placeholder="Número de teléfono" required />
+        </div>
+
+        {{!-- Email --}}
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" class="form-control" placeholder="Correo electrónico" />
+        </div>
+
+        {{!-- Imagen del Documento --}}
+        <div class="form-group">
+            <label for="otherFile">Imagen del Documento*</label>
+            <input type="file" id="otherFile" accept="image/*" class="form-control" required />
+            <input type="hidden" id="otherData" name="otherData" />
+            <div id="filePreview" class="file-preview"></div>
+        </div>
+
+        <button type="submit" class="save-button">Enviar</button>
+    </form>
+</div>

@@ -1,0 +1,14 @@
+/* reuse tus variables/globales si las tienes */
+.file-preview {
+  margin-top: 8px;
+}
+.file-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+}
+/* si quieres, añade espaciado extra */
+.container {
+  padding-bottom: 40px;
+}

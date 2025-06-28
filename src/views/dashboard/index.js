@@ -48,6 +48,11 @@ export default class DashboardView {
       navigateTo(ROUTES.FORM);
     });
 
+    // ** Tarjeta de Enrolamiento Manual **
+    document.getElementById("enrollCard")?.addEventListener("click", () => {
+      navigateTo(ROUTES.ENROLLMENT_MANUAL);
+    });
+
     // Tarjeta de registro manual (sin INE)
     document.getElementById("manualCard")?.addEventListener("click", () => {
       window.mostrarMensajeEstado?.("📝 Registro manual en desarrollo", 2000);

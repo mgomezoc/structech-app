@@ -18,6 +18,16 @@ async function loadView(viewName, context = {}) {
   try {
     console.log(`📄 Cargando vista: ${viewName}`);
 
+    // ——— Aplicar clase de ruta para transiciones específicas ———
+    // Elimina cualquier clase anterior que empiece por "route-"
+    appContainer.classList.forEach((cls) => {
+      if (cls.startsWith("route-")) {
+        appContainer.classList.remove(cls);
+      }
+    });
+    // Añade la nueva clase de ruta
+    appContainer.classList.add(`route-${viewName}`);
+
     // 1) Muestra tu loader habitual
     appContainer.innerHTML = `
       <div class="view-loader">
@@ -38,13 +48,13 @@ async function loadView(viewName, context = {}) {
       if (view.afterRender) {
         await view.afterRender();
       }
-      // registra cleanup para la próxima ruta
+      // registrar cleanup para la próxima ruta
       router.hooks({
         leave: () => view.cleanup?.(),
       });
     };
 
-    // 4) Si la API está disponible, úsala; si no, haz el commit a secas
+    // 4) Si la View Transition API está disponible, úsala
     if (document.startViewTransition) {
       document.startViewTransition(commit);
     } else {
@@ -71,34 +81,37 @@ export function setupRoutes() {
 
   // Login (pública)
   router.on(ROUTES.LOGIN, async () => {
+    // Aplica la clase de ruta también aquí
+    appContainer.classList.forEach((cls) => {
+      if (cls.startsWith("route-")) {
+        appContainer.classList.remove(cls);
+      }
+    });
+    appContainer.classList.add("route-login");
+
     const module = await import("../views/login/index.js");
     const View = module.default;
     const view = new View();
     appContainer.innerHTML = await view.render();
-    if (view.afterRender) await view.afterRender();
+    if (view.afterRender) {
+      await view.afterRender();
+    }
   });
 
   // Dashboard (privada)
-  router.on(
-    ROUTES.DASHBOARD,
-    // handler
-    () => loadView("dashboard"),
-    // guard (before hook)
-    {
-      before(done) {
-        authService.checkAuth().then((isAuth) => {
-          if (!isAuth) {
-            // guardamos para redirigir después del login
-            sessionStorage.setItem("redirectAfterLogin", ROUTES.DASHBOARD);
-            this.navigate(ROUTES.LOGIN);
-            done(false);
-          } else {
-            done();
-          }
-        });
-      },
-    }
-  );
+  router.on(ROUTES.DASHBOARD, () => loadView("dashboard"), {
+    before(done) {
+      authService.checkAuth().then((isAuth) => {
+        if (!isAuth) {
+          sessionStorage.setItem("redirectAfterLogin", ROUTES.DASHBOARD);
+          this.navigate(ROUTES.LOGIN);
+          done(false);
+        } else {
+          done();
+        }
+      });
+    },
+  });
 
   // Formulario (privada)
   router.on(ROUTES.FORM, () => loadView("form"), {
@@ -165,7 +178,7 @@ export function setupRoutes() {
   router.resolve();
 }
 
-// Helpers
+// Helpers de navegación
 export function navigateTo(path, data = {}) {
   router.navigate(path, data);
 }

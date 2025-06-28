@@ -1,6 +1,7 @@
 // src/views/enrollment-manual/index.js
 
 import Handlebars from "handlebars";
+import "../form/style.less";
 import "./style.less";
 import tplSource from "./template.hbs?raw";
 

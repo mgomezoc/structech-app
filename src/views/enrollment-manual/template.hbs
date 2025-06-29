@@ -1,9 +1,7 @@
 {{!-- src/views/enrollment-manual/template.hbs --}}
 <div class="header">
     <div class="header-nav">
-        <button id="backBtn" class="btn-back" title="Volver al dashboard">
-            ← Volver
-        </button>
+        <button id="backBtn" class="btn-back" title="Volver al dashboard">← Volver</button>
         <h1>
             <img src="{{logoUrl}}" alt="StructTech" class="logo" />
             Enrolamiento Manual
@@ -29,20 +27,18 @@
             </select>
         </div>
 
-        {{!-- Nombre y apellidos --}}
+        {{!-- Datos personales --}}
         <div class="form-group">
-            <label for="nombre">Nombre</label>
-            <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Nombre(s)" required />
+            <label for="nombre">Nombre*</label>
+            <input type="text" id="nombre" name="nombre" class="form-control" required />
         </div>
         <div class="form-group">
             <label for="apellidoPaterno">Apellido Paterno</label>
-            <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control"
-                placeholder="Apellido Paterno" required />
+            <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control" />
         </div>
         <div class="form-group">
             <label for="apellidoMaterno">Apellido Materno</label>
-            <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control"
-                placeholder="Apellido Materno" required />
+            <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control" />
         </div>
 
         {{!-- Fecha y género --}}
@@ -54,12 +50,10 @@
             <label>Género</label>
             <div class="gender-group">
                 <div class="gender-option">
-                    <input type="radio" id="hombre" name="genero" value="M" />
-                    <label for="hombre">👨 Hombre</label>
+                    <input type="radio" id="hombre" name="genero" value="M" /><label for="hombre">👨 Hombre</label>
                 </div>
                 <div class="gender-option">
-                    <input type="radio" id="mujer" name="genero" value="F" />
-                    <label for="mujer">👩 Mujer</label>
+                    <input type="radio" id="mujer" name="genero" value="F" /><label for="mujer">👩 Mujer</label>
                 </div>
             </div>
         </div>
@@ -67,55 +61,83 @@
         {{!-- CURP --}}
         <div class="form-group">
             <label for="curp">CURP</label>
-            <input type="text" id="curp" name="curp" class="form-control" maxlength="18" placeholder="CURP" required />
+            <input type="text" id="curp" name="curp" class="form-control" maxlength="18" />
         </div>
 
         {{!-- Código Postal --}}
         <div class="form-group">
             <label for="codigoPostal">Código Postal</label>
-            <input type="number" id="codigoPostal" name="codigoPostal" class="form-control" placeholder="Código Postal" required />
+            <input type="number" id="codigoPostal" name="codigoPostal" class="form-control" required />
         </div>
 
         {{!-- Colonia --}}
         <div class="form-group">
             <label for="colonia">Colonia</label>
             <select id="colonia" name="colonia" class="form-control" required>
-                <option value="">Selecciona una colonia</option>
+                <option value="">— Selecciona tu colonia —</option>
             </select>
         </div>
 
-        {{!-- Dirección --}}
+        {{!-- Dirección (calle y número) --}}
         <div class="form-group">
-            <label>Dirección (calle y número)*</label>
-            <input type="text" id="calleNumero" placeholder="Ej: Morelos 426" class="form-control" required />
+            <label for="calleNumero">Dirección (calle y número)*</label>
+            <input type="text" id="calleNumero" class="form-control" placeholder="Ej: Morelos 426" required />
         </div>
-
 
         {{!-- Observación --}}
         <div class="form-group">
             <label for="observacion">Observación</label>
-            <textarea id="observacion" name="observacion" class="form-control" rows="3"
-                placeholder="Agregar observaciones..."></textarea>
+            <textarea id="observacion" name="observacion" class="form-control" rows="3"></textarea>
         </div>
 
-        {{!-- Teléfono --}}
+        {{!-- Teléfono y Email --}}
         <div class="form-group">
             <label for="telefono">Teléfono</label>
-            <input type="tel" id="telefono" name="telefono" class="form-control" placeholder="Número de teléfono" required />
+            <input type="tel" id="telefono" name="telefono" class="form-control" required />
         </div>
-
-        {{!-- Email --}}
         <div class="form-group">
             <label for="email">Email</label>
-            <input type="email" id="email" name="email" class="form-control" placeholder="Correo electrónico" />
+            <input type="email" id="email" name="email" class="form-control" />
         </div>
 
-        {{!-- Imagen del Documento --}}
+        {{!-- Archivo --}}
         <div class="form-group">
             <label for="otherFile">Imagen del Documento*</label>
             <input type="file" id="otherFile" accept="image/*" class="form-control" required />
             <input type="hidden" id="otherData" name="otherData" />
             <div id="filePreview" class="file-preview"></div>
+        </div>
+
+        {{!-- Firma --}}
+        <div class="signature-section">
+            <label>Firma de autorización*</label>
+            <div class="signature-box" id="signatureBox">
+                <canvas id="signatureCanvas"></canvas>
+                <div id="signaturePlaceholder">✏️</div>
+            </div>
+            <div class="signature-controls">
+                <button type="button" id="clearSignature">Limpiar Firma</button>
+                <button type="button" id="undoSignature">Deshacer</button>
+            </div>
+            <input type="hidden" id="signatureImageData" name="signatureData" />
+        </div>
+
+        {{!-- Audio --}}
+        <div class="audio-section">
+            <label>Comentario de voz (opcional)</label>
+            <div class="audio-controls">
+                <button type="button" id="audioBtn">🎤</button>
+                <div class="audio-info">
+                    <div id="audioTimer">00:00:00</div>
+                    <span id="audioHint">Mantén presionado para grabar</span>
+                </div>
+                <button type="button" id="audioDelete" class="audio-delete">🗑️</button>
+            </div>
+            <div id="audioWave" class="audio-wave">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <input type="hidden" id="audioData" name="audioData" />
+            <input type="hidden" id="audioMimeType" name="audioMimeType" />
         </div>
 
         <button type="submit" class="save-button">Enviar</button>

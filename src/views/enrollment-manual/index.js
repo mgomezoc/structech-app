@@ -11,6 +11,9 @@ import { datosService } from "../../services/datos.service.js";
 import { enrollmentService } from "../../services/enrollment.service.js";
 import { ROUTES } from "../../utils/constants.js";
 
+import { audioRecorder } from "../../js/audioRecorder.js";
+import { signatureManager } from "../../js/signature.js";
+
 const template = Handlebars.compile(tplSource);
 
 export default class EnrollmentManualView {
@@ -23,7 +26,11 @@ export default class EnrollmentManualView {
   }
 
   async afterRender() {
-    // DOM references
+    // Inicializar firma y audio
+    signatureManager.init();
+    await audioRecorder.init();
+
+    // Referencias DOM
     this.form = document.getElementById("enrollForm");
     this.backBtn = document.getElementById("backBtn");
     this.estrSelect = document.getElementById("estructura");
@@ -35,23 +42,34 @@ export default class EnrollmentManualView {
     this.hiddenOtherData = document.getElementById("otherData");
     this.filePreview = document.getElementById("filePreview");
 
+    // Controles de firma
+    this.clearSignatureBtn = document.getElementById("clearSignature");
+    this.undoSignatureBtn = document.getElementById("undoSignature");
+
+    this.clearSignatureBtn.addEventListener("click", () => {
+      signatureManager.clear();
+    });
+    this.undoSignatureBtn.addEventListener("click", () => {
+      signatureManager.undo();
+    });
+
     // ← Volver
     this.backBtn.addEventListener("click", () => navigateTo(ROUTES.DASHBOARD));
 
-    // envío del formulario
+    // Envío de formulario
     this.form.addEventListener("submit", (e) => this.handleSubmit(e));
 
-    // 1) cargar estructuras
+    // 1) Cargar estructuras
     const estrRes = await datosService.obtenerEstructuras();
     if (estrRes.success) {
       estrRes.data.forEach((e) => {
-        this.estrSelect.innerHTML += /* html */ `
+        this.estrSelect.innerHTML += `
           <option value="${e.iCatalogId}">${e.vcCatalog}</option>
         `;
       });
     }
 
-    // 2) al cambiar estructura, cargar subestructuras
+    // 2) Cambiar estructura → subestructuras
     this.estrSelect.addEventListener("change", async (e) => {
       const id = e.target.value;
       this.subSelect.innerHTML = `<option value="">Sin selección</option>`;
@@ -59,23 +77,22 @@ export default class EnrollmentManualView {
       const subRes = await datosService.obtenerSubestructuras(id);
       if (subRes.success) {
         subRes.data.forEach((s) => {
-          this.subSelect.innerHTML += /* html */ `
+          this.subSelect.innerHTML += `
             <option value="${s.iSubCatalogId}">${s.vcSubCatalog}</option>
           `;
         });
       }
     });
 
-    // 3) al blur en código postal, obtener colonias y poblar select
+    // 3) Código Postal → colonias
     this.cpInput.addEventListener("blur", async (e) => {
       const cp = e.target.value.trim();
       if (!cp) return;
       const colRes = await datosService.obtenerColoniasPorCP(cp);
       if (colRes.success && Array.isArray(colRes.data)) {
-        // reiniciar opciones
         this.coloniaSelect.innerHTML = `<option value="">— Selecciona tu colonia —</option>`;
         colRes.data.forEach((c) => {
-          this.coloniaSelect.innerHTML += /* html */ `
+          this.coloniaSelect.innerHTML += `
             <option
               value="${c.vcNeighborhood}"
               data-municipio="${c.vcMunicipality}"
@@ -89,7 +106,7 @@ export default class EnrollmentManualView {
       }
     });
 
-    // 4) previsualización y Base64 del archivo
+    // 4) Previsualización y Base64 del archivo
     this.fileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -103,7 +120,6 @@ export default class EnrollmentManualView {
     });
   }
 
-  // arma y envía el payload
   async handleSubmit(e) {
     e.preventDefault();
     const btn = this.form.querySelector(".save-button");
@@ -111,10 +127,25 @@ export default class EnrollmentManualView {
     btn.classList.add("loading");
 
     try {
-      // extraer FormData
+      // Revisar firma
+      if (!signatureManager.hasSignature()) {
+        throw new Error("Por favor, proporciona tu firma");
+      }
+
+      // Construir payload
       const data = Object.fromEntries(new FormData(this.form).entries());
 
-      // construir 'domicilio' amigable para geocoding
+      // Agregar datos de firma
+      data.signatureData = signatureManager.getSignatureAsBase64();
+
+      // Agregar datos de audio si existen
+      if (audioRecorder.hasRecording()) {
+        const audio = audioRecorder.getAudioData();
+        data.audioData = audio.data;
+        data.audioMimeType = audio.mimeType;
+      }
+
+      // Armar domicilio para geocoding
       const option =
         this.coloniaSelect.options[this.coloniaSelect.selectedIndex];
       const calleNumero = this.calleNumeroInput.value.trim();
@@ -124,7 +155,7 @@ export default class EnrollmentManualView {
       const codigoPostal = option.dataset.cp;
       data.domicilio = `${calleNumero}, ${colonia}, ${municipio}, ${estado}, ${codigoPostal}`;
 
-      // enviar al servicio
+      // Enviar
       const result = await enrollmentService.enrollManual(data);
       if (!result.success) throw new Error(result.error);
 
@@ -132,6 +163,8 @@ export default class EnrollmentManualView {
       this.form.reset();
       this.filePreview.innerHTML = "";
       this.coloniaSelect.innerHTML = `<option value="">— Selecciona tu colonia —</option>`;
+      signatureManager.clear();
+      audioRecorder.deleteRecording();
     } catch (err) {
       window.mostrarMensajeEstado(`❌ ${err.message}`, 5000);
     } finally {
@@ -141,6 +174,6 @@ export default class EnrollmentManualView {
   }
 
   cleanup() {
-    // remover listeners si fuera necesario
+    window.poblarFormulario = null;
   }
 }

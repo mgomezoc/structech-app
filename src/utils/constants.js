@@ -2,40 +2,49 @@
 // Centraliza todas las constantes de la aplicación para fácil mantenimiento
 
 export const API_CONFIG = {
-  BASE_URL:
-    "https://apiusuario-dxa0bxftewgxc8a7.mexicocentral-01.azurewebsites.net",
+  BASE_URL: 'https://apiusuario-dxa0bxftewgxc8a7.mexicocentral-01.azurewebsites.net',
   ENDPOINTS: {
-    LOGIN: "/api/auth/login",
-    CONSULTA: "/api/datos/consulta",
-    REFRESH_TOKEN: "/api/auth/refresh",
-    LOGOUT: "/api/auth/logout",
-    ENROLLMENT: "/api/enrollment/ine",
-    ENROLLMENT_MANUAL: "/api/enrollment/manual",
-    NEIGHBORHOODS: "/api/combos/Neighborhoods", // + /{postalCode}
-    CATALOGS: "/api/combos/Catalogs",
-    SUBCATALOGS: "/api/combos/SubCatalogs", // + /{catalogId}
+    LOGIN: '/api/auth/login',
+    CONSULTA: '/api/datos/consulta',
+    LOGOUT: '/api/auth/logout',
+    ENROLLMENT: '/api/enrollment/ine',
+    ENROLLMENT_MANUAL: '/api/enrollment/manual',
+    NEIGHBORHOODS: '/api/combos/Neighborhoods', // + /{postalCode}
+    CATALOGS: '/api/combos/Catalogs',
+    SUBCATALOGS: '/api/combos/SubCatalogs', // + /{catalogId}
   },
   TIMEOUT: 30000, // 30 segundos
 };
 
 export const STORAGE_KEYS = {
-  ACCESS_TOKEN: "access_token",
-  REFRESH_TOKEN: "refresh_token",
-  USER_DATA: "user_data",
-  TOKEN_EXPIRY: "token_expiry",
+  ACCESS_TOKEN: 'access_token',
+  USER_DATA: 'user_data',
+  TOKEN_EXPIRY: 'token_expiry',
+  BIOMETRIC_ENABLED: 'biometric_enabled',
+  FORM_DATA: 'form_data', // Para datos temporales de formularios
 };
 
 export const ROUTES = {
-  LOGIN: "/login",
-  DASHBOARD: "/dashboard",
-  HOME: "/",
-  FORM: "/form",
-  ENROLLMENT_MANUAL: "/enrollment-manual",
+  LOGIN: '/login',
+  DASHBOARD: '/dashboard',
+  HOME: '/',
+  FORM: '/form',
+  ENROLLMENT_MANUAL: '/enrollment-manual',
+  ADMIN: '/admin',
 };
 
 export const ERROR_MESSAGES = {
-  NETWORK_ERROR: "Error de conexión. Por favor verifica tu internet.",
-  INVALID_CREDENTIALS: "Credenciales inválidas",
-  SESSION_EXPIRED: "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
-  GENERIC_ERROR: "Ha ocurrido un error. Por favor intenta de nuevo.",
+  NETWORK_ERROR: 'Error de conexión. Por favor verifica tu internet.',
+  INVALID_CREDENTIALS: 'Credenciales inválidas',
+  SESSION_EXPIRED: 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.',
+  GENERIC_ERROR: 'Ha ocurrido un error. Por favor intenta de nuevo.',
+  UNAUTHORIZED: 'No tienes permisos para realizar esta acción.',
+  LOCATION_REQUIRED: 'Se requiere acceso a la ubicación para continuar.',
+};
+
+export const APP_CONFIG = {
+  NAME: 'StructechApp',
+  VERSION: '1.0.0',
+  DEFAULT_TIMEOUT: 10000,
+  MAX_RETRY_ATTEMPTS: 3,
 };

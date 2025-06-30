@@ -6,6 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
+
     <title>StructTech App</title>
   </head>
   <body>
@@ -16,8 +17,8 @@
     <script>
       if (!document.startViewTransition) {
         // carga dinámicamente el polyfill oficial
-        const s = document.createElement("script");
-        s.src = "https://unpkg.com/@microsoft/view-transitions-polyfill";
+        const s = document.createElement('script');
+        s.src = 'https://unpkg.com/@microsoft/view-transitions-polyfill';
         document.head.appendChild(s);
       }
     </script>

@@ -1,21 +1,17 @@
 // src/services/auth.service.js
 // Gestión de autenticación, sesiones y login biométrico
 
-import {
-  API_CONFIG,
-  ERROR_MESSAGES,
-  STORAGE_KEYS,
-} from "../utils/constants.js";
-import { apiService, eventBus } from "./api.service.js";
-import { storageService } from "./storage.service.js";
+import { API_CONFIG, ERROR_MESSAGES } from '../utils/constants.js';
+import { apiService, eventBus } from './api.service.js';
+import { storageService } from './storage.service.js';
 
-import { BiometricAuth } from "@aparajita/capacitor-biometric-auth";
-import { SecureStorage } from "@aparajita/capacitor-secure-storage";
+import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
+import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 
-// Claves dedicadas en SecureStorage
-const BIOTOKEN_KEY = "biometric_auth_token";
-const BIOUSER_KEY = "biometric_user_data";
-const BIOENABLED_KEY = "biometric_enabled";
+// Claves dedicadas en SecureStorage para biometría
+const BIOTOKEN_KEY = 'biometric_auth_token';
+const BIOUSER_KEY = 'biometric_user_data';
+const BIOENABLED_KEY = 'biometric_enabled';
 
 class AuthService {
   constructor() {
@@ -25,139 +21,204 @@ class AuthService {
 
   /** Inicializa el servicio y restaura sesión si existe */
   async init() {
-    console.log("[AuthService] init()");
+    console.log('🔐 [AuthService] Inicializando...');
     try {
       const hasSession = await storageService.hasValidSession();
-      console.log("[Auth:init] hasValidSession:", hasSession);
+      console.log(`🔍 [AuthService] Sesión válida encontrada: ${hasSession}`);
+
       if (hasSession) {
         const userData = await storageService.getUserData();
-        console.log("[Auth:init] userData:", userData);
+        console.log('👤 [AuthService] Datos de usuario:', userData);
+
         if (userData) {
           this.currentUser = userData;
           this.isAuthenticated = true;
+          console.log('✅ [AuthService] Sesión restaurada exitosamente');
           return true;
         }
       }
-    } catch (e) {
-      console.error("[Auth:init] Error:", e);
+    } catch (error) {
+      console.error('❌ [AuthService] Error en init:', error);
     }
+
+    console.log('❌ [AuthService] No se pudo restaurar la sesión');
     return false;
   }
 
   /**
-   * Login con email/password (+ geoloc opcional)
-   * @returns {{success:boolean, user?:object, error?:string}}
+   * Login con email/password + geolocalización opcional
+   * @param {string} email
+   * @param {string} password
+   * @param {number|null} latitude
+   * @param {number|null} longitude
+   * @returns {Promise<{success: boolean, user?: object, error?: string}>}
    */
   async login(email, password, latitude = null, longitude = null) {
-    console.log("[AuthService] login()", { email, latitude, longitude });
+    console.log('🔑 [AuthService] Iniciando login para:', email);
+
     try {
       const payload = { email, password };
+
+      // Agregar coordenadas si están disponibles
       if (latitude && longitude) {
         payload.latitude = latitude.toString();
         payload.longitude = longitude.toString();
+        console.log('📍 [AuthService] Incluyendo geolocalización');
       }
 
-      const res = await apiService.publicRequest(
-        "post",
-        API_CONFIG.ENDPOINTS.LOGIN,
-        payload
-      );
-      const data = res.data;
-      console.log("[AuthService:login] response:", data);
+      // Hacer petición de login
+      const response = await apiService.publicRequest('post', API_CONFIG.ENDPOINTS.LOGIN, payload);
 
-      // 1) Guarda JWT en Preferences
+      const data = response.data;
+      console.log('📥 [AuthService] Respuesta del servidor:', data);
+
+      // Extraer token (puede venir como 'token' o 'access_token')
       const token = data.token || data.access_token;
-      console.log("[AuthService:login] token:", token);
-      if (token) {
-        await storageService.setToken(token);
+      if (!token) {
+        throw new Error('No se recibió token del servidor');
       }
 
-      // 2) Guarda expiración
+      // Guardar token
+      await storageService.setToken(token);
+      console.log('💾 [AuthService] Token guardado');
+
+      // Guardar expiración si está disponible
       if (data.expires_in) {
         const expiry = Date.now() + data.expires_in * 1000;
-        await storageService.set(STORAGE_KEYS.TOKEN_EXPIRY, expiry);
+        await storageService.setTokenExpiry(expiry);
+        console.log('⏰ [AuthService] Expiración del token guardada');
       }
 
-      // 3) Construye y guarda userData
+      // Construir datos de usuario
       const userData = {
         id: data.user?.id || data.id,
         email: data.user?.email || email,
-        name: data.user?.name || data.name || email.split("@")[0],
-        role: data.user?.role || data.role || "user",
-        ...data.user,
+        name: data.user?.name || data.name || email.split('@')[0],
+        role: data.user?.role || data.role || 'user',
+        ...data.user, // Incluir cualquier dato adicional del usuario
       };
-      console.log("[AuthService:login] userData:", userData);
-      await storageService.setUserData(userData);
 
-      // 4) Actualiza estado y emite evento
+      // Guardar datos de usuario
+      await storageService.setUserData(userData);
+      console.log('👤 [AuthService] Datos de usuario guardados:', userData);
+
+      // Actualizar estado interno
       this.currentUser = userData;
       this.isAuthenticated = true;
-      eventBus.emit("auth:login", userData);
+
+      // Emitir evento de login exitoso
+      eventBus.emit('auth:login', userData);
+      console.log('✅ [AuthService] Login exitoso');
 
       return { success: true, user: userData };
-    } catch (err) {
-      console.error("[AuthService:login] Error:", err);
+    } catch (error) {
+      console.error('❌ [AuthService] Error en login:', error);
+
       let message = ERROR_MESSAGES.GENERIC_ERROR;
-      if (err.response) {
-        switch (err.response.status) {
+
+      if (error.response) {
+        // Error de respuesta del servidor
+        switch (error.response.status) {
           case 401:
             message = ERROR_MESSAGES.INVALID_CREDENTIALS;
             break;
           case 404:
-            message = "Usuario no encontrado";
+            message = 'Usuario no encontrado';
             break;
           case 422:
-            message = err.response.data?.message || "Datos inválidos";
+            message = error.response.data?.message || 'Datos inválidos';
             break;
+          case 429:
+            message = 'Demasiados intentos. Intenta más tarde';
+            break;
+          default:
+            message = error.response.data?.message || ERROR_MESSAGES.GENERIC_ERROR;
         }
-      } else if (err.request) {
+      } else if (error.request) {
+        // Error de red
         message = ERROR_MESSAGES.NETWORK_ERROR;
       }
+
       return { success: false, error: message };
     }
   }
 
   /**
-   * Logout: elimina sólo el JWT público (token + expiry),
-   * preserva en Preferences el userData y en SecureStorage
-   * las credenciales biométricas.
+   * Logout: elimina datos de sesión pero preserva configuración biométrica
    */
   async logout() {
-    console.log("[AuthService] logout()");
-    // 1) Intentar notificar al servidor (no frena logout)
-    await apiService
-      .post(API_CONFIG.ENDPOINTS.LOGOUT)
-      .catch((e) => console.warn("[AuthService:logout] servidor:", e));
+    console.log('🚪 [AuthService] Cerrando sesión...');
 
-    // 2) Elimina sólo el JWT público
-    await storageService.remove(STORAGE_KEYS.ACCESS_TOKEN);
-    await storageService.remove(STORAGE_KEYS.TOKEN_EXPIRY);
-    console.log("[AuthService:logout] JWT público eliminado");
+    try {
+      // Intentar notificar logout al servidor (no crítico si falla)
+      try {
+        await apiService.post(API_CONFIG.ENDPOINTS.LOGOUT);
+        console.log('📤 [AuthService] Logout notificado al servidor');
+      } catch (error) {
+        console.warn('⚠️ [AuthService] Error notificando logout al servidor:', error);
+      }
 
-    // 3) Mantiene userData en Preferences para login biométrico
-    this.currentUser = null;
-    this.isAuthenticated = false;
-    eventBus.emit("auth:logout");
-    return true;
+      // Limpiar datos de sesión local
+      await storageService.clearSession();
+      console.log('🧹 [AuthService] Datos de sesión limpiados');
+
+      // Actualizar estado interno
+      this.currentUser = null;
+      this.isAuthenticated = false;
+
+      // Emitir evento de logout
+      eventBus.emit('auth:logout');
+      console.log('✅ [AuthService] Logout completado');
+
+      return { success: true };
+    } catch (error) {
+      console.error('❌ [AuthService] Error en logout:', error);
+
+      // Asegurar limpieza local aunque falle el servidor
+      await storageService.clearSession();
+      this.currentUser = null;
+      this.isAuthenticated = false;
+      eventBus.emit('auth:logout');
+
+      return { success: false, error: error.message };
+    }
   }
 
-  /** Verifica si la sesión pública sigue activa */
+  /** Verifica si hay una sesión activa válida */
   async checkAuth() {
-    console.log("[AuthService] checkAuth()");
-    if (this.isAuthenticated && this.currentUser) return true;
+    console.log('🔍 [AuthService] Verificando autenticación...');
+
+    // Si ya tenemos estado en memoria, verificar que siga válido
+    if (this.isAuthenticated && this.currentUser) {
+      const hasValidSession = await storageService.hasValidSession();
+      if (hasValidSession) {
+        console.log('✅ [AuthService] Sesión en memoria válida');
+        return true;
+      } else {
+        console.log('❌ [AuthService] Sesión en memoria expirada');
+        this.currentUser = null;
+        this.isAuthenticated = false;
+      }
+    }
+
+    // Verificar storage
     if (await storageService.hasValidSession()) {
       const userData = await storageService.getUserData();
       if (userData) {
         this.currentUser = userData;
         this.isAuthenticated = true;
+        console.log('✅ [AuthService] Sesión restaurada desde storage');
         return true;
       }
     }
+
+    console.log('❌ [AuthService] No hay sesión válida');
     this.currentUser = null;
     this.isAuthenticated = false;
     return false;
   }
 
+  // Getters para datos de usuario
   getCurrentUser() {
     return this.currentUser;
   }
@@ -170,127 +231,169 @@ class AuthService {
     return roles.includes(this.currentUser?.role);
   }
 
-  /** Actualiza datos del usuario en Preferences */
+  /** Actualiza datos del usuario actual */
   async updateUserData(updates) {
-    console.log("[AuthService] updateUserData()", updates);
-    if (!this.currentUser) return false;
+    console.log('📝 [AuthService] Actualizando datos de usuario:', updates);
+
+    if (!this.currentUser) {
+      console.error('❌ [AuthService] No hay usuario logueado para actualizar');
+      return false;
+    }
+
     try {
       this.currentUser = { ...this.currentUser, ...updates };
       await storageService.setUserData(this.currentUser);
-      eventBus.emit("auth:user-updated", this.currentUser);
+      eventBus.emit('auth:user-updated', this.currentUser);
+      console.log('✅ [AuthService] Datos de usuario actualizados');
       return true;
-    } catch (e) {
-      console.error("[AuthService:updateUserData] Error:", e);
+    } catch (error) {
+      console.error('❌ [AuthService] Error actualizando datos de usuario:', error);
       return false;
     }
   }
 
-  // —— MÉTODOS BIOMÉTRICOS —— //
+  // ========== MÉTODOS BIOMÉTRICOS ========== //
 
-  /** ¿Soporta el dispositivo biometría? */
+  /** Verifica si el dispositivo soporta autenticación biométrica */
   async isBiometricAvailable() {
-    console.log("[AuthService] isBiometricAvailable()");
+    console.log('🔍 [AuthService] Verificando disponibilidad biométrica...');
+
     try {
       const info = await BiometricAuth.checkBiometry();
-      console.log("[AuthService] checkBiometry:", info);
+      console.log('📱 [AuthService] Info biométrica:', info);
       return info.isAvailable;
-    } catch (e) {
-      console.error("[AuthService] checkBiometry error:", e);
+    } catch (error) {
+      console.error('❌ [AuthService] Error verificando biometría:', error);
       return false;
     }
   }
 
-  /** ¿Usuario habilitó login biométrico? */
+  /** Verifica si el usuario ha habilitado autenticación biométrica */
   async isBiometricEnabled() {
-    console.log("[AuthService] isBiometricEnabled()");
+    console.log('🔍 [AuthService] Verificando si biometría está habilitada...');
+
     try {
-      const val = await SecureStorage.getItem(BIOENABLED_KEY);
-      console.log("[AuthService] biometric_enabled:", val);
-      return val === "true";
-    } catch (e) {
-      console.error("[AuthService] getItem(biometric_enabled):", e);
+      const enabled = await SecureStorage.getItem(BIOENABLED_KEY);
+      const isEnabled = enabled === 'true';
+      console.log(`🔐 [AuthService] Biometría habilitada: ${isEnabled}`);
+      return isEnabled;
+    } catch (error) {
+      console.error('❌ [AuthService] Error verificando estado biométrico:', error);
       return false;
     }
   }
 
   /**
-   * Habilita login biométrico:
-   * - Prompt del sistema
-   * - Guarda el JWT y el userData en SecureStorage
-   * - Marca la flag
+   * Habilita autenticación biométrica
+   * Guarda credenciales en SecureStorage después de verificar biometría
    */
   async enableBiometric() {
-    console.log("[AuthService] enableBiometric()");
-    await BiometricAuth.authenticate({
-      reason: "Autentícate para habilitar inicio con huella",
-    });
-    console.log("[AuthService] biometric prompt OK");
+    console.log('🔐 [AuthService] Habilitando autenticación biométrica...');
 
-    const token = await storageService.getToken();
-    const userData = this.currentUser;
-    if (!token || !userData) {
-      throw new Error("Sesión no válida para habilitar biometría");
+    try {
+      // Verificar que hay sesión activa
+      const token = await storageService.getToken();
+      const userData = this.currentUser;
+
+      if (!token || !userData) {
+        throw new Error('Sesión no válida para habilitar biometría');
+      }
+
+      // Prompt biométrico para confirmar
+      await BiometricAuth.authenticate({
+        reason: 'Autentícate para habilitar inicio con huella',
+        subtitle: 'Usa tu huella o rostro',
+      });
+
+      console.log('✅ [AuthService] Autenticación biométrica exitosa');
+
+      // Guardar credenciales en SecureStorage
+      await SecureStorage.setItem(BIOTOKEN_KEY, token);
+      await SecureStorage.setItem(BIOUSER_KEY, JSON.stringify(userData));
+      await SecureStorage.setItem(BIOENABLED_KEY, 'true');
+
+      console.log('💾 [AuthService] Credenciales biométricas guardadas');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ [AuthService] Error habilitando biometría:', error);
+      throw new Error(error.message || 'Error habilitando autenticación biométrica');
     }
-
-    // Guarda en SecureStorage
-    await SecureStorage.setItem(BIOTOKEN_KEY, token);
-    await SecureStorage.setItem(BIOUSER_KEY, JSON.stringify(userData));
-    await SecureStorage.setItem(BIOENABLED_KEY, "true");
-    console.log(
-      "[AuthService] SecureStorage: token + userData + enabled flag guardados"
-    );
   }
 
   /**
-   * Login biométrico:
-   * 1) Prompt del sistema
-   * 2) Recupera JWT + userData de SecureStorage
-   * 3) Restaura en Preferences (token + userData)
+   * Login usando autenticación biométrica
+   * Recupera credenciales de SecureStorage y restaura sesión
    */
   async loginWithBiometric() {
-    console.log("[AuthService] loginWithBiometric()");
-    // Disponibilidad
-    const info = await BiometricAuth.checkBiometry();
-    console.log("[AuthService] checkBiometry:", info);
-    if (!info.isAvailable) {
-      return { success: false, error: "Biometría no soportada" };
+    console.log('👆 [AuthService] Iniciando login biométrico...');
+
+    try {
+      // Verificar disponibilidad
+      const info = await BiometricAuth.checkBiometry();
+      if (!info.isAvailable) {
+        return { success: false, error: 'Biometría no disponible en este dispositivo' };
+      }
+
+      // Prompt biométrico
+      await BiometricAuth.authenticate({
+        reason: 'Usa tu huella o rostro para iniciar sesión',
+        subtitle: 'Autenticación biométrica',
+      });
+
+      console.log('✅ [AuthService] Autenticación biométrica exitosa');
+
+      // Recuperar credenciales de SecureStorage
+      const token = await SecureStorage.getItem(BIOTOKEN_KEY);
+      const userDataString = await SecureStorage.getItem(BIOUSER_KEY);
+
+      if (!token || !userDataString) {
+        return {
+          success: false,
+          error: 'No hay credenciales biométricas guardadas',
+        };
+      }
+
+      const userData = JSON.parse(userDataString);
+
+      // Restaurar sesión en Preferences
+      await storageService.setToken(token);
+      await storageService.setUserData(userData);
+
+      // Actualizar estado interno
+      this.currentUser = userData;
+      this.isAuthenticated = true;
+
+      // Emitir evento de login
+      eventBus.emit('auth:login', userData);
+
+      console.log('✅ [AuthService] Login biométrico exitoso');
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('❌ [AuthService] Error en login biométrico:', error);
+      return {
+        success: false,
+        error: error.message || 'Error en autenticación biométrica',
+      };
     }
-
-    // Prompt
-    await BiometricAuth.authenticate({
-      reason: "Usa tu huella o rostro para iniciar sesión",
-    });
-    console.log("[AuthService] biometric prompt OK");
-
-    // Recupera de SecureStorage
-    const tok = await SecureStorage.getItem(BIOTOKEN_KEY);
-    const ujstr = await SecureStorage.getItem(BIOUSER_KEY);
-    if (!tok || !ujstr) {
-      return { success: false, error: "No hay credenciales biométricas" };
-    }
-
-    // Restaura en Preferences
-    await storageService.setToken(tok);
-    const userData = JSON.parse(ujstr);
-    await storageService.setUserData(userData);
-
-    this.currentUser = userData;
-    this.isAuthenticated = true;
-    eventBus.emit("auth:login", userData);
-    console.log("[AuthService] loginWithBiometric SUCCESS");
-
-    return { success: true, user: userData };
   }
 
-  /** Deshabilita login biométrico */
+  /** Deshabilita autenticación biométrica y elimina credenciales */
   async disableBiometric() {
-    console.log("[AuthService] disableBiometric()");
-    await SecureStorage.removeItem(BIOTOKEN_KEY);
-    await SecureStorage.removeItem(BIOUSER_KEY);
-    await SecureStorage.removeItem(BIOENABLED_KEY);
-    console.log("[AuthService] Credenciales biométricas eliminadas");
+    console.log('🚫 [AuthService] Deshabilitando autenticación biométrica...');
+
+    try {
+      await SecureStorage.removeItem(BIOTOKEN_KEY);
+      await SecureStorage.removeItem(BIOUSER_KEY);
+      await SecureStorage.removeItem(BIOENABLED_KEY);
+
+      console.log('✅ [AuthService] Autenticación biométrica deshabilitada');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ [AuthService] Error deshabilitando biometría:', error);
+      return { success: false, error: error.message };
+    }
   }
 }
 
-// Exporta la única instancia
+// Exportar instancia única
 export const authService = new AuthService();

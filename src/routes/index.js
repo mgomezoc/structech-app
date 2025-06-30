@@ -1,34 +1,47 @@
 // src/routes/index.js
-import Navigo from "navigo";
-import { eventBus } from "../services/api.service.js";
-import { authService } from "../services/auth.service.js";
-import { ROUTES } from "../utils/constants.js";
+import Navigo from 'navigo';
+import { eventBus } from '../services/api.service.js';
+import { authService } from '../services/auth.service.js';
+import { ROUTES } from '../utils/constants.js';
+import { authGuard, combineGuards, guestGuard, roleGuard } from './guards.js';
 
 // Creamos el router en modo hash
-export const router = new Navigo("/", { hash: true });
+export const router = new Navigo('/', { hash: true });
 
 // Contenedor principal
-const appContainer = document.getElementById("app") || document.body;
+const appContainer = document.getElementById('app') || document.body;
+
+// Variable para manejar cleanup de vista actual
+let currentViewCleanup = null;
 
 /**
- * Helper para cargar vistas dinámicamente desde
- * src/views/{viewName}/index.js
+ * Helper para cargar vistas dinámicamente desde src/views/{viewName}/index.js
+ * @param {string} viewName - Nombre de la vista a cargar
+ * @param {object} context - Contexto con params, query, etc.
  */
 async function loadView(viewName, context = {}) {
   try {
     console.log(`📄 Cargando vista: ${viewName}`);
 
-    // ——— Aplicar clase de ruta para transiciones específicas ———
-    // Elimina cualquier clase anterior que empiece por "route-"
-    appContainer.classList.forEach((cls) => {
-      if (cls.startsWith("route-")) {
+    // Ejecutar cleanup de vista anterior
+    if (currentViewCleanup) {
+      try {
+        await currentViewCleanup();
+      } catch (error) {
+        console.error('Error en cleanup anterior:', error);
+      }
+      currentViewCleanup = null;
+    }
+
+    // Aplicar clase de ruta para transiciones específicas
+    appContainer.classList.forEach(cls => {
+      if (cls.startsWith('route-')) {
         appContainer.classList.remove(cls);
       }
     });
-    // Añade la nueva clase de ruta
     appContainer.classList.add(`route-${viewName}`);
 
-    // 1) Muestra tu loader habitual
+    // Mostrar loader
     appContainer.innerHTML = `
       <div class="view-loader">
         <div class="spinner"></div>
@@ -36,25 +49,25 @@ async function loadView(viewName, context = {}) {
       </div>
     `;
 
-    // 2) Importa dinámicamente y renderiza
+    // Importar dinámicamente y renderizar
     const module = await import(`../views/${viewName}/index.js`);
     const View = module.default;
     const view = new View(context);
     const content = await view.render();
 
-    // 3) Prepara el commit de la transición
+    // Función para hacer commit de la transición
     const commit = async () => {
       appContainer.innerHTML = content;
+
       if (view.afterRender) {
         await view.afterRender();
       }
-      // registrar cleanup para la próxima ruta
-      router.hooks({
-        leave: () => view.cleanup?.(),
-      });
+
+      // Guardar cleanup para la próxima navegación
+      currentViewCleanup = view.cleanup ? () => view.cleanup() : null;
     };
 
-    // 4) Si la View Transition API está disponible, úsala
+    // Usar View Transition API si está disponible
     if (document.startViewTransition) {
       document.startViewTransition(commit);
     } else {
@@ -67,141 +80,195 @@ async function loadView(viewName, context = {}) {
         <h2>Error al cargar la página</h2>
         <p>${error.message}</p>
         <button onclick="window.location.reload()">Recargar</button>
+        <button onclick="router.navigate('${ROUTES.DASHBOARD}')">Ir al Dashboard</button>
       </div>
     `;
   }
 }
 
+/**
+ * Configuración de todas las rutas de la aplicación
+ */
 export function setupRoutes() {
-  // Ruta raíz
+  // Ruta raíz - redirección inteligente
   router.on(ROUTES.HOME, async () => {
+    console.log('🏠 Accediendo a ruta raíz');
     const isAuth = await authService.checkAuth();
     router.navigate(isAuth ? ROUTES.DASHBOARD : ROUTES.LOGIN);
   });
 
-  // Login (pública)
-  router.on(ROUTES.LOGIN, async () => {
-    // Aplica la clase de ruta también aquí
-    appContainer.classList.forEach((cls) => {
-      if (cls.startsWith("route-")) {
-        appContainer.classList.remove(cls);
-      }
-    });
-    appContainer.classList.add("route-login");
-
-    const module = await import("../views/login/index.js");
-    const View = module.default;
-    const view = new View();
-    appContainer.innerHTML = await view.render();
-    if (view.afterRender) {
-      await view.afterRender();
-    }
-  });
-
-  // Dashboard (privada)
-  router.on(ROUTES.DASHBOARD, () => loadView("dashboard"), {
-    before(done) {
-      authService.checkAuth().then((isAuth) => {
-        if (!isAuth) {
-          sessionStorage.setItem("redirectAfterLogin", ROUTES.DASHBOARD);
-          this.navigate(ROUTES.LOGIN);
-          done(false);
-        } else {
-          done();
-        }
-      });
+  // Login (ruta pública con guard para usuarios autenticados)
+  router.on(
+    ROUTES.LOGIN,
+    (params, query) => {
+      console.log('🔑 Cargando login');
+      loadView('login', { params, query });
     },
-  });
-
-  // Formulario (privada)
-  router.on(ROUTES.FORM, () => loadView("form"), {
-    before(done) {
-      authService.checkAuth().then((isAuth) => {
-        if (!isAuth) {
-          sessionStorage.setItem("redirectAfterLogin", ROUTES.FORM);
-          this.navigate(ROUTES.LOGIN);
-          done(false);
-        } else {
-          done();
-        }
-      });
+    {
+      before: guestGuard,
     },
-  });
+  );
 
-  router.on(ROUTES.ENROLLMENT_MANUAL, () => loadView("enrollment-manual"), {
-    before(done) {
-      authService.checkAuth().then((isAuth) => {
-        if (!isAuth) {
-          sessionStorage.setItem(
-            "redirectAfterLogin",
-            ROUTES.ENROLLMENT_MANUAL
-          );
-          this.navigate(ROUTES.LOGIN);
-          done(false);
-        } else {
-          done();
-        }
-      });
+  // Dashboard (ruta privada)
+  router.on(
+    ROUTES.DASHBOARD,
+    (params, query) => {
+      console.log('📊 Cargando dashboard');
+      loadView('dashboard', { params, query });
     },
-  });
+    {
+      before: authGuard,
+    },
+  );
+
+  // Formulario (ruta privada)
+  router.on(
+    ROUTES.FORM,
+    (params, query) => {
+      console.log('📝 Cargando formulario');
+      loadView('form', { params, query });
+    },
+    {
+      before: authGuard,
+    },
+  );
+
+  // Formulario con parámetros opcionales
+  router.on(
+    ROUTES.FORM + '/:id',
+    (params, query) => {
+      console.log('📝 Cargando formulario con ID:', params.id);
+      loadView('form', { params, query });
+    },
+    {
+      before: authGuard,
+    },
+  );
+
+  // Enrollment manual (ruta privada)
+  router.on(
+    ROUTES.ENROLLMENT_MANUAL,
+    (params, query) => {
+      console.log('📋 Cargando enrollment manual');
+      loadView('enrollment-manual', { params, query });
+    },
+    {
+      before: authGuard,
+    },
+  );
 
   // Admin (requiere rol admin)
-  router.on("/admin", () => loadView("admin"), {
-    before(done) {
-      authService.checkAuth().then((isAuth) => {
-        if (!isAuth) {
-          this.navigate(ROUTES.LOGIN);
-          done(false);
-        } else if (!authService.hasRole("admin")) {
-          window.mostrarMensajeEstado(
-            "No tienes permisos para acceder a esta sección",
-            3000
-          );
-          this.navigate(ROUTES.DASHBOARD);
-          done(false);
-        } else {
-          done();
-        }
-      });
+  router.on(
+    '/admin',
+    (params, query) => {
+      console.log('⚙️ Cargando panel admin');
+      loadView('admin', { params, query });
     },
-  });
+    {
+      before: combineGuards(authGuard, roleGuard('admin')),
+    },
+  );
 
-  // 404
+  // Ruta 404
   router.notFound(() => {
+    console.log('❌ Ruta no encontrada');
     appContainer.innerHTML = `
       <div class="not-found-view">
         <h1>404</h1>
         <p>Página no encontrada</p>
-        <a href="${ROUTES.HOME}">Volver al inicio</a>
+        <a href="#${ROUTES.HOME}">Volver al inicio</a>
       </div>
     `;
   });
 
   // Eventos globales de autenticación
-  eventBus.on("auth:logout", () => {
+  eventBus.on('auth:logout', () => {
+    console.log('🚪 Logout detectado, redirigiendo a login');
+    // Ejecutar cleanup antes de logout
+    if (currentViewCleanup) {
+      currentViewCleanup();
+      currentViewCleanup = null;
+    }
     router.navigate(ROUTES.LOGIN);
   });
-  eventBus.on("auth:login", () => {
-    const redirectPath = sessionStorage.getItem("redirectAfterLogin");
-    if (redirectPath) {
-      sessionStorage.removeItem("redirectAfterLogin");
-      router.navigate(redirectPath);
+
+  eventBus.on('auth:login', () => {
+    console.log('✅ Login exitoso, redirigiendo');
+    const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+
+    if (redirectPath && redirectPath !== '#' + ROUTES.LOGIN) {
+      sessionStorage.removeItem('redirectAfterLogin');
+      // Limpiar el hash si es necesario
+      const cleanPath = redirectPath.startsWith('#') ? redirectPath.substring(1) : redirectPath;
+      router.navigate(cleanPath);
     } else {
       router.navigate(ROUTES.DASHBOARD);
     }
+  });
+
+  // Hook global para manejar errores de navegación
+  router.hooks({
+    before: (done, params, query) => {
+      console.log('🧭 Navegación iniciada:', window.location.hash);
+      done();
+    },
+    after: () => {
+      console.log('✅ Navegación completada');
+      // Scroll to top en cada navegación
+      window.scrollTo(0, 0);
+    },
   });
 
   // Resolución inicial
   router.resolve();
 }
 
-// Helpers de navegación
+/**
+ * Helpers de navegación para uso en toda la aplicación
+ */
 export function navigateTo(path, data = {}) {
+  console.log('➡️ Navegando a:', path);
   router.navigate(path, data);
 }
+
 export function getRouteParams() {
-  return router.getCurrentLocation().params || {};
+  const location = router.getCurrentLocation();
+  return location ? location.params || {} : {};
 }
+
 export function getQueryParams() {
-  return router.getCurrentLocation().queryString || "";
+  const location = router.getCurrentLocation();
+  if (!location || !location.queryString) return {};
+
+  // Parse query string manually
+  const params = new URLSearchParams(location.queryString);
+  const result = {};
+  for (const [key, value] of params) {
+    result[key] = value;
+  }
+  return result;
 }
+
+/**
+ * Helper para obtener la ruta actual
+ */
+export function getCurrentRoute() {
+  const location = router.getCurrentLocation();
+  return location ? location.url : ROUTES.HOME;
+}
+
+/**
+ * Helper para verificar si estamos en una ruta específica
+ */
+export function isCurrentRoute(route) {
+  return getCurrentRoute() === route;
+}
+
+/**
+ * Cleanup global al cerrar la aplicación
+ */
+window.addEventListener('beforeunload', () => {
+  if (currentViewCleanup) {
+    currentViewCleanup();
+  }
+});

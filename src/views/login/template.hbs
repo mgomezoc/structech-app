@@ -1,12 +1,30 @@
 {{!-- src/views/login/template.hbs --}}
 <div class="login-page">
     <div class="video-bg">
-        <video id="bgVideo" autoplay muted loop playsinline src="{{videoUrl}}"></video>
+        <!-- Video con múltiples formatos y fallback -->
+        <video id="bgVideo" autoplay muted loop playsinline preload="metadata" poster="{{posterUrl}}"
+            class="background-video">
+            <!-- WebM para mejor compresión (Chrome, Firefox, Edge moderno) -->
+            <source src="{{videoWebmUrl}}" type="video/webm" />
+            <!-- MP4 como fallback universal -->
+            <source src="{{videoMp4Url}}" type="video/mp4" />
+            <!-- Fallback final si no soporta video -->
+            <div class="video-fallback">
+                <div class="fallback-overlay"></div>
+            </div>
+        </video>
+
+        <!-- Loader mientras carga el video -->
+        <div id="videoLoader" class="video-loader">
+            <div class="video-loader-content">
+                <div class="spinner-large"></div>
+                <p>Cargando...</p>
+            </div>
+        </div>
     </div>
 
     <div class="login-container">
         <img src="{{logoUrl}}" alt="StructTech" class="logo" />
-
         <h2>¡Bienvenido de nuevo!</h2>
         <p class="subtitle">Inicia sesión en tu cuenta</p>
 
@@ -14,7 +32,8 @@
             {{!-- Email --}}
             <div class="input-group">
                 <span class="icon">
-                    <lord-icon src="https://cdn.lordicon.com/fluwldoy.json" trigger="in" style="width:24px;height:24px"></lord-icon>
+                    <lord-icon src="https://cdn.lordicon.com/fluwldoy.json" trigger="in" style="width:24px;height:24px">
+                    </lord-icon>
                 </span>
                 <input type="email" id="email" name="email" placeholder="Correo electrónico" autocomplete="email"
                     required />
@@ -23,15 +42,16 @@
             {{!-- Contraseña --}}
             <div class="input-group">
                 <span class="icon">
-                    <lord-icon src="https://cdn.lordicon.com/whsbnmak.json" trigger="in"
-                         style="width:24px;height:24px"></lord-icon>
+                    <lord-icon src="https://cdn.lordicon.com/whsbnmak.json" trigger="in" style="width:24px;height:24px">
+                    </lord-icon>
                 </span>
                 <input type="password" id="password" name="password" placeholder="Contraseña"
                     autocomplete="current-password" required />
                 {{!-- Toggle mostrar/ocultar --}}
                 <button type="button" id="togglePassword" class="toggle-password">
                     <lord-icon id="toggleIcon" src="https://cdn.lordicon.com/lalzjnnh.json" trigger="in"
-                         style="width:24px;height:24px"></lord-icon>
+                        style="width:24px;height:24px">
+                    </lord-icon>
                 </button>
             </div>
 
@@ -43,14 +63,16 @@
                 </span>
             </button>
 
-            {{!-- Botón de login biométrico (se mostrará dinámicamente) --}}
-            <button type="button" class="btn-secondary" id="biometricBtn" style="display: none; margin-top: 12px;">
-                <lord-icon src="https://cdn.lordicon.com/ulgefjgj.json" trigger="hover"
-                    
-                    style="width:24px;height:24px;vertical-align:middle"></lord-icon>
-                <span style="vertical-align:middle; margin-left:6px;">
-                    Iniciar con huella
-                </span>
+            {{!-- Divider --}}
+            <div class="login-divider">
+                <span>o continúa con</span>
+            </div>
+
+            {{!-- Botón de login biométrico --}}
+            <button type="button" class="btn-secondary" id="biometricBtn" style="display: none;">
+                <lord-icon src="https://cdn.lordicon.com/ulgefjgj.json" trigger="hover" style="width:24px;height:24px">
+                </lord-icon>
+                <span>Iniciar con huella</span>
             </button>
 
             {{!-- Opciones extra --}}

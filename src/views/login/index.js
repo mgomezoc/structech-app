@@ -3,7 +3,6 @@
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import Handlebars from 'handlebars';
-import videoUrl from '../../img/login3.mp4';
 import logoUrl from '../../img/logo-icono-structech.png';
 import { authService } from '../../services/auth.service.js';
 import { dialogService } from '../../services/dialog.service.js';
@@ -19,15 +18,73 @@ export default class LoginView {
     this.isLoading = false;
   }
 
+  /** Configuración optimizada del video de fondo */
+  _setupVideo() {
+    if (!this.bgVideo) return;
+
+    const videoLoader = $('#videoLoader');
+    let videoLoaded = false;
+    let loadTimeout;
+
+    // Detectar soporte de video
+    const canPlayWebM = this.bgVideo.canPlayType('video/webm; codecs="vp9"');
+    const canPlayMP4 = this.bgVideo.canPlayType('video/mp4; codecs="avc1.42E01E"');
+
+    if (!canPlayWebM && !canPlayMP4) {
+      // No hay soporte de video, usar fallback
+      dom(document.body).addClass('no-video-support');
+      dom(videoLoader).addClass('hidden');
+      return;
+    }
+
+    // Timeout para ocultar loader aunque el video no cargue
+    loadTimeout = setTimeout(() => {
+      if (!videoLoaded) {
+        console.warn('Video load timeout, showing fallback');
+        dom(videoLoader).addClass('hidden');
+        dom(document.body).addClass('no-video-support');
+      }
+    }, 8000); // 8 segundos máximo
+
+    // Eventos del video
+    this.bgVideo.addEventListener('loadeddata', () => {
+      videoLoaded = true;
+      clearTimeout(loadTimeout);
+
+      // Ralentizar video para efecto cinematográfico
+      this.bgVideo.playbackRate = 0.8;
+
+      // Mostrar video con fade-in
+      dom(this.bgVideo).addClass('loaded');
+
+      // Ocultar loader con delay para transición suave
+      setTimeout(() => {
+        dom(videoLoader).addClass('hidden');
+      }, 500);
+    });
+
+    this.bgVideo.addEventListener('error', e => {
+      console.error('Error cargando video:', e);
+      clearTimeout(loadTimeout);
+      dom(videoLoader).addClass('hidden');
+      dom(document.body).addClass('no-video-support');
+    });
+
+    // Intentar cargar el video
+    this.bgVideo.load();
+  }
+
   render() {
     return template({
       logoUrl,
-      videoUrl,
+      videoWebmUrl: new URL('../../img/login3-optimized.webm', import.meta.url).href,
+      videoMp4Url: new URL('../../img/login3-optimized.mp4', import.meta.url).href,
+      posterUrl: new URL('../../img/login-poster.jpg', import.meta.url).href,
     });
   }
 
   async afterRender() {
-    // ✅ $ para referencias que usaremos múltiples veces (elementos almacenados)
+    // ✅ $ para referencias que usaremos múltiples veces
     this.form = $('#loginForm');
     this.emailInput = $('#email');
     this.passwordInput = $('#password');
@@ -39,12 +96,10 @@ export default class LoginView {
     this.biometricBtn = $('#biometricBtn');
     this.bgVideo = $('#bgVideo');
 
-    this._attachEventListeners();
+    // ✅ Configurar video con fallbacks y loader
+    this._setupVideo();
 
-    // Ralentiza el video de fondo
-    if (this.bgVideo) {
-      this.bgVideo.playbackRate = 0.8;
-    }
+    this._attachEventListeners();
 
     // Precarga "recordarme"
     const saved = localStorage.getItem('remembered_email');

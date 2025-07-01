@@ -14,6 +14,8 @@ import { ROUTES } from '../../utils/constants.js';
 import { audioRecorder } from '../../js/audioRecorder.js';
 import { signatureManager } from '../../js/signature.js';
 
+import { createElement, dom } from '../../utils/dom.helper.js'; // ← import dom helper
+
 const template = Handlebars.compile(tplSource);
 
 export default class EnrollmentManualView {
@@ -26,95 +28,95 @@ export default class EnrollmentManualView {
   }
 
   async afterRender() {
-    // Inicializar firma y audio
+    // 1) inicializar firma y audio
     signatureManager.init();
     await audioRecorder.init();
 
-    // Referencias DOM
-    this.form = document.getElementById('enrollForm');
-    this.backBtn = document.getElementById('backBtn');
-    this.estrSelect = document.getElementById('estructura');
-    this.subSelect = document.getElementById('subestructura');
-    this.cpInput = document.getElementById('codigoPostal');
-    this.coloniaSelect = document.getElementById('colonia');
-    this.calleNumeroInput = document.getElementById('calleNumero');
-    this.fileInput = document.getElementById('otherFile');
-    this.hiddenOtherData = document.getElementById('otherData');
-    this.filePreview = document.getElementById('filePreview');
+    // 2) capturar referencias con el wrapper DOM
+    this.form = dom('#enrollForm');
+    this.backBtn = dom('#backBtn');
+    this.estrSelect = dom('#estructura');
+    this.subSelect = dom('#subestructura');
+    this.cpInput = dom('#codigoPostal');
+    this.coloniaSelect = dom('#colonia');
+    this.calleNumero = dom('#calleNumero');
+    this.fileInput = dom('#otherFile');
+    this.hiddenOtherData = dom('#otherData');
+    this.filePreview = dom('#filePreview');
+    this.clearSigBtn = dom('#clearSignature');
+    this.undoSigBtn = dom('#undoSignature');
 
-    // Controles de firma
-    this.clearSignatureBtn = document.getElementById('clearSignature');
-    this.undoSignatureBtn = document.getElementById('undoSignature');
+    // 3) wiring de eventos
+    this.backBtn.on('click', () => navigateTo(ROUTES.DASHBOARD));
 
-    this.clearSignatureBtn.addEventListener('click', () => {
-      signatureManager.clear();
-    });
-    this.undoSignatureBtn.addEventListener('click', () => {
-      signatureManager.undo();
-    });
+    this.clearSigBtn.on('click', () => signatureManager.clear());
+    this.undoSigBtn.on('click', () => signatureManager.undo());
 
-    // ← Volver
-    this.backBtn.addEventListener('click', () => navigateTo(ROUTES.DASHBOARD));
+    this.form.on('submit', e => this.handleSubmit(e));
 
-    // Envío de formulario
-    this.form.addEventListener('submit', e => this.handleSubmit(e));
-
-    // 1) Cargar estructuras
+    // 4) cargar estructuras
     const estrRes = await datosService.obtenerEstructuras();
     if (estrRes.success) {
-      estrRes.data.forEach(e => {
-        this.estrSelect.innerHTML += `
-          <option value="${e.iCatalogId}">${e.vcCatalog}</option>
-        `;
-      });
+      estrRes.data.forEach(e =>
+        this.estrSelect
+          .get()
+          .appendChild(createElement('option', { value: e.iCatalogId }, e.vcCatalog)),
+      );
     }
 
-    // 2) Cambiar estructura → subestructuras
-    this.estrSelect.addEventListener('change', async e => {
+    // 5) cuando cambia la estructura, recargar subestructuras
+    this.estrSelect.on('change', async e => {
       const id = e.target.value;
-      this.subSelect.innerHTML = `<option value="">Sin selección</option>`;
+      // reset
+      this.subSelect.html(`<option value="">Sin selección</option>`);
       if (!id) return;
+
       const subRes = await datosService.obtenerSubestructuras(id);
       if (subRes.success) {
-        subRes.data.forEach(s => {
-          this.subSelect.innerHTML += `
-            <option value="${s.iSubCatalogId}">${s.vcSubCatalog}</option>
-          `;
-        });
+        subRes.data.forEach(s =>
+          this.subSelect
+            .get()
+            .appendChild(createElement('option', { value: s.iSubCatalogId }, s.vcSubCatalog)),
+        );
       }
     });
 
-    // 3) Código Postal → colonias
-    this.cpInput.addEventListener('blur', async e => {
+    // 6) al salir del CP, recargar colonias
+    this.cpInput.on('blur', async e => {
       const cp = e.target.value.trim();
       if (!cp) return;
       const colRes = await datosService.obtenerColoniasPorCP(cp);
       if (colRes.success && Array.isArray(colRes.data)) {
-        this.coloniaSelect.innerHTML = `<option value="">— Selecciona tu colonia —</option>`;
+        // reset
+        this.coloniaSelect.html(`<option value="">— Selecciona tu colonia —</option>`);
         colRes.data.forEach(c => {
-          this.coloniaSelect.innerHTML += `
-            <option
-              value="${c.vcNeighborhood}"
-              data-municipio="${c.vcMunicipality}"
-              data-estado="${c.vcState}"
-              data-cp="${c.iZipCode}"
-            >
-              ${c.vcNeighborhood}
-            </option>
-          `;
+          const opt = createElement(
+            'option',
+            {
+              value: c.vcNeighborhood,
+              dataset: {
+                municipio: c.vcMunicipality,
+                estado: c.vcState,
+                cp: c.iZipCode,
+              },
+            },
+            c.vcNeighborhood,
+          );
+          this.coloniaSelect.get().appendChild(opt);
         });
       }
     });
 
-    // 4) Previsualización y Base64 del archivo
-    this.fileInput.addEventListener('change', e => {
+    // 7) previsualización de imagen + Base64
+    this.fileInput.on('change', e => {
       const file = e.target.files[0];
       if (!file) return;
+
       const reader = new FileReader();
       reader.onload = () => {
-        const [_, base64] = reader.result.split(',');
-        this.hiddenOtherData.value = base64;
-        this.filePreview.innerHTML = `<img src="${reader.result}" alt="Preview" />`;
+        const [, base64] = reader.result.split(',');
+        this.hiddenOtherData.attr('value', base64); // input hidden
+        this.filePreview.html(`<img src="${reader.result}" alt="Preview" />`);
       };
       reader.readAsDataURL(file);
     });
@@ -122,57 +124,60 @@ export default class EnrollmentManualView {
 
   async handleSubmit(e) {
     e.preventDefault();
-    const btn = this.form.querySelector('.save-button');
-    btn.disabled = true;
-    btn.classList.add('loading');
+
+    const btn = dom('.save-button', this.form.get());
+    btn.attr('disabled', 'true').addClass('loading');
 
     try {
-      // Revisar firma
+      // 1) validar firma
       if (!signatureManager.hasSignature()) {
         throw new Error('Por favor, proporciona tu firma');
       }
 
-      // Construir payload
-      const data = Object.fromEntries(new FormData(this.form).entries());
-
-      // Agregar datos de firma
+      // 2) armar el payload desde el form
+      const data = Object.fromEntries(new FormData(this.form.get()).entries());
       data.signatureData = signatureManager.getSignatureAsBase64();
 
-      // Agregar datos de audio si existen
+      // 3) audio opcional
       if (audioRecorder.hasRecording()) {
-        const audio = audioRecorder.getAudioData();
-        data.audioData = audio.data;
-        data.audioMimeType = audio.mimeType;
+        const { data: audioData, mimeType } = audioRecorder.getAudioData();
+        data.audioData = audioData;
+        data.audioMimeType = mimeType;
       }
 
-      // Armar domicilio para geocoding
-      const option = this.coloniaSelect.options[this.coloniaSelect.selectedIndex];
-      const calleNumero = this.calleNumeroInput.value.trim();
-      const colonia = option.value;
-      const municipio = option.dataset.municipio;
-      const estado = option.dataset.estado;
-      const codigoPostal = option.dataset.cp;
-      data.domicilio = `${calleNumero}, ${colonia}, ${municipio}, ${estado}, ${codigoPostal}`;
+      // 4) armar domicilio con la opción seleccionada
+      const sel = this.coloniaSelect.get().selectedOptions[0];
+      data.domicilio = [
+        this.calleNumero.value.trim(),
+        sel.value,
+        sel.dataset.municipio,
+        sel.dataset.estado,
+        sel.dataset.cp,
+      ].join(', ');
 
-      // Enviar
+      // 5) llamar al servicio
       const result = await enrollmentService.enrollManual(data);
       if (!result.success) throw new Error(result.error);
 
+      // 6) éxito: limpiar UI
       window.mostrarMensajeEstado('✅ Enrolamiento exitoso', 3000);
-      this.form.reset();
-      this.filePreview.innerHTML = '';
-      this.coloniaSelect.innerHTML = `<option value="">— Selecciona tu colonia —</option>`;
+      this.form.get().reset();
+      this.filePreview.html('');
+      this.coloniaSelect.html(`<option value="">— Selecciona tu colonia —</option>`);
       signatureManager.clear();
       audioRecorder.deleteRecording();
     } catch (err) {
       window.mostrarMensajeEstado(`❌ ${err.message}`, 5000);
     } finally {
-      btn.disabled = false;
-      btn.classList.remove('loading');
+      btn.removeClass('loading').removeAttr('disabled');
     }
   }
 
   cleanup() {
-    window.poblarFormulario = null;
+    // si quieres eliminar listeners:
+    this.backBtn.off('click');
+    this.clearSigBtn.off('click');
+    this.undoSigBtn.off('click');
+    this.form.off('submit');
   }
 }

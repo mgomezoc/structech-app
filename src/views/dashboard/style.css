@@ -8,6 +8,7 @@
   position: sticky;
   top: 0;
   z-index: 100;
+  padding: 20px 0 0 0;
 }
 .header-content {
   max-width: 1200px;
@@ -100,7 +101,7 @@
   overflow: hidden;
 }
 .dashboard-card::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;

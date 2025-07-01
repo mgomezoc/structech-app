@@ -245,6 +245,7 @@ select.form-control {
   transition: all 0.3s;
   background-color: #f0f2f2;
   color: #60160f;
+  width: 100%;
 }
 .gender-option label:hover {
   border-color: rgba(242, 162, 155, 0.4);

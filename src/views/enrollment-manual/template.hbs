@@ -1,4 +1,5 @@
 {{!-- src/views/enrollment-manual/template.hbs --}}
+
 <div class="header">
     <div class="header-nav">
         <button id="backBtn" class="btn-back" title="Volver al dashboard">← Volver</button>
@@ -9,17 +10,15 @@
     </div>
 </div>
 
-<div class="">
+<div>
     <form id="enrollForm" class="form-section">
-        {{!-- Estructura --}}
+        {{!-- Estructura y Subestructura --}}
         <div class="form-group">
             <label for="estructura">Selecciona Estructura*</label>
             <select id="estructura" name="estructura" class="form-control" required>
                 <option value="">Sin selección</option>
             </select>
         </div>
-
-        {{!-- SubEstructura --}}
         <div class="form-group">
             <label for="subestructura">Selecciona SubEstructura*</label>
             <select id="subestructura" name="subestructura" class="form-control" required>
@@ -28,60 +27,88 @@
         </div>
 
         {{!-- Datos personales --}}
-        <div class="form-group">
-            <label for="nombre">Nombre*</label>
-            <input type="text" id="nombre" name="nombre" class="form-control" required />
-        </div>
-        <div class="form-group">
-            <label for="apellidoPaterno">Apellido Paterno</label>
-            <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control" />
-        </div>
-        <div class="form-group">
-            <label for="apellidoMaterno">Apellido Materno</label>
-            <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control" />
-        </div>
-
-        {{!-- Fecha y género --}}
-        <div class="form-group">
-            <label for="fechaNacimiento">Fecha de Nacimiento</label>
-            <input type="date" id="fechaNacimiento" name="fechaNacimiento" class="form-control" />
-        </div>
-        <div class="form-group">
-            <label>Género</label>
-            <div class="gender-group">
-                <div class="gender-option">
-                    <input type="radio" id="hombre" name="genero" value="M" /><label for="hombre">👨 Hombre</label>
-                </div>
-                <div class="gender-option">
-                    <input type="radio" id="mujer" name="genero" value="F" /><label for="mujer">👩 Mujer</label>
-                </div>
+        <div class="form-row">
+            <div class="form-group flex-1">
+                <label for="nombre">Nombre*</label>
+                <input type="text" id="nombre" name="nombre" class="form-control" required />
+            </div>
+            <div class="form-group flex-1">
+                <label for="apellidoPaterno">Apellido Paterno*</label>
+                <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control" required />
+            </div>
+            <div class="form-group flex-1">
+                <label for="apellidoMaterno">Apellido Materno</label>
+                <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control" />
             </div>
         </div>
 
-        {{!-- CURP --}}
-        <div class="form-group">
-            <label for="curp">CURP</label>
-            <input type="text" id="curp" name="curp" class="form-control" maxlength="18" />
+        {{!-- Fecha y Estado de Nacimiento juntos --}}
+        <div class="form-row">
+            <div class="form-group flex-1">
+                <label for="fechaNacimiento">Fecha de Nacimiento*</label>
+                <input type="date" id="fechaNacimiento" name="fechaNacimiento" class="form-control" required />
+                <small class="help-text">Selecciona tu fecha de nacimiento</small>
+            </div>
+            <div class="form-group flex-1">
+                <label for="estadoNacimiento">Lugar de Nacimiento*</label>
+                <select id="estadoNacimiento" name="estadoNacimiento" class="form-control" required>
+                    <option value="">— Selecciona tu estado —</option>
+                    {{#each estados}}
+                    <option value="{{this.clave}}">{{this.nombre}}</option>
+                    {{/each}}
+                </select>
+                <small class="help-text">Estado donde naciste</small>
+            </div>
         </div>
 
-        {{!-- Código Postal --}}
-        <div class="form-group">
-            <label for="codigoPostal">Código Postal</label>
-            <input type="number" id="codigoPostal" name="codigoPostal" class="form-control" required />
+        <div class="form-group flex-1">
+            <label>Género*</label>
+            <div class="gender-group">
+                <div class="gender-option">
+                    <input type="radio" id="hombre" name="genero" value="M" required />
+                    <label for="hombre">👨 Hombre</label>
+                </div>
+                <div class="gender-option">
+                    <input type="radio" id="mujer" name="genero" value="F" />
+                    <label for="mujer">👩 Mujer</label>
+                </div>
+            </div>
+            <small class="help-text">Selecciona tu género</small>
+        </div>
         </div>
 
-        {{!-- Colonia --}}
-        <div class="form-group">
-            <label for="colonia">Colonia</label>
-            <select id="colonia" name="colonia" class="form-control" required>
-                <option value="">— Selecciona tu colonia —</option>
-            </select>
+        {{!-- CURP automático --}}
+        <div class="form-group curp-group">
+            <label for="curp">CURP*</label>
+            <div class="curp-wrapper">
+                <input type="text" id="curp" name="curp" class="form-control" readonly
+                    placeholder="Se generará automáticamente" maxlength="18" required />
+                <button type="button" id="recalcularCurp" class="btn-secondary btn-small" title="Recalcular CURP">
+                    🔄
+                </button>
+            </div>
+            <small class="help-text">Tu CURP se compone de tus datos anteriores</small>
         </div>
 
-        {{!-- Dirección (calle y número) --}}
+        {{!-- Código Postal y Colonia --}}
+        <div class="form-row">
+            <div class="form-group flex-1">
+                <label for="codigoPostal">Código Postal*</label>
+                <input type="number" id="codigoPostal" name="codigoPostal" class="form-control" required />
+            </div>
+            <div class="form-group flex-1">
+                <label for="colonia">Colonia*</label>
+                <select id="colonia" name="colonia" class="form-control" required>
+                    <option value="">— Selecciona tu colonia —</option>
+                </select>
+            </div>
+        </div>
+
+        {{!-- Dirección --}}
         <div class="form-group">
             <label for="calleNumero">Dirección (calle y número)*</label>
-            <input type="text" id="calleNumero" class="form-control" placeholder="Ej: Morelos 426" required />
+            <input type="text" id="calleNumero" name="calleNumero" class="form-control" placeholder="Ej: Morelos 426"
+                required />
         </div>
 
         {{!-- Observación --}}
@@ -91,16 +118,18 @@
         </div>
 
         {{!-- Teléfono y Email --}}
-        <div class="form-group">
-            <label for="telefono">Teléfono</label>
-            <input type="tel" id="telefono" name="telefono" class="form-control" required />
-        </div>
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" class="form-control" />
+        <div class="form-row">
+            <div class="form-group flex-1">
+                <label for="telefono">Teléfono*</label>
+                <input type="tel" id="telefono" name="telefono" class="form-control" required />
+            </div>
+            <div class="form-group flex-1">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-control" />
+            </div>
         </div>
 
-        {{!-- Archivo --}}
+        {{!-- Imagen del Documento --}}
         <div class="form-group">
             <label for="otherFile">Imagen del Documento*</label>
             <input type="file" id="otherFile" accept="image/*" class="form-control" required />
@@ -125,12 +154,16 @@
         {{!-- Audio --}}
         <div class="audio-section">
             <div class="audio-controls">
-                <button type="button" id="audioBtn">🎤</button>
+                <button type="button" id="audioBtn" class="audio-button">
+                    🎤
+                </button>
                 <div class="audio-info">
                     <div id="audioTimer">00:00:00</div>
                     <span id="audioHint">Mantén presionado para grabar</span>
                 </div>
-                <button type="button" id="audioDelete" class="audio-delete">🗑️</button>
+                <button type="button" id="audioDelete" class="audio-delete" title="Eliminar grabación">
+                    🗑️
+                </button>
             </div>
             <div id="audioWave" class="audio-wave">
                 <span></span><span></span><span></span><span></span><span></span>
@@ -139,6 +172,8 @@
             <input type="hidden" id="audioMimeType" name="audioMimeType" />
         </div>
 
-        <button type="submit" class="save-button">Enviar</button>
+        <button type="submit" class="save-button" id="submitBtn">
+            Enviar
+        </button>
     </form>
 </div>

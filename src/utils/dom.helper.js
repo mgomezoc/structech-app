@@ -81,9 +81,17 @@ class DOMElement {
     return this;
   }
 
-  removeClass(className) {
-    if (this.el) {
-      this.el.classList.remove(className);
+  removeClass(nameOrFn) {
+    if (!this.el) return this;
+    if (typeof nameOrFn === 'function') {
+      // iteramos sobre una copia porque vamos a modificar classList
+      Array.from(this.el.classList).forEach(cls => {
+        if (nameOrFn(cls)) {
+          this.el.classList.remove(cls);
+        }
+      });
+    } else {
+      this.el.classList.remove(nameOrFn);
     }
     return this;
   }

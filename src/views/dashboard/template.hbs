@@ -14,7 +14,7 @@
                         {{#if user.name}}{{user.name}}{{else if user.email}}{{user.email}}{{else}}Usuario{{/if}}
                     </span>
                     <button id="logoutBtn" class="btn-logout" title="Cerrar sesión">
-                        <lord-icon src="https://cdn.lordicon.com/gwvmctbb.json" trigger="hover" colors="primary:#ffffff"
+                        <lord-icon src="https://cdn.lordicon.com/ldpyyqjp.json" trigger="in" colors="primary:#ffffff"
                             style="width:20px;height:20px">
                         </lord-icon>
                     </button>
@@ -51,7 +51,7 @@
             </div>
 
             <!-- Enrolamiento Manual -->
-            <div class="dashboard-card secondary-card" id="enrollCard" onclick="navigateTo(ROUTES.ENROLLMENT_MANUAL)">
+            <div class="dashboard-card secondary-card" id="enrollCard">
                 <div class="card-icon">
                     <lord-icon src="https://cdn.lordicon.com/ulgefjgj.json" trigger="hover" colors="primary:#f59e0b"
                         style="width:64px;height:64px">
@@ -64,45 +64,7 @@
                     <span class="feature-tag">✓ Previsualización de imagen</span>
                 </div>
                 <button class="btn-card secondary">Enrolar Manual</button>
-            </div>
-
-            <!-- Registro Manual (sin INE) -->
-            <div class="dashboard-card" id="manualCard">
-                <div class="card-icon">
-                    <lord-icon src="https://cdn.lordicon.com/kulwmpzs.json" trigger="hover" colors="primary:#10b981"
-                        style="width:64px;height:64px">
-                    </lord-icon>
-                </div>
-                <h3>Registro Manual</h3>
-                <p>
-                    Ingresa manualmente los datos del ciudadano. Ideal cuando no se cuenta
-                    con la INE física disponible.
-                </p>
-                <div class="card-features">
-                    <span class="feature-tag">✓ Sin requisitos</span>
-                    <span class="feature-tag">✓ Flexible</span>
-                </div>
-                <button class="btn-card tertiary">Registro Manual</button>
-            </div>
-
-            <!-- Copia de INE -->
-            <div class="dashboard-card" id="copyCard">
-                <div class="card-icon">
-                    <lord-icon src="https://cdn.lordicon.com/depeqmsz.json" trigger="hover" colors="primary:#8b5cf6"
-                        style="width:64px;height:64px">
-                    </lord-icon>
-                </div>
-                <h3>Registro con Copia de INE</h3>
-                <p>
-                    Adjunta una foto o archivo de la INE. Útil cuando tienes una imagen
-                    digital del documento.
-                </p>
-                <div class="card-features">
-                    <span class="feature-tag">✓ Desde galería</span>
-                    <span class="feature-tag">✓ Archivo digital</span>
-                </div>
-                <button class="btn-card tertiary">Subir Copia</button>
-            </div>
+            </div>            
         </div>
 
         <!-- Estadísticas Rápidas -->

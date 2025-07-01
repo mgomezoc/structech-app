@@ -3,16 +3,18 @@ import Navigo from 'navigo';
 import { eventBus } from '../services/api.service.js';
 import { authService } from '../services/auth.service.js';
 import { ROUTES } from '../utils/constants.js';
+import { $, dom } from '../utils/dom.helper.js'; // 👈 Importar dom helper
 import { authGuard, combineGuards, guestGuard, roleGuard } from './guards.js';
 
 // Creamos el router en modo hash
 export const router = new Navigo('/', { hash: true });
 
 // Contenedor principal
-const appContainer = document.getElementById('app') || document.body;
+const appContainer = $('#app') || document.body;
 
 // Variable para manejar cleanup de vista actual
 let currentViewCleanup = null;
+let currentViewLoader = null; // 👈 Variable para manejar el loader de vista
 
 /**
  * Helper para cargar vistas dinámicamente desde src/views/{viewName}/index.js
@@ -33,21 +35,14 @@ async function loadView(viewName, context = {}) {
       currentViewCleanup = null;
     }
 
-    // Aplicar clase de ruta para transiciones específicas
-    appContainer.classList.forEach(cls => {
-      if (cls.startsWith('route-')) {
-        appContainer.classList.remove(cls);
-      }
-    });
-    appContainer.classList.add(`route-${viewName}`);
+    // ✅ Mostrar loader específico para la vista
+    showViewLoader(viewName);
 
-    // Mostrar loader
-    appContainer.innerHTML = `
-      <div class="view-loader">
-        <div class="spinner"></div>
-        <p>Cargando...</p>
-      </div>
-    `;
+    await new Promise(requestAnimationFrame);
+
+    // ✅ Aplicar clase de ruta usando dom helper
+    dom(appContainer).removeClass(className => className.startsWith('route-'));
+    dom(appContainer).addClass(`route-${viewName}`);
 
     // Importar dinámicamente y renderizar
     const module = await import(`../views/${viewName}/index.js`);
@@ -57,6 +52,9 @@ async function loadView(viewName, context = {}) {
 
     // Función para hacer commit de la transición
     const commit = async () => {
+      // ✅ Ocultar loader antes de mostrar contenido
+      hideViewLoader();
+
       appContainer.innerHTML = content;
 
       if (view.afterRender) {
@@ -75,15 +73,325 @@ async function loadView(viewName, context = {}) {
     }
   } catch (error) {
     console.error(`Error al cargar vista ${viewName}:`, error);
-    appContainer.innerHTML = `
+
+    // ✅ Ocultar loader en caso de error
+    hideViewLoader();
+
+    // ✅ Mostrar error usando dom helper
+    const errorHtml = `
       <div class="error-view">
-        <h2>Error al cargar la página</h2>
-        <p>${error.message}</p>
-        <button onclick="window.location.reload()">Recargar</button>
-        <button onclick="router.navigate('${ROUTES.DASHBOARD}')">Ir al Dashboard</button>
+        <div class="error-content">
+          <h2>Error al cargar la página</h2>
+          <p>${error.message}</p>
+          <div class="error-actions">
+            <button id="reloadBtn" class="btn-primary">Recargar</button>
+            <button id="dashboardBtn" class="btn-secondary">Ir al Dashboard</button>
+          </div>
+        </div>
       </div>
     `;
+
+    dom(appContainer).html(errorHtml);
+
+    // ✅ Agregar eventos a los botones de error
+    dom('#reloadBtn').on('click', () => window.location.reload());
+    dom('#dashboardBtn').on('click', () => router.navigate(ROUTES.DASHBOARD));
   }
+}
+
+/**
+ * ✅ Mostrar loader específico para carga de vistas
+ * @param {string} viewName - Nombre de la vista que se está cargando
+ */
+function showViewLoader(viewName = '') {
+  // Remover loader anterior si existe
+  hideViewLoader();
+
+  const loaderHtml = `
+    <div class="view-loader-container">
+      <div class="view-loader-content">
+        <div class="view-loader-spinner">
+          <div class="spinner-ring primary"></div>
+          <div class="spinner-ring secondary"></div>
+        </div>
+        <div class="view-loader-text">
+          <p>Cargando ${getViewDisplayName(viewName)}...</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ✅ Crear loader usando dom helper
+  currentViewLoader = dom(document.createElement('div'))
+    .attr('id', 'view-loader')
+    .addClass('view-loader')
+    .html(loaderHtml);
+
+  // Agregar estilos si no existen
+  addViewLoaderStyles();
+
+  // ✅ Agregar al contenedor principal
+  appContainer.appendChild(currentViewLoader.get());
+}
+
+/**
+ * ✅ Ocultar loader de vista
+ */
+function hideViewLoader() {
+  if (currentViewLoader) {
+    const loader = currentViewLoader.get();
+    if (loader && loader.parentNode) {
+      // ✅ Animación de salida
+      dom(loader).addClass('fade-out');
+      setTimeout(() => {
+        if (loader.parentNode) {
+          loader.parentNode.removeChild(loader);
+        }
+      }, 300);
+    }
+    currentViewLoader = null;
+  }
+}
+
+/**
+ * ✅ Obtener nombre amigable de la vista para mostrar
+ * @param {string} viewName
+ * @returns {string}
+ */
+function getViewDisplayName(viewName) {
+  const displayNames = {
+    login: 'Inicio de Sesión',
+    dashboard: 'Panel Principal',
+    form: 'Formulario',
+    'enrollment-manual': 'Registro Manual',
+    admin: 'Panel de Administración',
+  };
+
+  return displayNames[viewName] || viewName;
+}
+
+/**
+ * ✅ Agregar estilos del loader de vista
+ */
+function addViewLoaderStyles() {
+  // Verificar si los estilos ya existen
+  if ($('#view-loader-styles')) return;
+
+  const styles = dom(document.createElement('style')).attr('id', 'view-loader-styles');
+
+  styles.get().textContent = `
+    .view-loader {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(240, 242, 242, 0.95);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      transition: opacity 0.3s ease-out;
+    }
+
+    .view-loader.fade-out {
+      opacity: 0;
+    }
+
+    .view-loader-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .view-loader-content {
+      text-align: center;
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(55, 166, 166, 0.15);
+      border: 1px solid rgba(55, 166, 166, 0.1);
+    }
+
+    .view-loader-spinner {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      margin: 0 auto 20px;
+    }
+
+    .view-loader-spinner .spinner-ring {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 3px solid transparent;
+      border-radius: 50%;
+    }
+
+    .view-loader-spinner .spinner-ring.primary {
+      border-top-color: #37a6a6;
+      animation: viewSpin 1.2s linear infinite;
+    }
+
+    .view-loader-spinner .spinner-ring.secondary {
+      border-bottom-color: #d96b2b;
+      animation: viewSpin 1.2s linear infinite reverse;
+      animation-delay: -0.6s;
+      width: 80%;
+      height: 80%;
+      top: 10%;
+      left: 10%;
+    }
+
+    .view-loader-text p {
+      margin: 0;
+      color: #732C1C;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+
+    @keyframes viewSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Error view styles */
+    .error-view {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      padding: 20px;
+    }
+
+    .error-content {
+      text-align: center;
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.1);
+      max-width: 400px;
+    }
+
+    .error-content h2 {
+      color: #ef4444;
+      margin-bottom: 16px;
+      font-size: 20px;
+    }
+
+    .error-content p {
+      color: #6b7280;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .error-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .error-actions .btn-primary,
+    .error-actions .btn-secondary {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .error-actions .btn-primary {
+      background: #37a6a6;
+      color: white;
+    }
+
+    .error-actions .btn-primary:hover {
+      background: #2d8a8a;
+    }
+
+    .error-actions .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid #d1d5db;
+    }
+
+    .error-actions .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    /* 404 styles */
+    .not-found-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .not-found-view h1 {
+      font-size: 72px;
+      color: #37a6a6;
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+
+    .not-found-view p {
+      color: #6b7280;
+      margin-bottom: 24px;
+      font-size: 18px;
+    }
+
+    .not-found-view a {
+      color: #37a6a6;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 12px 24px;
+      border: 2px solid #37a6a6;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .not-found-view a:hover {
+      background: #37a6a6;
+      color: white;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .view-loader-content {
+        padding: 20px;
+        margin: 20px;
+      }
+      
+      .error-content {
+        padding: 30px 20px;
+        margin: 20px;
+      }
+      
+      .error-actions {
+        flex-direction: column;
+      }
+      
+      .not-found-view h1 {
+        font-size: 48px;
+      }
+    }
+  `;
+
+  document.head.appendChild(styles.get());
 }
 
 /**
@@ -169,16 +477,25 @@ export function setupRoutes() {
     },
   );
 
-  // Ruta 404
+  // ✅ Ruta 404 mejorada
   router.notFound(() => {
     console.log('❌ Ruta no encontrada');
-    appContainer.innerHTML = `
+
+    const notFoundHtml = `
       <div class="not-found-view">
         <h1>404</h1>
         <p>Página no encontrada</p>
-        <a href="#${ROUTES.HOME}">Volver al inicio</a>
+        <a href="#${ROUTES.HOME}" id="homeLink">Volver al inicio</a>
       </div>
     `;
+
+    dom(appContainer).html(notFoundHtml);
+
+    // ✅ Agregar evento al enlace
+    dom('#homeLink').on('click', e => {
+      e.preventDefault();
+      router.navigate(ROUTES.HOME);
+    });
   });
 
   // Eventos globales de autenticación
@@ -189,6 +506,8 @@ export function setupRoutes() {
       currentViewCleanup();
       currentViewCleanup = null;
     }
+    // ✅ Limpiar loader también
+    hideViewLoader();
     router.navigate(ROUTES.LOGIN);
   });
 
@@ -265,10 +584,11 @@ export function isCurrentRoute(route) {
 }
 
 /**
- * Cleanup global al cerrar la aplicación
+ * ✅ Cleanup global al cerrar la aplicación
  */
 window.addEventListener('beforeunload', () => {
   if (currentViewCleanup) {
     currentViewCleanup();
   }
+  hideViewLoader();
 });

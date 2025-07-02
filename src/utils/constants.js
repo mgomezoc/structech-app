@@ -12,6 +12,10 @@ export const API_CONFIG = {
     NEIGHBORHOODS: '/api/combos/Neighborhoods', // + /{postalCode}
     CATALOGS: '/api/combos/Catalogs',
     SUBCATALOGS: '/api/combos/SubCatalogs', // + /{catalogId}
+    CITIZENS: '/api/combos/Citizens',
+    TICKET_TYPES: '/api/combos/Ticket_Types',
+    CLASSIFICATIONS: '/api/combos/Classifications', // + /{typeId}
+    CREATE_TICKET: '/api/ticket/ticket',
   },
   TIMEOUT: 30000, // 30 segundos
 };
@@ -31,6 +35,7 @@ export const ROUTES = {
   FORM: '/form',
   ENROLLMENT_MANUAL: '/enrollment-manual',
   ADMIN: '/admin',
+  ALTA_GESTION: '/alta-gestion',
 };
 
 export const ERROR_MESSAGES = {

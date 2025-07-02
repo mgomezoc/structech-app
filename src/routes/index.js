@@ -465,6 +465,18 @@ export function setupRoutes() {
     },
   );
 
+  // Alta Gestión (ruta privada)
+  router.on(
+    ROUTES.ALTA_GESTION,
+    (params, query) => {
+      console.log('📝 Cargando alta gestión');
+      loadView('alta-gestion', { params, query });
+    },
+    {
+      before: authGuard,
+    },
+  );
+
   // Admin (requiere rol admin)
   router.on(
     '/admin',

@@ -45,7 +45,7 @@ export default class AltaGestionView {
   }
 
   async afterRender() {
-    // Referencias a elementos - verificar que existan antes de asignar
+    // Referencias
     this.form = $('#altaGestionForm');
     this.citizenSelect = $('#citizenSelect');
     this.typeSelect = $('#typeSelect');
@@ -59,10 +59,10 @@ export default class AltaGestionView {
     this.charCounter = $('#charCounter');
     this.btnText = $('#btnText');
     this.btnLoader = $('#btnLoader');
+    this.successOverlay = $('#successOverlay');
 
-    // Solo continuar si los elementos esenciales existen
     if (!this.form || !this.citizenSelect || !this.typeSelect || !this.classificationSelect) {
-      console.error('Error: No se encontraron elementos esenciales del formulario');
+      console.error('Error: elementos del formulario no encontrados');
       return;
     }
 
@@ -71,25 +71,25 @@ export default class AltaGestionView {
   }
 
   _attachEventListeners() {
-    // Navegación
+    // Volver
     dom('#backBtn').on('click', async () => {
       await hapticsService.light();
       router.navigate(ROUTES.DASHBOARD);
     });
 
-    // Selects
+    // Ciudadano
     dom(this.citizenSelect).on('change', async e => {
       await hapticsService.selection();
       this.formData.Citizen = parseInt(e.target.value) || null;
       this._validateForm();
     });
 
+    // Tipo
     dom(this.typeSelect).on('change', async e => {
       await hapticsService.selection();
       this.formData.Type = parseInt(e.target.value) || null;
       this.formData.Classification = null;
       this.classificationSelect.value = '';
-
       if (this.formData.Type) {
         await this._loadClassifications(this.formData.Type);
       } else {
@@ -97,10 +97,10 @@ export default class AltaGestionView {
           '<option value="">Primero selecciona un tipo</option>';
         this.classificationSelect.disabled = true;
       }
-
       this._validateForm();
     });
 
+    // Clasificación
     dom(this.classificationSelect).on('change', async e => {
       await hapticsService.selection();
       this.formData.Classification = parseInt(e.target.value) || null;
@@ -109,54 +109,42 @@ export default class AltaGestionView {
 
     // Descripción
     dom(this.descriptionTextarea).on('input', e => {
-      const value = e.target.value;
-      const length = value.length;
-
-      this.formData.Description = value;
-      this.charCounter.textContent = `${length} / 500`;
-
-      if (length > 500) {
-        e.target.value = value.substring(0, 500);
-        this.formData.Description = e.target.value;
-        this.charCounter.textContent = '500 / 500';
+      let val = e.target.value;
+      if (val.length > 500) {
+        val = val.substring(0, 500);
+        e.target.value = val;
       }
-
+      this.formData.Description = val;
+      this.charCounter.textContent = `${val.length} / 500`;
       this._validateForm();
     });
 
-    // Archivo - Drag & Drop
+    // Drag & Drop archivo
     dom(this.fileUploadArea).on('dragover', e => {
       e.preventDefault();
       dom(this.fileUploadArea).addClass('drag-over');
     });
-
     dom(this.fileUploadArea).on('dragleave', () => {
       dom(this.fileUploadArea).removeClass('drag-over');
     });
-
     dom(this.fileUploadArea).on('drop', async e => {
       e.preventDefault();
       dom(this.fileUploadArea).removeClass('drag-over');
-
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        await hapticsService.light();
-        await this._handleFileSelect(files[0]);
+      if (e.dataTransfer.files.length > 0) {
+        await this._handleFileSelect(e.dataTransfer.files[0]);
       }
     });
 
-    // Archivo - Click
+    // Click para seleccionar archivo
     dom('#selectFileBtn').on('click', async () => {
       await hapticsService.light();
       this.fileInput.click();
     });
-
     dom(this.fileInput).on('change', async e => {
       if (e.target.files.length > 0) {
         await this._handleFileSelect(e.target.files[0]);
       }
     });
-
     dom('#removeFileBtn').on('click', async () => {
       await hapticsService.light();
       this._removeFile();
@@ -168,207 +156,134 @@ export default class AltaGestionView {
 
   async _loadInitialData() {
     try {
-      // Cargar ciudadanos y tipos en paralelo
-      const [citizensResult, typesResult] = await Promise.all([
-        this._loadCitizens(),
-        this._loadTypes(),
-      ]);
-
-      // Habilitar el botón si todo está bien
-      if (citizensResult && typesResult) {
-        this._validateForm();
-      }
-    } catch (error) {
-      console.error('Error al cargar datos iniciales:', error);
-      await dialogService.alert('Error', 'Error al cargar los datos. Por favor recarga la página.');
+      const [citizensOk, typesOk] = await Promise.all([this._loadCitizens(), this._loadTypes()]);
+      if (citizensOk && typesOk) this._validateForm();
+    } catch (err) {
+      console.error(err);
+      await dialogService.alert('Error', 'No se pudieron cargar los datos iniciales.');
     }
   }
 
   async _loadCitizens() {
+    const loader = $('#citizenLoader');
     try {
-      const loader = $('#citizenLoader');
-      if (loader) {
-        dom(loader).removeClass('hidden');
-      }
+      if (loader) dom(loader).removeClass('hidden');
+      this.citizenSelect.disabled = true;
 
-      if (this.citizenSelect) {
-        this.citizenSelect.disabled = true;
-      }
-
-      // Obtener ubicación actual
-      const location = await this._getCurrentLocation();
-
-      const response = await apiService.post('/api/combos/Citizens', {
+      const loc = await this._getCurrentLocation();
+      const resp = await apiService.post('/api/combos/Citizens', {
         Phone: '',
         CURP: '',
         Mail: '',
         Names: '',
-        latitude: location.latitude.toString(),
-        longitude: location.longitude.toString(),
+        latitude: loc.latitude.toString(),
+        longitude: loc.longitude.toString(),
       });
 
-      this.citizens = response.data || [];
-
-      // Llenar el select
-      let optionsHtml = '<option value="">Selecciona un ciudadano</option>';
-      this.citizens.forEach(citizen => {
-        const displayName = citizen.vcNames || citizen.vcPhone || 'Sin nombre';
-        optionsHtml += `<option value="${citizen.iCitizenId}">${displayName}</option>`;
+      this.citizens = resp.data || [];
+      let html = '<option value="">Selecciona un ciudadano</option>';
+      this.citizens.forEach(c => {
+        const name = c.vcNames || c.vcPhone || 'Sin nombre';
+        html += `<option value="${c.iCitizenId}">${name}</option>`;
       });
-
-      if (this.citizenSelect) {
-        this.citizenSelect.innerHTML = optionsHtml;
-        this.citizenSelect.disabled = false;
-      }
-
+      this.citizenSelect.innerHTML = html;
+      this.citizenSelect.disabled = false;
       return true;
-    } catch (error) {
-      console.error('Error al cargar ciudadanos:', error);
-      if (this.citizenSelect) {
-        this.citizenSelect.innerHTML = '<option value="">Error al cargar ciudadanos</option>';
-      }
+    } catch (err) {
+      console.error(err);
+      this.citizenSelect.innerHTML = '<option value="">Error al cargar</option>';
       return false;
     } finally {
-      const loader = $('#citizenLoader');
-      if (loader) {
-        dom(loader).addClass('hidden');
-      }
+      if (loader) dom(loader).addClass('hidden');
     }
   }
 
   async _loadTypes() {
+    const loader = $('#typeLoader');
     try {
-      const loader = $('#typeLoader');
-      if (loader) {
-        dom(loader).removeClass('hidden');
-      }
+      if (loader) dom(loader).removeClass('hidden');
+      this.typeSelect.disabled = true;
 
-      if (this.typeSelect) {
-        this.typeSelect.disabled = true;
-      }
-
-      const response = await apiService.get('/api/combos/Ticket_Types');
-      this.types = response.data || [];
-
-      // Llenar el select
-      let optionsHtml = '<option value="">Selecciona un tipo</option>';
-      this.types.forEach(type => {
-        optionsHtml += `<option value="${type.iTypeId}">${type.vcType}</option>`;
+      const resp = await apiService.get('/api/combos/Ticket_Types');
+      this.types = resp.data || [];
+      let html = '<option value="">Selecciona un tipo</option>';
+      this.types.forEach(t => {
+        html += `<option value="${t.iTypeId}">${t.vcType}</option>`;
       });
-
-      if (this.typeSelect) {
-        this.typeSelect.innerHTML = optionsHtml;
-        this.typeSelect.disabled = false;
-      }
-
+      this.typeSelect.innerHTML = html;
+      this.typeSelect.disabled = false;
       return true;
-    } catch (error) {
-      console.error('Error al cargar tipos:', error);
-      if (this.typeSelect) {
-        this.typeSelect.innerHTML = '<option value="">Error al cargar tipos</option>';
-      }
+    } catch (err) {
+      console.error(err);
+      this.typeSelect.innerHTML = '<option value="">Error al cargar</option>';
       return false;
     } finally {
-      const loader = $('#typeLoader');
-      if (loader) {
-        dom(loader).addClass('hidden');
-      }
+      if (loader) dom(loader).addClass('hidden');
     }
   }
 
   async _loadClassifications(typeId) {
+    const loader = $('#classificationLoader');
     try {
-      const loader = $('#classificationLoader');
-      if (loader) {
-        dom(loader).removeClass('hidden');
-      }
+      if (loader) dom(loader).removeClass('hidden');
+      this.classificationSelect.disabled = true;
+      this.classificationSelect.innerHTML = '<option value="">Cargando clasificaciones...</option>';
 
-      if (this.classificationSelect) {
-        this.classificationSelect.disabled = true;
-        this.classificationSelect.innerHTML =
-          '<option value="">Cargando clasificaciones...</option>';
-      }
-
-      const response = await apiService.get(`/api/combos/Classifications/${typeId}`);
-      this.classifications = response.data || [];
-
-      // Llenar el select
-      let optionsHtml = '<option value="">Selecciona una clasificación</option>';
-      this.classifications.forEach(classification => {
-        optionsHtml += `<option value="${classification.iClassificationId}">${classification.vcClassification}</option>`;
+      const resp = await apiService.get(`/api/combos/Classifications/${typeId}`);
+      this.classifications = resp.data || [];
+      let html = '<option value="">Selecciona una clasificación</option>';
+      this.classifications.forEach(c => {
+        html += `<option value="${c.iClassificationId}">${c.vcClassification}</option>`;
       });
-
-      if (this.classificationSelect) {
-        this.classificationSelect.innerHTML = optionsHtml;
-        this.classificationSelect.disabled = false;
-      }
-    } catch (error) {
-      console.error('Error al cargar clasificaciones:', error);
-      if (this.classificationSelect) {
-        this.classificationSelect.innerHTML =
-          '<option value="">Error al cargar clasificaciones</option>';
-      }
+      this.classificationSelect.innerHTML = html;
+      this.classificationSelect.disabled = false;
+    } catch (err) {
+      console.error(err);
+      this.classificationSelect.innerHTML = '<option value="">Error al cargar</option>';
     } finally {
-      const loader = $('#classificationLoader');
-      if (loader) {
-        dom(loader).addClass('hidden');
-      }
+      if (loader) dom(loader).addClass('hidden');
     }
   }
 
   async _handleFileSelect(file) {
-    // Validar tipo de archivo
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-    if (!validTypes.includes(file.type)) {
+    const valid = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+    const max = 5 * 1024 * 1024;
+    if (!valid.includes(file.type)) {
       await hapticsService.error();
-      await dialogService.alert('Error', 'Por favor selecciona un archivo JPG, PNG o PDF');
-      return;
+      return dialogService.alert('Error', 'Sólo JPG, PNG o PDF');
     }
-
-    // Validar tamaño (5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > max) {
       await hapticsService.error();
-      await dialogService.alert('Error', 'El archivo no debe superar los 5MB');
-      return;
+      return dialogService.alert('Error', 'Máx. 5MB');
     }
-
-    // Convertir a base64
     try {
-      const base64 = await this._fileToBase64(file);
+      const b64 = await this._fileToBase64(file);
       this.selectedFile = file;
-      this.formData.File = base64;
-
-      // Mostrar preview
+      this.formData.File = b64;
       await hapticsService.success();
       this._showFilePreview(file);
       this._validateForm();
-    } catch (error) {
-      console.error('Error al procesar archivo:', error);
+    } catch (err) {
+      console.error(err);
       await hapticsService.error();
-      await dialogService.alert('Error', 'Error al procesar el archivo');
+      dialogService.alert('Error', 'No se pudo procesar el archivo');
     }
   }
 
   _fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result.split(',')[1];
-        resolve(base64);
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => {
+        res(r.result.split(',')[1]);
       };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      r.onerror = rej;
+      r.readAsDataURL(file);
     });
   }
 
   _showFilePreview(file) {
-    const fileName = file.name;
-    const fileSize = this._formatFileSize(file.size);
-
-    $('#fileName').textContent = fileName;
-    $('#fileSize').textContent = fileSize;
-
+    $('#fileName').textContent = file.name;
+    $('#fileSize').textContent = this._formatFileSize(file.size);
     dom(this.fileUploadContent).addClass('hidden');
     dom(this.filePreview).removeClass('hidden');
   }
@@ -377,19 +292,17 @@ export default class AltaGestionView {
     this.selectedFile = null;
     this.formData.File = '';
     this.fileInput.value = '';
-
     dom(this.fileUploadContent).removeClass('hidden');
     dom(this.filePreview).addClass('hidden');
-
     this._validateForm();
   }
 
-  _formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  _formatFileSize(b) {
+    if (b === 0) return '0 Bytes';
+    const k = 1024,
+      sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(b) / Math.log(k));
+    return `${(b / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
   }
 
   async _getCurrentLocation() {
@@ -400,24 +313,13 @@ export default class AltaGestionView {
       });
       return pos.coords;
     } catch {
-      // Fallback con navigator.geolocation
       return new Promise(resolve => {
         if (!navigator.geolocation) {
-          // Coordenadas por defecto
-          return resolve({
-            latitude: 25.683044339204386,
-            longitude: -100.46833076762884,
-          });
+          return resolve({ latitude: 25.6830443, longitude: -100.4683308 });
         }
         navigator.geolocation.getCurrentPosition(
           pos => resolve(pos.coords),
-          () => {
-            // Coordenadas por defecto si falla
-            resolve({
-              latitude: 25.683044339204386,
-              longitude: -100.46833076762884,
-            });
-          },
+          () => resolve({ latitude: 25.6830443, longitude: -100.4683308 }),
           { enableHighAccuracy: true, timeout: 10000 },
         );
       });
@@ -425,31 +327,33 @@ export default class AltaGestionView {
   }
 
   _validateForm() {
-    const isValid =
-      this.formData.Citizen &&
-      this.formData.Type &&
-      this.formData.Classification &&
-      this.formData.Description.trim().length > 0;
+    // Validar campos
+    const pasos = [
+      this.formData.Citizen,
+      this.formData.Type,
+      this.formData.Classification,
+      this.formData.Description.trim(),
+    ];
+    const llenos = pasos.filter(v => v).length;
+    // Actualizar barra de progreso
+    const pct = Math.round((llenos / pasos.length) * 100);
+    dom('#progressFill').css('width', pct + '%');
 
-    if (this.submitBtn) {
-      this.submitBtn.disabled = !isValid;
-    }
+    const ok = llenos === pasos.length;
+    if (this.submitBtn) this.submitBtn.disabled = !ok;
   }
 
   async _handleSubmit(e) {
     e.preventDefault();
     if (this.isSubmitting) return;
-
     await hapticsService.light();
     this._setLoading(true);
 
     try {
-      // Obtener ubicación actual
-      const location = await this._getCurrentLocation();
-      this.formData.Latitude = location.latitude.toString();
-      this.formData.Longitude = location.longitude.toString();
+      const loc = await this._getCurrentLocation();
+      this.formData.Latitude = loc.latitude.toString();
+      this.formData.Longitude = loc.longitude.toString();
 
-      // Preparar payload
       const payload = {
         Type: this.formData.Type,
         Classification: this.formData.Classification,
@@ -460,31 +364,29 @@ export default class AltaGestionView {
         Longitude: this.formData.Longitude,
       };
 
-      console.log('📤 Enviando gestión:', payload);
+      const resp = await apiService.post('/api/ticket/ticket', payload);
+      const { success, ticketId } = resp.data;
 
-      const response = await apiService.post('/api/ticket/ticket', payload);
-
-      if (response.data) {
+      if (success) {
+        // Toast
         await hapticsService.success();
-        window.mostrarMensajeEstado?.('✅ Gestión creada exitosamente', 2000);
+        window.mostrarMensajeEstado(`✅ Gestión ${ticketId} creada exitosamente`, 3000);
 
-        // Pequeña pausa para que el usuario vea el mensaje
-        setTimeout(() => {
-          router.navigate(ROUTES.DASHBOARD);
-        }, 1500);
+        // Overlay con ID
+        dom('#successMessage').text(`¡Gestión creada! ID: ${ticketId}`);
+        dom('#successOverlay').removeClass('hidden');
+
+        // Redirigir
+        setTimeout(() => router.navigate(ROUTES.DASHBOARD), 1500);
       }
-    } catch (error) {
-      console.error('Error al crear gestión:', error);
+    } catch (err) {
+      console.error(err);
       await hapticsService.error();
-
-      let errorMessage = 'Error al crear la gestión';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.status === 413) {
-        errorMessage = 'El archivo es muy grande. Por favor usa un archivo más pequeño.';
-      }
-
-      await dialogService.alert('Error', errorMessage);
+      let msg = 'Error al crear la gestión';
+      if (err.response?.data?.message) msg = err.response.data.message;
+      else if (err.response?.status === 413)
+        msg = 'El archivo es muy grande. Usa un archivo menor a 5MB.';
+      await dialogService.alert('Error', msg);
     } finally {
       this._setLoading(false);
     }
@@ -492,18 +394,9 @@ export default class AltaGestionView {
 
   _setLoading(on) {
     this.isSubmitting = on;
-
-    if (this.submitBtn) {
-      dom(this.submitBtn).attr('disabled', on || null);
-    }
-
-    if (this.btnText) {
-      dom(this.btnText).css('display', on ? 'none' : 'inline');
-    }
-
-    if (this.btnLoader) {
-      dom(this.btnLoader).css('display', on ? 'inline-flex' : 'none');
-    }
+    dom(this.submitBtn).attr('disabled', on || null);
+    dom(this.btnText).css('display', on ? 'none' : 'inline');
+    dom(this.btnLoader).css('display', on ? 'inline-flex' : 'none');
   }
 
   // Helpers para iconos SVG
@@ -544,7 +437,7 @@ export default class AltaGestionView {
   }
 
   cleanup() {
-    // Limpiar event listeners si es necesario
-    console.log('🧹 Limpiando vista Alta Gestión');
+    // Aquí puedes desuscribir listeners si lo deseas
+    console.log('🧹 Limpieza Alta Gestión');
   }
 }

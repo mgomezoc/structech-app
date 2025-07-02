@@ -45,9 +45,8 @@ export default class AltaGestionView {
   }
 
   async afterRender() {
-    // Referencias
+    // --- REFERENCIAS DEL DOM ---
     this.form = $('#altaGestionForm');
-    this.citizenSelect = $('#citizenSelect');
     this.typeSelect = $('#typeSelect');
     this.classificationSelect = $('#classificationSelect');
     this.descriptionTextarea = $('#description');
@@ -61,7 +60,19 @@ export default class AltaGestionView {
     this.btnLoader = $('#btnLoader');
     this.successOverlay = $('#successOverlay');
 
-    if (!this.form || !this.citizenSelect || !this.typeSelect || !this.classificationSelect) {
+    // Referencias para el nuevo selector de ciudadano
+    this.citizenSelector = {
+      trigger: $('#citizen-selector-trigger'),
+      modal: $('#citizen-selector-modal'),
+      closeBtn: $('#modal-close-btn'),
+      searchInput: $('#citizen-search-input'),
+      resultsList: $('#citizen-results-list'),
+      loader: $('#citizenLoader'),
+      selectedAvatar: $('#selected-citizen-avatar'),
+      selectedName: $('#selected-citizen-name'),
+    };
+
+    if (!this.form || !this.citizenSelector.trigger || !this.typeSelect) {
       console.error('Error: elementos del formulario no encontrados');
       return;
     }
@@ -77,13 +88,35 @@ export default class AltaGestionView {
       router.navigate(ROUTES.DASHBOARD);
     });
 
-    // Ciudadano
-    dom(this.citizenSelect).on('change', async e => {
-      await hapticsService.selection();
-      this.formData.Citizen = parseInt(e.target.value) || null;
-      this._validateForm();
+    // --- LÓGICA DEL NUEVO SELECTOR DE CIUDADANO ---
+    dom(this.citizenSelector.trigger).on('click', () => this._openCitizenModal());
+    dom(this.citizenSelector.closeBtn).on('click', () => this._closeCitizenModal());
+    dom(this.citizenSelector.modal).on('click', e => {
+      if (e.target === this.citizenSelector.modal) {
+        this._closeCitizenModal(); // Cierra si se hace clic en el fondo
+      }
+    });
+    dom(this.citizenSelector.searchInput).on('input', e => {
+      this._filterCitizens(e.target.value);
+    });
+    dom(this.citizenSelector.resultsList).on('click', e => {
+      const item = e.target.closest('li');
+      if (item && item.dataset.id) {
+        this._handleCitizenSelection(parseInt(item.dataset.id));
+      }
     });
 
+    dom('#citizen-results-list').on('keydown', e => {
+      const items = Array.from(e.currentTarget.querySelectorAll('[role=option]'));
+      let idx = items.findIndex(i => i.classList.contains('focused'));
+      if (e.key === 'ArrowDown') idx = Math.min(idx + 1, items.length - 1);
+      if (e.key === 'ArrowUp') idx = Math.max(idx - 1, 0);
+      if (e.key.match(/Enter| /)) items[idx]?.click();
+      items.forEach(i => i.classList.toggle('focused', items.indexOf(i) === idx));
+      e.preventDefault();
+    });
+
+    // --- RESTO DE EVENT LISTENERS ---
     // Tipo
     dom(this.typeSelect).on('change', async e => {
       await hapticsService.selection();
@@ -165,10 +198,10 @@ export default class AltaGestionView {
   }
 
   async _loadCitizens() {
-    const loader = $('#citizenLoader');
+    const { loader, trigger, resultsList } = this.citizenSelector;
     try {
-      if (loader) dom(loader).removeClass('hidden');
-      this.citizenSelect.disabled = true;
+      dom(loader).removeClass('hidden');
+      dom(trigger).css('pointer-events', 'none');
 
       const loc = await this._getCurrentLocation();
       const resp = await apiService.post('/api/combos/Citizens', {
@@ -181,22 +214,85 @@ export default class AltaGestionView {
       });
 
       this.citizens = resp.data || [];
-      let html = '<option value="">Selecciona un ciudadano</option>';
-      this.citizens.forEach(c => {
-        const name = c.vcNames || c.vcPhone || 'Sin nombre';
-        html += `<option value="${c.iCitizenId}">${name}</option>`;
-      });
-      this.citizenSelect.innerHTML = html;
-      this.citizenSelect.disabled = false;
+      this._renderCitizensList(this.citizens); // Renderiza la lista en la modal
+
+      dom(trigger).css('pointer-events', 'auto');
       return true;
     } catch (err) {
       console.error(err);
-      this.citizenSelect.innerHTML = '<option value="">Error al cargar</option>';
+      resultsList.innerHTML = '<li class="no-results">Error al cargar ciudadanos</li>';
       return false;
     } finally {
-      if (loader) dom(loader).addClass('hidden');
+      dom(loader).addClass('hidden');
     }
   }
+
+  // --- MÉTODOS DEL NUEVO SELECTOR DE CIUDADANO ---
+  _openCitizenModal() {
+    dom(this.citizenSelector.modal).removeClass('hidden').addClass('visible');
+    this.citizenSelector.searchInput.focus();
+  }
+
+  _closeCitizenModal() {
+    dom(this.citizenSelector.modal).removeClass('visible').addClass('hidden');
+  }
+
+  _renderCitizensList(citizens) {
+    const list = this.citizenSelector.resultsList;
+    if (citizens.length === 0) {
+      list.innerHTML = `<li class="no-results">No se encontraron resultados</li>`;
+      return;
+    }
+    list.innerHTML = citizens
+      .map(
+        c => `
+        <li data-id="${c.iCitizenId}">
+            <img src="${
+              c.vcFace ||
+              'https://ui-avatars.com/api/?name=' +
+                c.vcNames.charAt(0) +
+                '&background=e0e0e0&color=a0a0a0'
+            }" 
+                 alt="${c.vcNames}" class="citizen-avatar">
+            <span>${c.vcNames}</span>
+        </li>
+    `,
+      )
+      .join('');
+  }
+
+  _filterCitizens(searchTerm) {
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) {
+      this._renderCitizensList(this.citizens);
+      return;
+    }
+    const filtered = this.citizens.filter(
+      c => c.vcNames.toLowerCase().includes(term) || (c.vcPhone && c.vcPhone.includes(term)),
+    );
+    this._renderCitizensList(filtered);
+  }
+
+  async _handleCitizenSelection(citizenId) {
+    await hapticsService.selection();
+    this.formData.Citizen = citizenId;
+
+    const selected = this.citizens.find(c => c.iCitizenId === citizenId);
+
+    if (selected) {
+      this.citizenSelector.selectedName.textContent = selected.vcNames;
+      this.citizenSelector.selectedAvatar.src =
+        selected.vcFace ||
+        'https://ui-avatars.com/api/?name=' +
+          selected.vcNames.charAt(0) +
+          '&background=e0e0e0&color=a0a0a0';
+    }
+
+    this._closeCitizenModal();
+    this._validateForm();
+  }
+
+  // --- RESTO DE MÉTODOS DE LA CLASE (sin cambios) ---
 
   async _loadTypes() {
     const loader = $('#typeLoader');

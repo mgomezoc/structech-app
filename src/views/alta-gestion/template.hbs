@@ -24,29 +24,48 @@
             <!-- Ciudadano Section -->
             <section class="form-section">
                 <div class="section-header">
-                    <lord-icon src="https://cdn.lordicon.com/dxjqoygy.json" trigger="loop" delay="3000"
-                        colors="primary:#37a6a6" style="width:24px;height:24px">
+                    <lord-icon src="https://cdn.lordicon.com/dxjqoygy.json" trigger="loop" delay="3000" colors="primary:#37a6a6"
+                        style="width:24px;height:24px">
                     </lord-icon>
                     <h2>Información del ciudadano</h2>
                 </div>
-
+            
                 <div class="form-group">
-                    <label for="citizenSelect" class="required">
+                    <label for="citizen-selector-trigger" class="required">
                         Ciudadano
                         <span class="required-mark">*</span>
                     </label>
-                    <div class="select-wrapper">
-                        <select id="citizenSelect" name="citizen" required>
-                            <option value="">Cargando ciudadanos...</option>
-                        </select>
+            
+                    <div class="custom-selector-trigger" id="citizen-selector-trigger" tabindex="0">
+                        <div class="trigger-content">
+                            <img src="https://ui-avatars.com/api/?name=?&background=e0e0e0&color=a0a0a0" alt="Avatar del ciudadano"
+                                class="citizen-avatar" id="selected-citizen-avatar">
+                            <span class="trigger-text" id="selected-citizen-name">Selecciona un ciudadano...</span>
+                        </div>
                         {{{chevronIcon}}}
-                        <div class="field-loader" id="citizenLoader">
+                        <div class="field-loader hidden" id="citizenLoader">
                             <div class="mini-spinner"></div>
                         </div>
                     </div>
-                    <span class="field-hint">Selecciona el ciudadano que solicita la gestión</span>
+                    <span class="field-hint">Toca para buscar y seleccionar al ciudadano</span>
                 </div>
             </section>
+            
+            <div class="selector-modal-overlay hidden" id="citizen-selector-modal">
+                <div class="selector-modal-content">
+                    <div class="selector-modal-header">
+                        <h3>Buscar Ciudadano</h3>
+                        <button class="modal-close-btn" id="modal-close-btn" aria-label="Cerrar">
+                            &times;
+                        </button>
+                    </div>
+                    <div class="selector-modal-search">
+                        <input type="text" id="citizen-search-input" placeholder="Escribe un nombre o teléfono...">
+                    </div>
+                    <ul class="selector-modal-list" id="citizen-results-list">
+                    </ul>
+                </div>
+            </div>
 
             <!-- Tipo y Clasificación Section -->
             <section class="form-section">

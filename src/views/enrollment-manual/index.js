@@ -1,7 +1,7 @@
 // src/views/enrollment-manual/index.js
 
 import Handlebars from 'handlebars';
-import '../form/style.less';
+import '../form/style.less'; // shared form styles
 import './style.less';
 import tplSource from './template.hbs?raw';
 
@@ -26,7 +26,6 @@ export default class EnrollmentManualView {
   }
 
   render() {
-    // pasamos la lista de estados al template
     return template({
       logoUrl: this.logoUrl,
       estados: ESTADOS_MEXICO,
@@ -34,50 +33,99 @@ export default class EnrollmentManualView {
   }
 
   async afterRender() {
-    // inicializar firma y audio
+    // Inicializar signature & audio
     signatureManager.init();
     await audioRecorder.init();
 
-    // referencias DOM
+    // Inicializar referencias DOM
+    this._initializeDOMReferences();
+
+    // Configurar event listeners
+    this._setupEventListeners();
+
+    // Cargar datos iniciales
+    await this._loadInitialData();
+
+    // Configurar progreso
+    this._attachProgressListeners();
+    this._updateProgress();
+
+    // Generar CURP inicial
+    this._actualizarCurp();
+  }
+
+  _initializeDOMReferences() {
+    // Elementos principales
     this.form = dom('#enrollForm');
     this.backBtn = dom('#backBtn');
+    this.submitBtn = dom('#submitBtn');
+
+    // Progress bar
+    this.progressFill = dom('#progressFill');
+    this.progressText = dom('#progressText');
+
+    // Estructura
     this.estrSelect = dom('#estructura');
     this.subSelect = dom('#subestructura');
+
+    // Datos personales
+    this.nameField = dom('#nombre');
+    this.apField = dom('#apellidoPaterno');
+    this.amField = dom('#apellidoMaterno');
+    this.dateField = dom('#fechaNacimiento');
+    this.estadoNacimiento = dom('#estadoNacimiento');
+    this.genderM = dom('#hombre');
+    this.genderF = dom('#mujer');
+
+    // CURP
+    this.curpField = dom('#curp');
+    this.recalcCurpBtn = dom('#recalcularCurp');
+
+    // Localización
     this.cpInput = dom('#codigoPostal');
     this.coloniaSelect = dom('#colonia');
     this.calleNumero = dom('#calleNumero');
+
+    // Documento - Sistema mejorado
+    this.documentUploadArea = dom('#documentUploadArea');
     this.fileInput = dom('#otherFile');
     this.hiddenOtherData = dom('#otherData');
-    this.filePreview = dom('#filePreview');
+    this.uploadPlaceholder = dom('#uploadPlaceholder');
+    this.documentPreview = dom('#documentPreview');
+    this.selectFileBtn = dom('#selectFileBtn');
+    this.removeFileBtn = dom('#removeFileBtn');
+    this.fileName = dom('#fileName');
+    this.fileSize = dom('#fileSize');
+    this.previewContent = dom('#previewContent');
+
+    // Firma
     this.clearSigBtn = dom('#clearSignature');
     this.undoSigBtn = dom('#undoSignature');
-    this.estadoNacimiento = dom('#estadoNacimiento');
-    this.curpField = dom('#curp');
-    this.recalcCurpBtn = dom('#recalcularCurp');
-    this.submitBtn = dom('#submitBtn');
+  }
 
-    // wiring de eventos estáticos
+  _setupEventListeners() {
+    // Navegación
     this.backBtn.on('click', () => navigateTo(ROUTES.DASHBOARD));
+
+    // Formulario
+    this.form.on('submit', e => this.handleSubmit(e));
+
+    // Firma
     this.clearSigBtn.on('click', () => signatureManager.clear());
     this.undoSigBtn.on('click', () => signatureManager.undo());
-    this.form.on('submit', e => this.handleSubmit(e));
+
+    // CURP
     this.recalcCurpBtn.on('click', () => this._actualizarCurp());
 
-    // cargar estructuras
-    const estrRes = await datosService.obtenerEstructuras();
-    if (estrRes.success) {
-      estrRes.data.forEach(e =>
-        this.estrSelect
-          .get()
-          .appendChild(createElement('option', { value: e.iCatalogId }, e.vcCatalog)),
-      );
-    }
-
-    // cambio de estructura → subestructuras
+    // Estructura → subestructuras
     this.estrSelect.on('change', async e => {
       const id = e.target.value;
       this.subSelect.html(`<option value="">Sin selección</option>`);
-      if (!id) return;
+      if (!id) {
+        this._updateProgress();
+        return;
+      }
+
       const subRes = await datosService.obtenerSubestructuras(id);
       if (subRes.success) {
         subRes.data.forEach(s =>
@@ -85,13 +133,19 @@ export default class EnrollmentManualView {
             .get()
             .appendChild(createElement('option', { value: s.iSubCatalogId }, s.vcSubCatalog)),
         );
+        this.subSelect.get().disabled = false;
       }
+      this._updateProgress();
     });
 
-    // cambio de CP → colonias
+    // Código postal → colonias
     this.cpInput.on('blur', async e => {
       const cp = e.target.value.trim();
-      if (!cp) return;
+      if (!cp) {
+        this._updateProgress();
+        return;
+      }
+
       const colRes = await datosService.obtenerColoniasPorCP(cp);
       if (colRes.success && Array.isArray(colRes.data)) {
         this.coloniaSelect.html(`<option value="">— Selecciona tu colonia —</option>`);
@@ -100,141 +154,366 @@ export default class EnrollmentManualView {
             'option',
             {
               value: c.vcNeighborhood,
-              dataset: {
-                municipio: c.vcMunicipality,
-                estado: c.vcState,
-                cp: c.iZipCode,
-              },
+              'data-municipio': c.vcMunicipality,
+              'data-estado': c.vcState,
+              'data-cp': c.iZipCode,
             },
             c.vcNeighborhood,
           );
           this.coloniaSelect.get().appendChild(opt);
         });
+        this.coloniaSelect.get().disabled = false;
+      }
+      this._updateProgress();
+    });
+
+    // Auto-recalcular CURP en campos relevantes
+    const recalcFields = [
+      this.nameField,
+      this.apField,
+      this.amField,
+      this.dateField,
+      this.estadoNacimiento,
+      this.genderM,
+      this.genderF,
+    ];
+
+    const debouncedRecalc = debounce(() => {
+      this._actualizarCurp();
+      this._updateProgress();
+    }, 300);
+
+    recalcFields.forEach(
+      f => f.exists() && f.on('input', debouncedRecalc).on('change', debouncedRecalc),
+    );
+
+    // Sistema de documentos mejorado
+    this._setupDocumentHandlers();
+  }
+
+  _setupDocumentHandlers() {
+    // Botón seleccionar archivo
+    this.selectFileBtn.on('click', () => this.fileInput.get().click());
+
+    // Botón remover archivo
+    this.removeFileBtn.on('click', () => this._removeFile());
+
+    // Drag and drop
+    this.documentUploadArea.on('dragover', e => {
+      e.preventDefault();
+      this.documentUploadArea.addClass('drag-over');
+    });
+
+    this.documentUploadArea.on('dragleave', () => {
+      this.documentUploadArea.removeClass('drag-over');
+    });
+
+    this.documentUploadArea.on('drop', e => {
+      e.preventDefault();
+      this.documentUploadArea.removeClass('drag-over');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        this._handleFile(files[0]);
       }
     });
 
-    // previsualización de imagen + Base64
+    // Cambio de archivo
     this.fileInput.on('change', e => {
       const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const [, base64] = reader.result.split(',');
-        this.hiddenOtherData.attr('value', base64);
-        this.filePreview.html(`<img src="${reader.result}" alt="Preview" />`);
-      };
-      reader.readAsDataURL(file);
+      if (file) {
+        this._handleFile(file);
+      }
+    });
+  }
+
+  async _loadInitialData() {
+    // Cargar estructuras
+    const estrRes = await datosService.obtenerEstructuras();
+    if (estrRes.success) {
+      estrRes.data.forEach(e =>
+        this.estrSelect
+          .get()
+          .appendChild(createElement('option', { value: e.iCatalogId }, e.vcCatalog)),
+      );
+    }
+  }
+
+  _attachProgressListeners() {
+    if (!this.form) return;
+
+    // Rastrear todos los controles del formulario
+    const ctrls = this.form.get().querySelectorAll('input, select, textarea');
+    ctrls.forEach(el => {
+      el.addEventListener('input', () => this._updateProgress());
+      el.addEventListener('change', () => this._updateProgress());
+    });
+  }
+
+  _updateProgress() {
+    if (!this.form || !this.progressFill) return;
+
+    const formEl = this.form.get();
+    const required = formEl.querySelectorAll('[required]');
+    let filled = 0;
+    const groups = new Set();
+
+    required.forEach(el => {
+      if (el.type === 'radio') {
+        const name = el.name;
+        if (groups.has(name)) return;
+        if (formEl.querySelector(`input[name="${name}"]:checked`)) {
+          filled++;
+          groups.add(name);
+        }
+      } else if (el.value && el.value.toString().trim() !== '') {
+        filled++;
+      }
     });
 
-    // campos que influyen en la CURP
-    const recalcFields = [
-      dom('#nombre'),
-      dom('#apellidoPaterno'),
-      dom('#apellidoMaterno'),
-      dom('#fechaNacimiento'),
-      this.estadoNacimiento,
-      dom('#hombre'),
-      dom('#mujer'),
-    ];
-    const debouncedRecalc = debounce(() => this._actualizarCurp(), 300);
+    const pct = required.length ? Math.round((filled / required.length) * 100) : 0;
+    this.progressFill.get().style.width = pct + '%';
 
-    recalcFields.forEach(
-      field => field.exists() && field.on('input', debouncedRecalc).on('change', debouncedRecalc),
-    );
+    if (this.progressText) {
+      this.progressText.get().textContent =
+        pct === 100 ? '¡Listo para enviar!' : `${pct}% completado`;
+    }
 
-    // cálculo inicial
-    this._actualizarCurp();
+    // Habilitar/deshabilitar botón submit
+    if (this.submitBtn) {
+      const hasSignature = signatureManager.hasSignature();
+      const hasValidCurp = this.curpField.val() && this.curpField.val().length === 18;
+
+      if (pct === 100 && hasValidCurp && hasSignature) {
+        this.submitBtn.removeAttr('disabled');
+      } else {
+        this.submitBtn.attr('disabled', 'true');
+      }
+    }
   }
 
   _actualizarCurp() {
     try {
-      const nombre = dom('#nombre').val().trim();
-      const ap = dom('#apellidoPaterno').val().trim();
-      const am = dom('#apellidoMaterno').val().trim();
-      const fecha = dom('#fechaNacimiento').val();
-      const genero = dom('#hombre').get().checked ? 'M' : 'F';
-      const estadoClave = this.estadoNacimiento.val();
-
+      const nombre = this.nameField.val().trim();
+      const ap = this.apField.val().trim();
+      const am = this.amField.val().trim();
+      const fecha = this.dateField.val();
+      const genero = this.genderM.get().checked ? 'M' : 'F';
+      const estado = this.estadoNacimiento.val();
       let curp = '';
-      if (nombre && ap && am && fecha && estadoClave) {
+
+      if (nombre && ap && am && fecha && estado) {
         curp = generateCurp({
           nombre,
           apellidoPaterno: ap,
           apellidoMaterno: am,
           fechaNacimiento: fecha,
           genero,
-          estadoClave,
+          estadoClave: estado,
         }).toUpperCase();
       }
 
-      // actualizar el campo y el estado del botón Enviar
-      if (curp && curp.length === 18) {
+      if (curp.length === 18) {
         this.curpField.val(curp);
-        this.submitBtn.removeAttr('disabled');
       } else {
         this.curpField.val('');
-        this.submitBtn.attr('disabled', 'true');
       }
     } catch (err) {
       console.error('Error generando CURP:', err);
     }
   }
 
+  _handleFile(file) {
+    // Validar tipo de archivo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      window.mostrarMensajeEstado('❌ Tipo de archivo no soportado', 3000);
+      return;
+    }
+
+    // Validar tamaño (5MB máximo)
+    if (file.size > 5 * 1024 * 1024) {
+      window.mostrarMensajeEstado('❌ El archivo es demasiado grande (máximo 5MB)', 3000);
+      return;
+    }
+
+    // Mostrar información del archivo
+    this.fileName.text(file.name);
+    this.fileSize.text(this._formatFileSize(file.size));
+
+    // Convertir a base64
+    const reader = new FileReader();
+    reader.onload = e => {
+      const result = e.target.result;
+      const [, base64] = result.split(',');
+
+      // Guardar en campo oculto
+      this.hiddenOtherData.val(base64);
+
+      // Mostrar preview si es imagen
+      if (file.type.startsWith('image/')) {
+        this.previewContent.html(`<img src="${result}" alt="Preview del documento" />`);
+      } else {
+        this.previewContent.html(`
+          <div style="padding: 40px; text-align: center; color: #6b7280;">
+            <div style="font-size: 48px; margin-bottom: 12px;">📄</div>
+            <p>Archivo PDF subido correctamente</p>
+          </div>
+        `);
+      }
+
+      // Cambiar estado visual
+      this.uploadPlaceholder.hide();
+      this.documentPreview.show();
+      this.documentUploadArea.addClass('has-success');
+
+      // Actualizar progreso
+      this._updateProgress();
+    };
+
+    reader.onerror = () => {
+      window.mostrarMensajeEstado('❌ Error al leer el archivo', 3000);
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  _removeFile() {
+    // Limpiar datos
+    this.fileInput.val('');
+    this.hiddenOtherData.val('');
+
+    // Restaurar estado visual
+    if (this.documentPreview && this.documentPreview.exists()) {
+      this.documentPreview.hide();
+    }
+
+    if (this.uploadPlaceholder && this.uploadPlaceholder.exists()) {
+      this.uploadPlaceholder.show();
+    }
+
+    // Remover clases de estado (corregido)
+    if (this.documentUploadArea && this.documentUploadArea.exists()) {
+      this.documentUploadArea.removeClass('has-success');
+      this.documentUploadArea.removeClass('has-error');
+    }
+
+    // Actualizar progreso
+    this._updateProgress();
+  }
+
+  _formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
   async handleSubmit(e) {
     e.preventDefault();
     const btn = this.submitBtn;
-    btn.attr('disabled', 'true').addClass('loading');
+    btn.addClass('loading').attr('disabled', 'true');
 
     try {
-      // validar firma
+      // Validaciones
       if (!signatureManager.hasSignature()) {
         throw new Error('Por favor, proporciona tu firma');
       }
 
-      // armar payload
-      const data = Object.fromEntries(new FormData(this.form.get()).entries());
+      if (!this.curpField.val() || this.curpField.val().length !== 18) {
+        throw new Error('El CURP debe tener 18 caracteres');
+      }
+
+      // Recopilar datos del formulario
+      const formData = new FormData(this.form.get());
+      const data = Object.fromEntries(formData.entries());
+
+      // Agregar datos adicionales
       data.signatureData = signatureManager.getSignatureAsBase64();
 
-      // audio opcional
+      // Audio si existe
       if (audioRecorder.hasRecording()) {
         const { data: audioData, mimeType } = audioRecorder.getAudioData();
         data.audioData = audioData;
         data.audioMimeType = mimeType;
       }
 
-      // domicilio completo
-      const sel = this.coloniaSelect.get().selectedOptions[0];
-      data.domicilio = [
-        this.calleNumero.value.trim(),
-        sel.value,
-        sel.dataset.municipio,
-        sel.dataset.estado,
-        sel.dataset.cp,
-      ].join(', ');
+      // Construir domicilio completo
+      const coloniaElement = this.coloniaSelect.get();
+      const selectedOption = coloniaElement.selectedOptions[0];
 
-      // llamada al servicio
+      if (selectedOption) {
+        data.domicilio = [
+          this.calleNumero.val().trim(),
+          selectedOption.value,
+          selectedOption.getAttribute('data-municipio'),
+          selectedOption.getAttribute('data-estado'),
+          selectedOption.getAttribute('data-cp'),
+        ]
+          .filter(Boolean)
+          .join(', ');
+      }
+
+      // Enviar datos
       const result = await enrollmentService.enrollManual(data);
-      if (!result.success) throw new Error(result.error);
+      if (!result.success) {
+        throw new Error(result.error || 'Error al procesar el enrolamiento');
+      }
 
+      // Éxito
       window.mostrarMensajeEstado('✅ Enrolamiento exitoso', 3000);
-      this.form.get().reset();
-      this.filePreview.html('');
-      this.coloniaSelect.html(`<option value="">— Selecciona tu colonia —</option>`);
-      signatureManager.clear();
-      audioRecorder.deleteRecording();
+
+      // Limpiar formulario
+      this._resetForm();
     } catch (err) {
+      console.error('Error en handleSubmit:', err);
       window.mostrarMensajeEstado(`❌ ${err.message}`, 5000);
     } finally {
       btn.removeClass('loading').removeAttr('disabled');
     }
   }
 
+  _resetForm() {
+    // Reset formulario
+    this.form.get().reset();
+
+    // Limpiar documentos
+    this._removeFile();
+
+    // Limpiar colonias
+    this.coloniaSelect.html(`<option value="">— Selecciona tu colonia —</option>`);
+    this.coloniaSelect.get().disabled = true;
+
+    // Limpiar subestructuras
+    this.subSelect.html(`<option value="">Sin selección</option>`);
+    this.subSelect.get().disabled = true;
+
+    // Limpiar firma y audio
+    signatureManager.clear();
+    audioRecorder.deleteRecording();
+
+    // Actualizar progreso
+    this._updateProgress();
+  }
+
   cleanup() {
-    // remover listeners si es necesario
-    this.backBtn.off('click');
-    this.clearSigBtn.off('click');
-    this.undoSigBtn.off('click');
-    this.form.off('submit');
-    this.recalcCurpBtn.off('click');
+    // Limpiar event listeners
+    this.backBtn?.off('click');
+    this.clearSigBtn?.off('click');
+    this.undoSigBtn?.off('click');
+    this.form?.off('submit');
+    this.recalcCurpBtn?.off('click');
+    this.selectFileBtn?.off('click');
+    this.removeFileBtn?.off('click');
+    this.fileInput?.off('change');
+
+    // Limpiar drag and drop
+    this.documentUploadArea?.off('dragover');
+    this.documentUploadArea?.off('dragleave');
+    this.documentUploadArea?.off('drop');
+
+    // Limpiar otros listeners
+    this.estrSelect?.off('change');
+    this.cpInput?.off('blur');
   }
 }

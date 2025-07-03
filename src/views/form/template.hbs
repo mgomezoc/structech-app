@@ -31,7 +31,7 @@
                     <div class="form-group">
                         <label for="estructura" class="required">
                             Estructura
-                            <span class="required-mark">*</span>
+                            
                         </label>
                         <div class="select-wrapper">
                             <select id="estructura" name="estructura" class="form-control" required>
@@ -42,7 +42,7 @@
                     <div class="form-group">
                         <label for="subestructura" class="required">
                             Subestructura
-                            <span class="required-mark">*</span>
+                            
                         </label>
                         <div class="select-wrapper">
                             <select id="subestructura" name="subestructura" class="form-control" required disabled>
@@ -86,35 +86,29 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="nombre" class="required">
-                            Nombre
-                            <span class="required-mark">*</span>
-                        </label>
+                        <label for="nombre" class="required">Nombre</label>
                         <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Nombre(s)"
                             required />
                     </div>
                     <div class="form-group">
-                        <label for="apellidoPaterno">Apellido Paterno</label>
+                        <label for="apellidoPaterno" class="required">Apellido Paterno</label>
                         <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control"
                             placeholder="Apellido Paterno" required />
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="apellidoMaterno">Apellido Materno</label>
+                        <label for="apellidoMaterno" class="required">Apellido Materno</label>
                         <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control"
                             placeholder="Apellido Materno" required />
                     </div>
                     <div class="form-group">
-                        <label for="fechaNacimiento">Fecha de Nacimiento</label>
+                        <label for="fechaNacimiento" class="required">Fecha de Nacimiento</label>
                         <input type="date" id="fechaNacimiento" name="fechaNacimiento" class="form-control" required />
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="required">
-                        Género
-                        <span class="required-mark">*</span>
-                    </label>
+                    <label class="required">Género</label>
                     <div class="gender-group">
                         <div class="gender-option">
                             <input type="radio" id="hombre" name="genero" value="M" required />
@@ -135,29 +129,24 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="curp" class="required">
-                            CURP
-                            <span class="required-mark">*</span>
-                        </label>
-                        <input type="text" id="curp" name="curp" class="form-control" maxlength="18" placeholder="CURP"
-                            required />
+                        <label for="curp" class="required">CURP</label>
+                        <input type="text" id="curp" name="curp" class="form-control" maxlength="18" placeholder="CURP" required />
                     </div>
                     <div class="form-group">
-                        <label for="claveElector">Clave de Elector</label>
-                        <input type="text" id="claveElector" name="claveElector" class="form-control"
-                            placeholder="Clave de Elector" required />
+                        <label for="claveElector" class="required">Clave de Elector</label>
+                        <input type="text" id="claveElector" name="claveElector" class="form-control" placeholder="Clave de Elector" required />
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="domicilio">Domicilio</label>
-                        <input type="text" id="domicilio" name="domicilio" class="form-control"
-                            placeholder="Domicilio completo" required />
+                        <label for="domicilio" class="required">Domicilio</label>
+                        <input type="text" id="domicilio" name="domicilio" class="form-control" placeholder="Domicilio completo" required />
                     </div>
                     <div class="form-group">
-                        <label for="seccion">Sección</label>
-                        <input type="text" id="seccion" name="seccion" class="form-control" maxlength="4"
+                        <label for="seccion" class="required">Sección</label>
+                        <input type="text" inputmode="numeric" pattern="\d{4}" maxlength="4" id="seccion" name="seccion" class="form-control"
                             placeholder="Sección electoral" required />
+
                     </div>
                 </div>
             </section>

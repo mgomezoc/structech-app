@@ -83,16 +83,22 @@ class DOMElement {
 
   removeClass(nameOrFn) {
     if (!this.el) return this;
+
     if (typeof nameOrFn === 'function') {
-      // iteramos sobre una copia porque vamos a modificar classList
+      // Función: iteramos sobre una copia porque vamos a modificar classList
       Array.from(this.el.classList).forEach(cls => {
         if (nameOrFn(cls)) {
           this.el.classList.remove(cls);
         }
       });
-    } else {
-      this.el.classList.remove(nameOrFn);
+    } else if (typeof nameOrFn === 'string') {
+      // String: puede ser una clase o múltiples clases separadas por espacio
+      const classes = nameOrFn.split(/\s+/).filter(cls => cls.trim());
+      classes.forEach(cls => {
+        this.el.classList.remove(cls);
+      });
     }
+
     return this;
   }
 

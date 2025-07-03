@@ -1,147 +1,229 @@
-{{!-- Template HBS para la vista de Formulario --}}
-<div class="header">
-    <div class="header-nav">
-        <button id="backBtn" class="btn-back" title="Volver al dashboard">
-            ← Volver
+{{!-- src/views/form/template.hbs --}}
+
+<div class="form-view-container">
+    <!-- Header -->
+    <header class="alta-header">
+        <button class="back-button" id="backBtn" aria-label="Regresar">
+            <!-- You can replace this with an SVG icon -->
+            ←
         </button>
-        <h1>
-            <img src="{{logoUrl}}" alt="StructTech" class="logo" />
-            StructTech
-        </h1>
-        <div class="user-badge">
-            {{user.name}}
+        <h1 class="view-title">Registro de Persona</h1>
+    </header>
+
+    <!-- Progress Indicator -->
+    <div class="progress-indicator">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
         </div>
+        <span class="progress-text" id="progressText">Completa todos los campos</span>
     </div>
-</div>
 
-<div class="container">
-    <form id="formPersona" method="POST">
-        <div class="profile-section">
-            <div class="profile-photo" id="profilePhoto">
-                <div id="profilePlaceholder"></div>
-                <img id="profileImage" src="" alt="" />
-            </div>
-        </div>
+    <!-- Form Container -->
+    <div class="form-container">
+        <form id="formPersona" class="alta-form" novalidate>
 
-        <div class="form-section">
-            {{!-- Estructura --}}
-            <div class="form-group">
-                <label>Selecciona Estructura*</label>
-                <select id="estructura" name="estructura" class="form-control" required>
-                    <option value="">Sin selección</option>
-                    <option value="N/A">N/A</option>
-
-                </select>
-            </div>
-
-            {{!-- Subsección --}}
-            <div class="form-group">
-                <label>Selecciona SubEstructura*</label>
-                <select id="subestructura" name="subestructura" class="form-control" required>
-                    <option value="">Sin selección</option>
-                    <option value="N/A">N/A</option>
-                </select>
-            </div>
-
-            {{!-- Nombre y apellidos --}}
-            <div class="form-group">
-                <label>Nombre*</label>
-                <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Nombre(s)" required />
-            </div>
-            <div class="form-group">
-                <label>Apellido Paterno</label>
-                <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control"
-                    placeholder="Apellido Paterno" />
-            </div>
-            <div class="form-group">
-                <label>Apellido Materno</label>
-                <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control"
-                    placeholder="Apellido Materno" />
-            </div>
-
-            {{!-- Fecha y género --}}
-            <div class="form-group">
-                <label>Fecha de Nacimiento</label>
-                <input type="date" id="fechaNacimiento" name="fechaNacimiento" class="form-control" />
-            </div>
-            <div class="form-group">
-                <label>Género</label>
-                <div class="gender-group">
-                    <div class="gender-option">
-                        <input type="radio" id="hombre" name="genero" value="M" />
-                        <label for="hombre">👨 Hombre</label>
+            <!-- Estructura Section -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Selección de estructura</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="estructura" class="required">
+                            Estructura
+                            <span class="required-mark">*</span>
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="estructura" name="estructura" class="form-control" required>
+                                <option value="">Sin selección</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="gender-option">
-                        <input type="radio" id="mujer" name="genero" value="F" />
-                        <label for="mujer">👩 Mujer</label>
+                    <div class="form-group">
+                        <label for="subestructura" class="required">
+                            Subestructura
+                            <span class="required-mark">*</span>
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="subestructura" name="subestructura" class="form-control" required disabled>
+                                <option value="">Sin selección</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            {{!-- CURP, elector, domicilio, sección, observación, teléfono --}}
-            <div class="form-group">
-                <label>CURP</label>
-                <input type="text" id="curp" name="curp" class="form-control" maxlength="18" placeholder="CURP" />
-            </div>
-            <div class="form-group">
-                <label>Clave de Elector</label>
-                <input type="text" id="claveElector" name="claveElector" class="form-control"
-                    placeholder="Clave de Elector" />
-            </div>
-            <div class="form-group">
-                <label>Domicilio</label>
-                <input type="text" id="domicilio" name="domicilio" class="form-control"
-                    placeholder="Domicilio completo" />
-            </div>
-            <div class="form-group">
-                <label>Sección</label>
-                <input type="text" id="seccion" name="seccion" class="form-control" maxlength="4"
-                    placeholder="Sección electoral" />
-            </div>
-            <div class="form-group">
-                <label>Observación</label>
-                <textarea id="observacion" name="observacion" class="form-control" rows="3"
-                    placeholder="Agregar observaciones..."></textarea>
-            </div>
-            <div class="form-group">
-                <label>Teléfono</label>
-                <input type="tel" id="telefono" name="telefono" class="form-control" placeholder="Número de teléfono" />
-            </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="email" name="email" class="form-control" placeholder="Correo electrónico" />
-            </div>
-
-            {{!-- Firma --}}
-            <div class="signature-section">
-                <label>Firma de Autorización</label>
-                <div class="signature-box" id="signatureBox">
-                    <canvas id="signatureCanvas"></canvas>
-                    <div id="signaturePlaceholder">✏️</div>
-                </div>
-                <div class="signature-controls">
-                    <button type="button" id="clearSignature">Limpiar Firma</button>
-                    <button type="button" id="undoSignature">Deshacer</button>
-                </div>
-            </div>
-
-            {{!-- Audio --}}
-            <div class="audio-section">
-                
-                <div class="audio-controls">
-                    <button type="button" id="audioBtn">🎤</button>
-                    <div class="audio-info">
-                        <div id="audioTimer">00:00:00</div>
-                        <span id="audioHint">Mantén presionado para grabar</span>
+            <!-- Profile Photo Section -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Foto de perfil</h2>
+                    <div class="section-actions">
+                        <button type="button" id="btnScan" class="scan-button">
+                            <div id="scanIcon"></div>
+                            <span>Escanear INE</span>
+                        </button>
                     </div>
-                    <button type="button" id="audioDelete" class="audio-delete">🗑️</button>
                 </div>
-                <div id="audioWave" class="audio-wave">
-                    <span></span><span></span><span></span><span></span><span></span>
+                <div class="profile-section">
+                    <div class="profile-photo" id="profilePhoto">
+                        <div id="profilePlaceholder" class="profile-placeholder">
+                        </div>
+                        <img id="profileImage" src="" alt="Foto de perfil" style="display: none;" />
+                    </div>
+            
+                    <!-- Estado después del escaneo -->
+                    <div class="scan-status" id="scanStatus" style="display: none;">
+                        <div class="status-icon">✅</div>
+                        <span>INE escaneado correctamente</span>
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            {{!-- Hidden fields --}}
+            <!-- Datos Personales Section -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Datos personales</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombre" class="required">
+                            Nombre
+                            <span class="required-mark">*</span>
+                        </label>
+                        <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Nombre(s)"
+                            required />
+                    </div>
+                    <div class="form-group">
+                        <label for="apellidoPaterno">Apellido Paterno</label>
+                        <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control"
+                            placeholder="Apellido Paterno" required />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="apellidoMaterno">Apellido Materno</label>
+                        <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control"
+                            placeholder="Apellido Materno" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaNacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="fechaNacimiento" name="fechaNacimiento" class="form-control" required />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="required">
+                        Género
+                        <span class="required-mark">*</span>
+                    </label>
+                    <div class="gender-group">
+                        <div class="gender-option">
+                            <input type="radio" id="hombre" name="genero" value="M" required />
+                            <label for="hombre">👨 Hombre</label>
+                        </div>
+                        <div class="gender-option">
+                            <input type="radio" id="mujer" name="genero" value="F" />
+                            <label for="mujer">👩 Mujer</label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Identificación Section -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Identificación</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="curp" class="required">
+                            CURP
+                            <span class="required-mark">*</span>
+                        </label>
+                        <input type="text" id="curp" name="curp" class="form-control" maxlength="18" placeholder="CURP"
+                            required />
+                    </div>
+                    <div class="form-group">
+                        <label for="claveElector">Clave de Elector</label>
+                        <input type="text" id="claveElector" name="claveElector" class="form-control"
+                            placeholder="Clave de Elector" required />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="domicilio">Domicilio</label>
+                        <input type="text" id="domicilio" name="domicilio" class="form-control"
+                            placeholder="Domicilio completo" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="seccion">Sección</label>
+                        <input type="text" id="seccion" name="seccion" class="form-control" maxlength="4"
+                            placeholder="Sección electoral" required />
+                    </div>
+                </div>
+            </section>
+
+            <!-- Observaciones y Contacto Section -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Observaciones y contacto</h2>
+                </div>
+                <div class="form-group">
+                    <label for="observacion">Observación</label>
+                    <textarea id="observacion" name="observacion" class="form-control" rows="3"
+                        placeholder="Agregar observaciones..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono" name="telefono" class="form-control"
+                            placeholder="Número de teléfono" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" class="form-control"
+                            placeholder="Correo electrónico" required />
+                    </div>
+                </div>
+            </section>
+
+            <!-- Firma Section -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Firma de autorización</h2>
+                </div>
+                <div class="signature-section">
+                    <div class="signature-box" id="signatureBox">
+                        <canvas id="signatureCanvas"></canvas>
+                        <div id="signaturePlaceholder">✏️</div>
+                    </div>
+                    <div class="signature-controls">
+                        <button type="button" id="clearSignature">Limpiar Firma</button>
+                        <button type="button" id="undoSignature">Deshacer</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Audio Section -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Notas de voz</h2>
+                </div>
+                <div class="audio-section">
+                    <div class="audio-controls">
+                        <button type="button" id="audioBtn">🎤</button>
+                        <div class="audio-info">
+                            <div id="audioTimer">00:00:00</div>
+                            <span id="audioHint">Mantén presionado para grabar</span>
+                        </div>
+                        <button type="button" id="audioDelete" class="audio-delete">🗑️</button>
+                    </div>
+                    <div id="audioWave" class="audio-wave">
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Hidden Fields -->
             <input type="hidden" id="documentNumber" name="documentNumber" />
             <input type="hidden" id="fullDocumentFrontImage" name="fullDocumentFrontImage" />
             <input type="hidden" id="fullDocumentBackImage" name="fullDocumentBackImage" />
@@ -149,11 +231,15 @@
             <input type="hidden" id="signatureImageData" name="signatureImageData" />
             <input type="hidden" id="idMex" name="idMex" />
 
-            <button type="submit" class="save-button">Guardar</button>
-        </div>
-    </form>
+            <!-- Submit Section -->
+            <section class="form-actions">
+                <button type="submit" class="btn-submit save-button">
+                    <span class="btn-text">Guardar</span>
+                    <div class="btn-loader hidden">
+                        <div class="mini-spinner white"></div>
+                    </div>
+                </button>
+            </section>
+        </form>
+    </div>
 </div>
-
-<button id="btnScan" class="fab-scan">
-    <div id="scanIcon"></div>
-</button>

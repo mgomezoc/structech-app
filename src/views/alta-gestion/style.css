@@ -1,5 +1,5 @@
 .alta-gestion-container {
-  min-height: 100vh;
+  padding-bottom: 10vh;
   background: #f0f2f2;
   animation: fadeIn 0.3s ease-out;
 }
@@ -44,6 +44,11 @@
   background: #ffffff;
   padding: 16px 20px;
   border-bottom: 1px solid #d1d5db;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
 }
 .progress-indicator .progress-bar {
   height: 6px;

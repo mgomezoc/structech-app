@@ -2,7 +2,7 @@
 
 <div class="dashboard-container">
     <!-- Header -->
-    <header class="dashboard-header">
+    <header class="app-header">
         <div class="header-content">
             <div class="header-left">
                 <img src="{{imgHeader}}" alt="StructTech" class="header-logo" />
@@ -24,7 +24,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="dashboard-main">
+    <main class="app-content">
         <div class="welcome-section">
             <h2>Bienvenido, {{#if user.name}}{{user.name}}{{else}}Usuario{{/if}}</h2>
             <p>Selecciona el tipo de registro que deseas realizar</p>
@@ -133,3 +133,9 @@
         </div>
     </main>
 </div>
+
+<footer class="app-footer">
+    <div class="footer-content">
+        <p>&copy; 2023 StructTech. Todos los derechos reservados.</p>
+    </div>
+</footer>

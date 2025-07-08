@@ -15,6 +15,7 @@ export const API_CONFIG = {
     CITIZENS: '/api/combos/Citizens',
     TICKET_TYPES: '/api/combos/Ticket_Types',
     CLASSIFICATIONS: '/api/combos/Classifications', // + /{typeId}
+    QUESTIONS: '/api/combos/Questions',
     CREATE_TICKET: '/api/ticket/ticket',
   },
   TIMEOUT: 30000, // 30 segundos

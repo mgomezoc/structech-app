@@ -12,15 +12,12 @@ export class DynamicQuestions {
     this.onChangeCallback = null;
   }
 
-  // Inicializar el componente
   init() {
     if (!this.container || !this.questions.length) return;
-
     this.render();
     this.attachEventListeners();
   }
 
-  // Renderizar las preguntas en formato acordeón/stepper
   render() {
     const html = `
       <div class="questions-container">
@@ -30,23 +27,19 @@ export class DynamicQuestions {
       this.questions.length
     }</span>
         </div>
-        
         <div class="questions-stepper">
-          ${this.questions.map((q, index) => this.renderQuestion(q, index)).join('')}
+          ${this.questions.map((q, idx) => this.renderQuestion(q, idx)).join('')}
         </div>
-        
         <div class="questions-summary" id="questionsSummary" style="display: none;">
           <h4>Resumen de respuestas</h4>
           <div class="summary-content" id="summaryContent"></div>
         </div>
       </div>
     `;
-
     this.container.innerHTML = html;
     this.updateProgress();
   }
 
-  // Renderizar una pregunta individual
   renderQuestion(questionData, index) {
     const question = questionData.Questions[0];
     const answers = questionData.Answers;
@@ -54,10 +47,9 @@ export class DynamicQuestions {
     const isActive = index === this.currentStep;
 
     return `
-      <div class="question-item ${isActive ? 'active' : ''} ${isAnswered ? 'answered' : ''}" 
-           data-question-id="${question.iQuestionId}" 
+      <div class="question-item ${isActive ? 'active' : ''} ${isAnswered ? 'answered' : ''}"
+           data-question-id="${question.iQuestionId}"
            data-index="${index}">
-        
         <div class="question-header" data-index="${index}">
           <div class="question-indicator">
             ${
@@ -82,49 +74,45 @@ export class DynamicQuestions {
             </svg>
           </div>
         </div>
-        
         <div class="question-content" ${!isActive ? 'style="display: none;"' : ''}>
           <div class="answers-grid">
-            ${answers.map(answer => this.renderAnswer(question.iQuestionId, answer)).join('')}
+            ${answers.map(a => this.renderAnswer(question.iQuestionId, a)).join('')}
           </div>
         </div>
       </div>
     `;
   }
 
-  // Renderizar una respuesta
   renderAnswer(questionId, answer) {
     const needsText = answer.bText;
     const answerId = answer.iAnswerId;
-    const currentAnswer = this.answers.get(questionId);
-    const isSelected = currentAnswer?.iAnswerId === answerId;
+    const current = this.answers.get(questionId);
+    const isSelected = current?.iAnswerId === answerId;
 
     return `
-      <div class="answer-option ${isSelected ? 'selected' : ''} ${needsText ? 'with-text' : ''}" 
-           data-question-id="${questionId}" 
+      <div class="answer-option ${isSelected ? 'selected' : ''} ${needsText ? 'with-text' : ''}"
+           data-question-id="${questionId}"
            data-answer-id="${answerId}"
            data-needs-text="${needsText}">
-        
         <label class="answer-label">
-          <input type="radio" 
-                 name="question_${questionId}" 
-                 value="${answerId}"
-                 ${isSelected ? 'checked' : ''}
-                 class="answer-radio">
-          
+          <input
+            type="radio"
+            name="question_${questionId}"
+            value="${answerId}"
+            ${isSelected ? 'checked' : ''}
+            class="answer-radio"
+          />
           <div class="answer-content">
             <span class="answer-text">${answer.vcAnswer}</span>
             ${
               needsText
-                ? `
-              <input type="text" 
-                     class="answer-input" 
-                     placeholder="Especifique..."
-                     value="${
-                       isSelected && currentAnswer.vcAnswerText ? currentAnswer.vcAnswerText : ''
-                     }"
-                     ${!isSelected ? 'disabled' : ''}>
-            `
+                ? `<input
+                   type="text"
+                   class="answer-input"
+                   placeholder="Especifique..."
+                   value="${isSelected && current.vcAnswerText ? current.vcAnswerText : ''}"
+                   ${!isSelected ? 'disabled' : ''}
+                 />`
                 : ''
             }
           </div>
@@ -133,21 +121,18 @@ export class DynamicQuestions {
     `;
   }
 
-  // Adjuntar event listeners
   attachEventListeners() {
-    // Click en headers de preguntas
+    // Abrir/cerrar cada pregunta
     this.container.querySelectorAll('.question-header').forEach(header => {
-      header.addEventListener('click', async e => {
-        const index = parseInt(header.dataset.index);
-        await this.goToQuestion(index);
+      header.addEventListener('click', async () => {
+        await this.goToQuestion(+header.dataset.index);
       });
     });
 
-    // Cambio en respuestas
+    // Selección de respuesta
     this.container.querySelectorAll('.answer-option').forEach(option => {
       option.addEventListener('click', async e => {
-        if (e.target.matches('input[type="text"]')) return; // No hacer nada si es el input de texto
-
+        if (e.target.matches('input[type="text"]')) return;
         const radio = option.querySelector('.answer-radio');
         if (radio && !radio.checked) {
           radio.checked = true;
@@ -156,258 +141,181 @@ export class DynamicQuestions {
       });
     });
 
-    // Input de texto en respuestas
+    // Input de texto para respuestas “Otro”
     this.container.querySelectorAll('.answer-input').forEach(input => {
-      input.addEventListener('input', e => {
-        this.updateTextAnswer(e.target);
-      });
-
-      // Prevenir propagación del click
-      input.addEventListener('click', e => {
-        e.stopPropagation();
-      });
+      // Mientras escribe
+      input.addEventListener('input', () => this.updateTextAnswer(input));
+      // Al perder foco, también refrescamos resumen si está visible
+      input.addEventListener('blur', () => this.refreshSummaryIfVisible());
+      // No cerrar el acordeón
+      input.addEventListener('click', e => e.stopPropagation());
     });
   }
 
-  // Manejar selección de respuesta
   async handleAnswerSelection(option) {
     await hapticsService.light();
-
-    const questionId = parseInt(option.dataset.questionId);
-    const answerId = parseInt(option.dataset.answerId);
+    const qId = +option.dataset.questionId;
+    const aId = +option.dataset.answerId;
     const needsText = option.dataset.needsText === 'true';
 
-    // Actualizar UI
+    // Limpiar selección previa
     option.parentElement.querySelectorAll('.answer-option').forEach(opt => {
       opt.classList.remove('selected');
-      const input = opt.querySelector('.answer-input');
-      if (input) input.disabled = true;
+      const inp = opt.querySelector('.answer-input');
+      if (inp) inp.disabled = true;
     });
 
+    // Marcar nueva
     option.classList.add('selected');
-
-    // Habilitar input de texto si es necesario
     if (needsText) {
       const textInput = option.querySelector('.answer-input');
-      if (textInput) {
-        textInput.disabled = false;
-        textInput.focus();
-      }
+      textInput.disabled = false;
+      textInput.focus();
     }
 
-    // Guardar respuesta
-    this.answers.set(questionId, {
-      iAnswerId: answerId,
+    // Guardar en mapa
+    this.answers.set(qId, {
+      iAnswerId: aId,
       vcAnswerText: needsText ? '' : null,
     });
 
-    // Actualizar progreso
     this.updateProgress();
+    if (!needsText) setTimeout(() => this.goToNextQuestion(), 300);
 
-    // Si no necesita texto, avanzar a la siguiente pregunta
-    if (!needsText) {
-      setTimeout(() => this.goToNextQuestion(), 300);
-    }
-
-    // Callback
     if (this.onChangeCallback) {
       this.onChangeCallback(this.getFormattedAnswers());
     }
   }
 
-  // Actualizar respuesta de texto
   updateTextAnswer(input) {
-    const option = input.closest('.answer-option');
-    const questionId = parseInt(option.dataset.questionId);
-    const answer = this.answers.get(questionId);
-
-    if (answer) {
-      answer.vcAnswerText = input.value;
-
-      // Actualizar preview
-      this.updateAnswerPreview(questionId);
-
-      // Callback
+    const opt = input.closest('.answer-option');
+    const qId = +opt.dataset.questionId;
+    const ans = this.answers.get(qId);
+    if (ans) {
+      ans.vcAnswerText = input.value;
+      this.updateAnswerPreview(qId);
       if (this.onChangeCallback) {
         this.onChangeCallback(this.getFormattedAnswers());
       }
     }
   }
 
-  // Ir a una pregunta específica
-  async goToQuestion(index) {
-    if (index < 0 || index >= this.questions.length) return;
-
-    await hapticsService.light();
-
-    // Cerrar pregunta actual
-    const currentItem = this.container.querySelector('.question-item.active');
-    if (currentItem) {
-      currentItem.classList.remove('active');
-      const content = currentItem.querySelector('.question-content');
-      if (content) content.style.display = 'none';
-    }
-
-    // Abrir nueva pregunta
-    const newItem = this.container.querySelector(`.question-item[data-index="${index}"]`);
-    if (newItem) {
-      newItem.classList.add('active');
-      const content = newItem.querySelector('.question-content');
-      if (content) {
-        content.style.display = 'block';
-        // Smooth scroll
-        newItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }
-
-    this.currentStep = index;
-  }
-
-  // Ir a la siguiente pregunta
-  async goToNextQuestion() {
-    if (this.currentStep < this.questions.length - 1) {
-      await this.goToQuestion(this.currentStep + 1);
-    } else {
-      // Si es la última pregunta, mostrar resumen
+  refreshSummaryIfVisible() {
+    const sumEl = this.container.querySelector('#questionsSummary');
+    if (sumEl && sumEl.style.display !== 'none') {
       this.showSummary();
     }
   }
 
-  // Mostrar resumen
-  showSummary() {
-    const summaryEl = document.getElementById('questionsSummary');
-    const contentEl = document.getElementById('summaryContent');
+  async goToQuestion(idx) {
+    if (idx < 0 || idx >= this.questions.length) return;
+    await hapticsService.light();
+    const current = this.container.querySelector('.question-item.active');
+    if (current) {
+      current.classList.remove('active');
+      current.querySelector('.question-content').style.display = 'none';
+    }
+    const next = this.container.querySelector(`.question-item[data-index="${idx}"]`);
+    next.classList.add('active');
+    next.querySelector('.question-content').style.display = 'block';
+    next.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    this.currentStep = idx;
+  }
 
+  async goToNextQuestion() {
+    if (this.currentStep < this.questions.length - 1) {
+      await this.goToQuestion(this.currentStep + 1);
+    } else {
+      this.showSummary();
+    }
+  }
+
+  showSummary() {
+    const summaryEl = this.container.querySelector('#questionsSummary');
+    const contentEl = this.container.querySelector('#summaryContent');
     if (!summaryEl || !contentEl) return;
 
-    const summaryHtml = this.questions
-      .map((q, index) => {
+    const html = this.questions
+      .map((q, i) => {
         const question = q.Questions[0];
-        const answer = this.answers.get(question.iQuestionId);
-
-        if (!answer) return '';
-
-        const selectedAnswer = q.Answers.find(a => a.iAnswerId === answer.iAnswerId);
-
+        const ans = this.answers.get(question.iQuestionId);
+        if (!ans) return '';
+        const sel = q.Answers.find(a => a.iAnswerId === ans.iAnswerId);
         return `
-        <div class="summary-item">
-          <p class="summary-question">${index + 1}. ${question.vcQuestion}</p>
-          <p class="summary-answer">
-            ${selectedAnswer?.vcAnswer || ''}
-            ${answer.vcAnswerText ? `: ${answer.vcAnswerText}` : ''}
-          </p>
-        </div>
-      `;
+          <div class="summary-item">
+            <p class="summary-question">${i + 1}. ${question.vcQuestion}</p>
+            <p class="summary-answer">
+              ${sel?.vcAnswer || ''}${ans.vcAnswerText ? `: ${ans.vcAnswerText}` : ''}
+            </p>
+          </div>
+        `;
       })
-      .filter(html => html)
+      .filter(Boolean)
       .join('');
 
-    contentEl.innerHTML = summaryHtml;
+    contentEl.innerHTML = html;
     summaryEl.style.display = 'block';
     summaryEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  // Actualizar progreso
   updateProgress() {
-    const progressEl = this.container.querySelector('.questions-progress');
-    if (progressEl) {
-      progressEl.textContent = `${this.getAnsweredCount()} de ${this.questions.length}`;
-    }
-
-    // Actualizar estado de las preguntas
-    this.questions.forEach((q, index) => {
-      const question = q.Questions[0];
-      const item = this.container.querySelector(`.question-item[data-index="${index}"]`);
-
+    const prog = this.container.querySelector('.questions-progress');
+    if (prog) prog.textContent = `${this.getAnsweredCount()} de ${this.questions.length}`;
+    this.questions.forEach((q, i) => {
+      const qId = q.Questions[0].iQuestionId;
+      const item = this.container.querySelector(`[data-question-id="${qId}"]`);
       if (item) {
-        if (this.answers.has(question.iQuestionId)) {
-          item.classList.add('answered');
-          // Actualizar preview
-          this.updateAnswerPreview(question.iQuestionId);
-        } else {
-          item.classList.remove('answered');
-        }
+        const done = this.answers.has(qId);
+        item.classList.toggle('answered', done);
+        if (done) this.updateAnswerPreview(qId);
       }
     });
   }
 
-  // Actualizar preview de respuesta
   updateAnswerPreview(questionId) {
-    const item = this.container.querySelector(`.question-item[data-question-id="${questionId}"]`);
-    if (!item) return;
-
-    const previewEl = item.querySelector('.answer-preview');
-    if (previewEl) {
-      previewEl.textContent = this.getAnswerPreview(questionId);
-    }
+    const item = this.container.querySelector(`[data-question-id="${questionId}"]`);
+    const preview = item?.querySelector('.answer-preview');
+    if (preview) preview.textContent = this.getAnswerPreview(questionId);
   }
 
-  // Obtener preview de respuesta
   getAnswerPreview(questionId) {
-    const answer = this.answers.get(questionId);
-    if (!answer) return '';
-
-    const questionData = this.questions.find(q => q.Questions[0].iQuestionId === questionId);
-    if (!questionData) return '';
-
-    const selectedAnswer = questionData.Answers.find(a => a.iAnswerId === answer.iAnswerId);
-    let preview = selectedAnswer?.vcAnswer || '';
-
-    if (answer.vcAnswerText) {
-      preview += `: ${answer.vcAnswerText}`;
-    }
-
-    return preview.length > 50 ? preview.substring(0, 47) + '...' : preview;
+    const ans = this.answers.get(questionId);
+    if (!ans) return '';
+    const qd = this.questions.find(q => q.Questions[0].iQuestionId === questionId);
+    const sel = qd?.Answers.find(a => a.iAnswerId === ans.iAnswerId);
+    let text = sel?.vcAnswer || '';
+    if (ans.vcAnswerText) text += `: ${ans.vcAnswerText}`;
+    return text.length > 50 ? text.slice(0, 47) + '...' : text;
   }
 
-  // Obtener cantidad de respuestas
   getAnsweredCount() {
     return this.answers.size;
   }
 
-  // Verificar si todas las preguntas están respondidas
-  isComplete() {
-    return this.getAnsweredCount() === this.questions.length;
-  }
-
-  // Obtener respuestas formateadas
   getFormattedAnswers() {
-    return Array.from(this.answers.entries()).map(([questionId, answer]) => ({
-      Question: {
-        iQuestionId: questionId,
-        SelectedAnswer: answer,
-      },
+    return Array.from(this.answers.entries()).map(([qid, ans]) => ({
+      Question: { iQuestionId: qid, SelectedAnswer: ans },
     }));
   }
 
-  // Establecer callback para cambios
-  onChange(callback) {
-    this.onChangeCallback = callback;
-  }
-
-  // Validar respuestas
   validate() {
     const unanswered = [];
-
-    this.questions.forEach((q, index) => {
+    this.questions.forEach((q, idx) => {
       const question = q.Questions[0];
-      const answer = this.answers.get(question.iQuestionId);
-
-      if (!answer) {
-        unanswered.push({ index, question: question.vcQuestion });
-      } else if (answer.vcAnswerText !== null && !answer.vcAnswerText.trim()) {
-        // Si requiere texto y está vacío
-        unanswered.push({ index, question: question.vcQuestion, needsText: true });
+      const ans = this.answers.get(question.iQuestionId);
+      if (!ans) {
+        unanswered.push({ index: idx, question: question.vcQuestion });
+      } else if (ans.vcAnswerText !== null && !ans.vcAnswerText.trim()) {
+        unanswered.push({ index: idx, question: question.vcQuestion, needsText: true });
       }
     });
-
-    return {
-      isValid: unanswered.length === 0,
-      unanswered,
-    };
+    return { isValid: unanswered.length === 0, unanswered };
   }
 
-  // Limpiar respuestas
+  onChange(cb) {
+    this.onChangeCallback = cb;
+  }
+
   clear() {
     this.answers.clear();
     this.currentStep = 0;

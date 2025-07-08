@@ -1,14 +1,14 @@
 // src/services/datos.service.js
 // Maneja las consultas de datos a la API, incluyendo el envío de datos del formulario
 
-import { API_CONFIG } from "../utils/constants.js";
-import { apiService } from "./api.service.js";
+import { API_CONFIG } from '../utils/constants.js';
+import { apiService } from './api.service.js';
 
 class DatosService {
   // Consultar datos (ejemplo del endpoint que compartiste)
   async consultarDatos(data) {
     try {
-      console.log("📊 Consultando datos:", data);
+      console.log('📊 Consultando datos:', data);
 
       const response = await apiService.post(API_CONFIG.ENDPOINTS.CONSULTA, {
         Data: data,
@@ -19,11 +19,11 @@ class DatosService {
         data: response.data,
       };
     } catch (error) {
-      console.error("Error al consultar datos:", error);
+      console.error('Error al consultar datos:', error);
 
       return {
         success: false,
-        error: error.response?.data?.message || "Error al consultar datos",
+        error: error.response?.data?.message || 'Error al consultar datos',
       };
     }
   }
@@ -33,7 +33,7 @@ class DatosService {
    */
   async enviarFormularioPersona(formData) {
     try {
-      console.log("📤 Enviando formulario de persona:", formData);
+      console.log('📤 Enviando formulario de persona:', formData);
 
       // Si quisieras validar campos, lo harías acá…
 
@@ -44,38 +44,34 @@ class DatosService {
       const payload = { Data: serialized };
 
       // 3) Hacer POST a /api/datos/consulta
-      const response = await apiService.post(
-        API_CONFIG.ENDPOINTS.ENROLLMENT,
-        payload
-      );
+      const response = await apiService.post(API_CONFIG.ENDPOINTS.ENROLLMENT, payload);
 
-      console.log("✅ Consulta exitosa:", response.data);
+      console.log('✅ Consulta exitosa:', response.data);
 
       return {
         success: true,
         data: response.data,
       };
     } catch (error) {
-      console.error("❌ Error al enviar formulario:", error);
+      console.error('❌ Error al enviar formulario:', error);
 
-      let errorMessage = "Error al guardar los datos";
+      let errorMessage = 'Error al guardar los datos';
       if (error.response) {
         switch (error.response.status) {
           case 400:
-            errorMessage = "Datos inválidos. Por favor verifica el formulario.";
+            errorMessage = 'Datos inválidos. Por favor verifica el formulario.';
             break;
           case 409:
-            errorMessage = "Ya existe un registro con estos datos.";
+            errorMessage = 'Ya existe un registro con estos datos.';
             break;
           case 413:
-            errorMessage =
-              "Las imágenes son muy pesadas. Intenta con imágenes más pequeñas.";
+            errorMessage = 'Las imágenes son muy pesadas. Intenta con imágenes más pequeñas.';
             break;
           default:
             errorMessage = error.response.data?.message || errorMessage;
         }
       } else if (error.request) {
-        errorMessage = "No hubo respuesta del servidor.";
+        errorMessage = 'No hubo respuesta del servidor.';
       }
 
       return {
@@ -91,17 +87,26 @@ class DatosService {
       const response = await apiService.get(API_CONFIG.ENDPOINTS.CATALOGS);
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("Error al obtener estructuras:", error);
-      return { success: false, error: "No se pudieron cargar las estructuras" };
+      console.error('Error al obtener estructuras:', error);
+      return { success: false, error: 'No se pudieron cargar las estructuras' };
+    }
+  }
+
+  // Obtener lista de preguntas
+  async obtenerPreguntas() {
+    try {
+      const response = await apiService.get(API_CONFIG.ENDPOINTS.QUESTIONS);
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Error al obtener preguntas:', error);
+      return { success: false, error: 'No se pudieron cargar las preguntas' };
     }
   }
 
   // Obtener subestructuras según la estructura seleccionada
   async obtenerSubestructuras(estructuraId) {
     try {
-      const response = await apiService.get(
-        `${API_CONFIG.ENDPOINTS.SUBCATALOGS}/${estructuraId}`
-      );
+      const response = await apiService.get(`${API_CONFIG.ENDPOINTS.SUBCATALOGS}/${estructuraId}`);
       const payload = response.data;
 
       // 1) Si es array: ok
@@ -113,22 +118,20 @@ class DatosService {
       if (payload && payload.success === false) {
         return {
           success: false,
-          error: payload.message || "No se encontraron sub-catalogos.",
+          error: payload.message || 'No se encontraron sub-catalogos.',
         };
       }
 
       // 3) Cualquier otra forma inesperada
       return {
         success: false,
-        error: "Respuesta inesperada de sub-catalogos.",
+        error: 'Respuesta inesperada de sub-catalogos.',
       };
     } catch (error) {
-      console.error("Error al obtener subestructuras:", error);
+      console.error('Error al obtener subestructuras:', error);
       return {
         success: false,
-        error:
-          error.response?.data?.message ||
-          "No se pudieron cargar las subestructuras",
+        error: error.response?.data?.message || 'No se pudieron cargar las subestructuras',
       };
     }
   }
@@ -137,21 +140,19 @@ class DatosService {
   async obtenerColoniasPorCP(codigoPostal) {
     try {
       const response = await apiService.get(
-        `${API_CONFIG.ENDPOINTS.NEIGHBORHOODS}/${codigoPostal}`
+        `${API_CONFIG.ENDPOINTS.NEIGHBORHOODS}/${codigoPostal}`,
       );
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("Error al obtener colonias:", error);
-      return { success: false, error: "No se pudieron cargar las colonias" };
+      console.error('Error al obtener colonias:', error);
+      return { success: false, error: 'No se pudieron cargar las colonias' };
     }
   }
 
   // Buscar persona por CURP (útil para evitar duplicados)
   async buscarPorCurp(curp) {
     try {
-      const response = await apiService.get(
-        `/api/personas/buscar?curp=${curp}`
-      );
+      const response = await apiService.get(`/api/personas/buscar?curp=${curp}`);
       return {
         success: true,
         exists: response.data.exists,
@@ -168,18 +169,18 @@ class DatosService {
 
       return {
         success: false,
-        error: "Error al buscar persona",
+        error: 'Error al buscar persona',
       };
     }
   }
 
   // Comprimir imagen antes de enviar (helper)
   async compressImage(base64String, maxWidth = 1024) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
 
         let { width, height } = img;
 
@@ -195,8 +196,8 @@ class DatosService {
         ctx.drawImage(img, 0, 0, width, height);
 
         // Convertir a base64 con compresión JPEG
-        const compressed = canvas.toDataURL("image/jpeg", 0.7);
-        resolve(compressed.split(",")[1]); // Retornar solo la parte base64
+        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(compressed.split(',')[1]); // Retornar solo la parte base64
       };
 
       img.src = `data:image/png;base64,${base64String}`;

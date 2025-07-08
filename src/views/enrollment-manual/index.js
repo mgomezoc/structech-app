@@ -86,7 +86,7 @@ export default class EnrollmentManualView {
     this.coloniaSelect = dom('#colonia');
     this.calleNumero = dom('#calleNumero');
 
-    // Documento - Sistema mejorado
+    // Documento - Sistema exacto del template
     this.documentUploadArea = dom('#documentUploadArea');
     this.fileInput = dom('#otherFile');
     this.hiddenOtherData = dom('#otherData');
@@ -192,38 +192,46 @@ export default class EnrollmentManualView {
   }
 
   _setupDocumentHandlers() {
-    // Botón seleccionar archivo
-    this.selectFileBtn.on('click', () => this.fileInput.get().click());
+    // Botón seleccionar archivo - verificar que existe
+    if (this.selectFileBtn.exists()) {
+      this.selectFileBtn.on('click', () => this.fileInput.get().click());
+    }
 
-    // Botón remover archivo
-    this.removeFileBtn.on('click', () => this._removeFile());
+    // Botón remover archivo - verificar que existe
+    if (this.removeFileBtn.exists()) {
+      this.removeFileBtn.on('click', () => this._removeFile());
+    }
 
-    // Drag and drop
-    this.documentUploadArea.on('dragover', e => {
-      e.preventDefault();
-      this.documentUploadArea.addClass('drag-over');
-    });
+    // Drag and drop - verificar que existe
+    if (this.documentUploadArea.exists()) {
+      this.documentUploadArea.on('dragover', e => {
+        e.preventDefault();
+        this.documentUploadArea.addClass('drag-over');
+      });
 
-    this.documentUploadArea.on('dragleave', () => {
-      this.documentUploadArea.removeClass('drag-over');
-    });
+      this.documentUploadArea.on('dragleave', () => {
+        this.documentUploadArea.removeClass('drag-over');
+      });
 
-    this.documentUploadArea.on('drop', e => {
-      e.preventDefault();
-      this.documentUploadArea.removeClass('drag-over');
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        this._handleFile(files[0]);
-      }
-    });
+      this.documentUploadArea.on('drop', e => {
+        e.preventDefault();
+        this.documentUploadArea.removeClass('drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          this._handleFile(files[0]);
+        }
+      });
+    }
 
-    // Cambio de archivo
-    this.fileInput.on('change', e => {
-      const file = e.target.files[0];
-      if (file) {
-        this._handleFile(file);
-      }
-    });
+    // Cambio de archivo - verificar que existe
+    if (this.fileInput.exists()) {
+      this.fileInput.on('change', e => {
+        const file = e.target.files[0];
+        if (file) {
+          this._handleFile(file);
+        }
+      });
+    }
   }
 
   async _loadInitialData() {
@@ -322,67 +330,109 @@ export default class EnrollmentManualView {
     }
   }
 
-  _handleFile(file) {
-    // Validar tipo de archivo
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
-      window.mostrarMensajeEstado('❌ Tipo de archivo no soportado', 3000);
-      return;
-    }
-
-    // Validar tamaño (5MB máximo)
-    if (file.size > 5 * 1024 * 1024) {
-      window.mostrarMensajeEstado('❌ El archivo es demasiado grande (máximo 5MB)', 3000);
-      return;
-    }
-
-    // Mostrar información del archivo
-    this.fileName.text(file.name);
-    this.fileSize.text(this._formatFileSize(file.size));
-
-    // Convertir a base64
-    const reader = new FileReader();
-    reader.onload = e => {
-      const result = e.target.result;
-      const [, base64] = result.split(',');
-
-      // Guardar en campo oculto
-      this.hiddenOtherData.val(base64);
-
-      // Mostrar preview si es imagen
-      if (file.type.startsWith('image/')) {
-        this.previewContent.html(`<img src="${result}" alt="Preview del documento" />`);
-      } else {
-        this.previewContent.html(`
-          <div style="padding: 40px; text-align: center; color: #6b7280;">
-            <div style="font-size: 48px; margin-bottom: 12px;">📄</div>
-            <p>Archivo PDF subido correctamente</p>
-          </div>
-        `);
+  // Método corregido para manejar archivos
+  async _handleFile(file) {
+    try {
+      // Validar tipo de archivo
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+      if (!allowedTypes.includes(file.type)) {
+        window.mostrarMensajeEstado('❌ Tipo de archivo no soportado', 3000);
+        return;
       }
 
-      // Cambiar estado visual
-      this.uploadPlaceholder.hide();
-      this.documentPreview.show();
-      this.documentUploadArea.addClass('has-success');
+      // Validar tamaño (5MB máximo)
+      if (file.size > 5 * 1024 * 1024) {
+        window.mostrarMensajeEstado('❌ El archivo es demasiado grande (máximo 5MB)', 3000);
+        return;
+      }
+
+      // Mostrar información del archivo solo si los elementos existen
+      if (this.fileName.exists()) {
+        this.fileName.text(file.name);
+      }
+      if (this.fileSize.exists()) {
+        this.fileSize.text(this._formatFileSize(file.size));
+      }
+
+      // Convertir a base64 de forma más robusta
+      const base64 = await this._fileToBase64(file);
+
+      // Guardar en campo oculto
+      if (this.hiddenOtherData.exists()) {
+        this.hiddenOtherData.val(base64);
+      }
+
+      // Mostrar preview según el tipo de archivo
+      if (this.previewContent.exists()) {
+        if (file.type.startsWith('image/')) {
+          // Para imágenes, usar URL temporal que es más eficiente
+          const imageUrl = URL.createObjectURL(file);
+          this.previewContent.html(
+            `<img src="${imageUrl}" alt="Preview del documento" style="max-width: 100%; height: auto;" onload="URL.revokeObjectURL(this.src)" />`,
+          );
+        } else {
+          // Para PDFs
+          this.previewContent.html(`
+            <div style="padding: 40px; text-align: center; color: #6b7280;">
+              <div style="font-size: 48px; margin-bottom: 12px;">📄</div>
+              <p>Archivo PDF subido correctamente</p>
+            </div>
+          `);
+        }
+      }
+
+      // Cambiar estado visual solo si los elementos existen
+      if (this.uploadPlaceholder.exists()) {
+        this.uploadPlaceholder.hide();
+      }
+      if (this.documentPreview.exists()) {
+        this.documentPreview.show();
+      }
+      if (this.documentUploadArea.exists()) {
+        this.documentUploadArea.addClass('has-success');
+      }
 
       // Actualizar progreso
       this._updateProgress();
-    };
+    } catch (error) {
+      console.error('Error procesando archivo:', error);
+      window.mostrarMensajeEstado('❌ Error al procesar el archivo', 3000);
+    }
+  }
 
-    reader.onerror = () => {
-      window.mostrarMensajeEstado('❌ Error al leer el archivo', 3000);
-    };
+  // Método helper para convertir archivo a base64
+  _fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
 
-    reader.readAsDataURL(file);
+      reader.onload = () => {
+        try {
+          const result = reader.result;
+          const base64 = result.split(',')[1]; // Extraer solo la parte base64
+          resolve(base64);
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      reader.onerror = () => {
+        reject(new Error('Error al leer el archivo'));
+      };
+
+      reader.readAsDataURL(file);
+    });
   }
 
   _removeFile() {
     // Limpiar datos
-    this.fileInput.val('');
-    this.hiddenOtherData.val('');
+    if (this.fileInput.exists()) {
+      this.fileInput.val('');
+    }
+    if (this.hiddenOtherData.exists()) {
+      this.hiddenOtherData.val('');
+    }
 
-    // Restaurar estado visual
+    // Restaurar estado visual solo si los elementos existen
     if (this.documentPreview && this.documentPreview.exists()) {
       this.documentPreview.hide();
     }
@@ -391,7 +441,7 @@ export default class EnrollmentManualView {
       this.uploadPlaceholder.show();
     }
 
-    // Remover clases de estado (corregido)
+    // Remover clases de estado solo si el elemento existe
     if (this.documentUploadArea && this.documentUploadArea.exists()) {
       this.documentUploadArea.removeClass('has-success');
       this.documentUploadArea.removeClass('has-error');

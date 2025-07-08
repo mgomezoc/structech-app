@@ -4,6 +4,7 @@ import Handlebars from 'handlebars';
 import './style.less';
 import tplSource from './template.hbs?raw';
 
+import { DynamicQuestions } from '../../components/dynamicQuestions.js';
 import logoUrl from '../../img/logo-icono-structech.png';
 import { navigateTo } from '../../routes/index.js';
 import { authService } from '../../services/auth.service.js';
@@ -23,6 +24,8 @@ const template = Handlebars.compile(tplSource);
 export default class FormView {
   constructor() {
     this.user = authService.getCurrentUser();
+    this.dynamicQuestions = null; // Nueva propiedad
+    this.questionsData = []; // Nueva propiedad
   }
 
   render() {
@@ -56,6 +59,36 @@ export default class FormView {
     const saveButton = this.form?.querySelector('.save-button');
     if (saveButton) {
       saveButton.disabled = true;
+    }
+    await this.initializeDynamicQuestions();
+  }
+  async initializeDynamicQuestions() {
+    try {
+      const response = await datosService.obtenerPreguntas();
+
+      if (response.success && response.data && response.data.length > 0) {
+        this.questionsData = response.data;
+
+        // Mostrar la sección
+        const section = document.getElementById('questionsSection');
+        if (section) {
+          section.style.display = 'block';
+        }
+
+        // Inicializar componente
+        this.dynamicQuestions = new DynamicQuestions(
+          'dynamicQuestionsContainer',
+          this.questionsData,
+        );
+        this.dynamicQuestions.init();
+
+        // Escuchar cambios para actualizar progreso
+        this.dynamicQuestions.onChange(() => {
+          this._updateProgress();
+        });
+      }
+    } catch (error) {
+      console.error('Error al cargar preguntas dinámicas:', error);
     }
   }
 
@@ -166,6 +199,19 @@ export default class FormView {
         return;
       }
 
+      if (this.dynamicQuestions) {
+        const { isValid, unanswered } = this.dynamicQuestions.validate();
+        if (!isValid) {
+          await dialogService.alert(
+            'Preguntas Incompletas',
+            `Por favor responde: ${unanswered.map(u => u.question).join(', ')}`,
+          );
+          btn.disabled = false;
+          btn.classList.remove('loading');
+          return;
+        }
+      }
+
       const shouldSubmit = await dialogService.confirm(
         'Confirmar Registro',
         '¿Estás seguro que deseas guardar este registro? Verifica que toda la información sea correcta.',
@@ -176,6 +222,8 @@ export default class FormView {
 
       await hapticsService.medium();
       const data = Object.fromEntries(new FormData(e.target).entries());
+
+      data.Questions = this.dynamicQuestions.getFormattedAnswers();
       data.signatureData = signatureManager.getSignatureAsBase64();
 
       if (audioRecorder.hasRecording()) {

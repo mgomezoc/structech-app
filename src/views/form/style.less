@@ -761,3 +761,116 @@
     }
   }
 }
+// ============================================
+// SECCIÓN DE PREGUNTAS DINÁMICAS
+// ============================================
+@font-size-sm: 14px;
+@font-weight-normal: 400;
+@spacing-sm: 8px;
+@spacing-md: 16px;
+@spacing-lg: 24px;
+@bg-card: #ffffff;
+@shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+@shadow-base: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+#questionsSection {
+  // Animación de entrada suave
+  animation: fadeInUp 0.3s ease-out;
+
+  .section-helper {
+    font-size: @font-size-sm;
+    color: @text-secondary;
+    font-weight: @font-weight-normal;
+    margin-left: @spacing-sm;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Ajustes para mantener consistencia con el resto del formulario
+#dynamicQuestionsContainer {
+  margin-top: @spacing-lg;
+
+  // Sobrescribir algunos estilos del componente para que coincidan con el formulario
+  .questions-container {
+    margin-top: 0;
+  }
+
+  .question-item {
+    background-color: @bg-card;
+    box-shadow: @shadow-sm;
+
+    &:hover {
+      box-shadow: @shadow-base;
+    }
+  }
+}
+
+// ============================================
+// MEJORAS DE UX PARA FORMULARIO LARGO
+// ============================================
+@border-light: #f2f2f2;
+@radius-full: 9999px;
+@shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+@transition-base: 0.3s;
+@ease-base: ease-in-out;
+// Indicador de sección actual (opcional)
+.form-section {
+  position: relative;
+
+  &:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    bottom: -@spacing-lg;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 2px;
+    background-color: @border-light;
+  }
+}
+
+// Botón de "Volver arriba" flotante para formularios largos
+.back-to-top {
+  position: fixed;
+  bottom: calc(80px + var(--safe-area-bottom));
+  right: @spacing-md;
+  width: 40px;
+  height: 40px;
+  background-color: @bg-card;
+  border: 1px solid @border-color;
+  border-radius: @radius-full;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: @text-secondary;
+  box-shadow: @shadow-md;
+  opacity: 0;
+  visibility: hidden;
+  transition: all @transition-base @ease-base;
+  z-index: 100;
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  &:hover {
+    background-color: @primary-color;
+    color: white;
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}

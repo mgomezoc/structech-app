@@ -188,16 +188,19 @@
             <section class="form-section">
                 <div class="section-header">
                     <h2>Firma de autorización</h2>
+                    <span class="section-helper">Dibuja tu firma o escanéala desde tu INE</span>
                 </div>
                 <div class="signature-section">
                     <div class="signature-box" id="signatureBox">
                         <canvas id="signatureCanvas"></canvas>
+                        <img id="signatureImage" alt="Firma escaneada" style="display: none;" />
                         <div id="signaturePlaceholder">✏️</div>
                     </div>
                     <div class="signature-controls">
                         <button type="button" id="clearSignature">Limpiar Firma</button>
                         <button type="button" id="undoSignature">Deshacer</button>
                     </div>
+                    <p class="signature-help">Mantén presionado para dibujar tu firma</p>
                 </div>
             </section>
 

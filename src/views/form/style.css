@@ -1,7 +1,3 @@
-.form-view-container {
-  min-height: 100vh;
-  background: #f8fafc;
-}
 .alta-header {
   background: #ffffff;
   padding: 16px 20px;
@@ -136,85 +132,6 @@
   background: #f3f4f6;
   cursor: not-allowed;
   opacity: 0.7;
-}
-.gender-group {
-  display: flex;
-  gap: 24px;
-}
-.gender-group .gender-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-.gender-group .gender-option input[type='radio'] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-}
-.gender-group .gender-option label {
-  margin: 0;
-  cursor: pointer;
-  user-select: none;
-}
-.signature-section .signature-box {
-  position: relative;
-  background: #f9fafb;
-  border-radius: 8px;
-  padding: 4px;
-  margin-bottom: 12px;
-}
-.signature-section .signature-box #signatureCanvas {
-  width: 100%;
-  height: 150px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #ffffff;
-  cursor: crosshair;
-  touch-action: none;
-}
-.signature-section .signature-box #signaturePlaceholder {
-  display: none;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 48px;
-  color: #e5e7eb;
-  pointer-events: none;
-}
-.signature-section .signature-controls {
-  display: flex;
-  gap: 10px;
-}
-.signature-section .signature-controls button {
-  flex: 1;
-  padding: 8px 16px;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #374151;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.signature-section .signature-controls button:hover {
-  background: #f3f4f6;
-}
-.signature-section .signature-controls button#clearSignature {
-  color: #ef4444;
-  border-color: #ef4444;
-}
-.signature-section .signature-controls button#clearSignature:hover {
-  background: #fef2f2;
-}
-.signature-section .signature-controls button#undoSignature {
-  color: #0ea5e9;
-  border-color: #0ea5e9;
-}
-.signature-section .signature-controls button#undoSignature:hover {
-  background: #eff6ff;
 }
 .audio-section .audio-controls {
   display: flex;

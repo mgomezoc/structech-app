@@ -168,67 +168,6 @@
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
-.signature-section {
-  margin-top: 24px;
-}
-.signature-section .signature-box {
-  position: relative;
-  background: #f3f4f6;
-  border: 1px dashed #d1d5db;
-  border-radius: 6px;
-  padding: 4px;
-  margin-bottom: 12px;
-}
-.signature-section .signature-box #signatureCanvas {
-  width: 100%;
-  height: 150px;
-  border-radius: 6px;
-  background: #ffffff;
-  cursor: crosshair;
-  touch-action: none;
-}
-.signature-section .signature-box #signaturePlaceholder {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 48px;
-  color: #9ca3af;
-  pointer-events: none;
-}
-.signature-section .signature-controls {
-  display: flex;
-  gap: 10px;
-}
-.signature-section .signature-controls button {
-  flex: 1;
-  padding: 8px 0;
-  font-size: 14px;
-  font-weight: 500;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #374151;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.signature-section .signature-controls button:hover {
-  background: #f3f4f6;
-}
-.signature-section .signature-controls button#clearSignature {
-  border-color: #ef4444;
-  color: #ef4444;
-}
-.signature-section .signature-controls button#clearSignature:hover {
-  background: rgba(239, 68, 68, 0.1);
-}
-.signature-section .signature-controls button#undoSignature {
-  border-color: #0ea5e9;
-  color: #0ea5e9;
-}
-.signature-section .signature-controls button#undoSignature:hover {
-  background: rgba(14, 165, 233, 0.1);
-}
 .audio-section {
   margin-top: 24px;
 }

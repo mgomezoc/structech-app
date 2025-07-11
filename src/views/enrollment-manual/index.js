@@ -5,7 +5,6 @@ import '../form/style.less';
 import './style.less';
 import tplSource from './template.hbs?raw';
 
-import logoUrl from '../../img/logo-icono-structech.png';
 import { navigateTo } from '../../routes/index.js';
 import { datosService } from '../../services/datos.service.js';
 import { enrollmentService } from '../../services/enrollment.service.js';
@@ -23,42 +22,74 @@ import { keyboardService } from '../../services/keyboard.service.js';
 const template = Handlebars.compile(tplSource);
 
 export default class EnrollmentManualView {
-  constructor() {
-    this.logoUrl = logoUrl;
-  }
+  constructor() {}
 
   render() {
     return template({
-      logoUrl: this.logoUrl,
       estados: ESTADOS_MEXICO,
     });
   }
 
   async afterRender() {
-    // Mejorar comportamiento del header
+    // 1. Inicializar referencias DOM (necesarias antes de usarlas)
+    this._initializeDOMReferences();
+
+    // 2. Mejorar comportamiento del header (usa elementos DOM ya referenciados)
     this.enhanceHeader();
-    // Inicializar signature & audio
+
+    // 3. Configurar eventos (formulario, inputs, botones, etc.)
+    this._setupEventListeners();
+
+    // 4. Inicializar firma y grabadora
     signatureManager.init();
     await audioRecorder.init();
 
-    // Inicializar referencias DOM
-    this._initializeDOMReferences();
-
-    // Configurar event listeners
-    this._setupEventListeners();
-
-    // Cargar datos iniciales
+    // 5. Cargar opciones iniciales del formulario (estructuras, colonias, etc.)
     await this._loadInitialData();
 
-    // Configurar progreso
+    // 6. Configurar progreso visual y mensaje
     this._attachProgressListeners();
     this._updateProgress();
 
-    // Generar CURP inicial
+    // 7. Calcular CURP inicial (con campos si ya hay valores precargados)
     this._actualizarCurp();
 
-    // --- Nuevo: inicializar keyboardService ---
+    // 8. Activar soporte para teclado móvil
     await this.initKeyboard();
+  }
+
+  _initializeDOMReferences() {
+    this.form = dom('#enrollForm');
+    this.backBtn = dom('#backBtn');
+    this.submitBtn = dom('#submitBtn');
+    this.progressFill = dom('#progressFill');
+    this.progressText = dom('#progressText');
+    this.estrSelect = dom('#estructura');
+    this.subSelect = dom('#subestructura');
+    this.nameField = dom('#nombre');
+    this.apField = dom('#apellidoPaterno');
+    this.amField = dom('#apellidoMaterno');
+    this.dateField = dom('#fechaNacimiento');
+    this.estadoNacimiento = dom('#estadoNacimiento');
+    this.genderM = dom('#hombre');
+    this.genderF = dom('#mujer');
+    this.curpField = dom('#curp');
+    this.recalcCurpBtn = dom('#recalcularCurp');
+    this.cpInput = dom('#codigoPostal');
+    this.coloniaSelect = dom('#colonia');
+    this.calleNumero = dom('#calleNumero');
+    this.documentUploadArea = dom('#documentUploadArea');
+    this.fileInput = dom('#otherFile');
+    this.hiddenOtherData = dom('#otherData');
+    this.uploadPlaceholder = dom('#uploadPlaceholder');
+    this.documentPreview = dom('#documentPreview');
+    this.selectFileBtn = dom('#selectFileBtn');
+    this.removeFileBtn = dom('#removeFileBtn');
+    this.fileName = dom('#fileName');
+    this.fileSize = dom('#fileSize');
+    this.previewContent = dom('#previewContent');
+    this.clearSigBtn = dom('#clearSignature');
+    this.undoSigBtn = dom('#undoSignature');
   }
 
   enhanceHeader() {
@@ -79,19 +110,17 @@ export default class EnrollmentManualView {
 
           // Agregar clase cuando hay scroll
           if (scrollTop > 10) {
-            header.classList.add('scrolled');
+            header.classList.remove('scrolled-top');
           } else {
-            header.classList.remove('scrolled');
+            header.classList.add('scrolled-top');
           }
 
           // Ocultar header al hacer scroll down en móvil (opcional)
           if (window.innerWidth < 768) {
             if (scrollTop > lastScrollTop && scrollTop > 100) {
-              // Scrolling down
-              header.style.transform = 'translateY(-100%)';
+              header.classList.add('scrolled');
             } else {
-              // Scrolling up
-              header.style.transform = 'translateY(0)';
+              header.classList.remove('scrolled');
             }
           }
 
@@ -251,41 +280,6 @@ export default class EnrollmentManualView {
     }
   }
   // --- Fin keyboardService ---
-
-  _initializeDOMReferences() {
-    this.form = dom('#enrollForm');
-    this.backBtn = dom('#backBtn');
-    this.submitBtn = dom('#submitBtn');
-    this.progressFill = dom('#progressFill');
-    this.progressText = dom('#progressText');
-    this.estrSelect = dom('#estructura');
-    this.subSelect = dom('#subestructura');
-    this.nameField = dom('#nombre');
-    this.apField = dom('#apellidoPaterno');
-    this.amField = dom('#apellidoMaterno');
-    this.dateField = dom('#fechaNacimiento');
-    this.estadoNacimiento = dom('#estadoNacimiento');
-    this.genderM = dom('#hombre');
-    this.genderF = dom('#mujer');
-    this.curpField = dom('#curp');
-    this.recalcCurpBtn = dom('#recalcularCurp');
-    this.cpInput = dom('#codigoPostal');
-    this.coloniaSelect = dom('#colonia');
-    this.calleNumero = dom('#calleNumero');
-    this.documentUploadArea = dom('#documentUploadArea');
-    this.fileInput = dom('#otherFile');
-    this.hiddenOtherData = dom('#otherData');
-    this.uploadPlaceholder = dom('#uploadPlaceholder');
-    this.documentPreview = dom('#documentPreview');
-    this.selectFileBtn = dom('#selectFileBtn');
-    this.removeFileBtn = dom('#removeFileBtn');
-    this.fileName = dom('#fileName');
-    this.fileSize = dom('#fileSize');
-    this.previewContent = dom('#previewContent');
-    this.clearSigBtn = dom('#clearSignature');
-    this.undoSigBtn = dom('#undoSignature');
-  }
-
   _setupEventListeners() {
     this.backBtn.on('click', () => navigateTo(ROUTES.DASHBOARD));
     this.form.on('submit', e => this.handleSubmit(e));

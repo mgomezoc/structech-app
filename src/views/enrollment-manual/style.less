@@ -79,6 +79,22 @@
   padding: 20px 16px 40px;
 }
 
+#altaHeader {
+  will-change: transform;
+  &.scrolled {
+    position: absolute;
+    transform: translateY(-100%);
+  }
+  &.scrolled-top {
+    transform: translateY(0);
+  }
+}
+
+.form-container {
+  height: 100vh;
+  overflow-y: auto;
+}
+
 // ----------------------
 // Form Section (Card)
 // ----------------------

@@ -564,11 +564,6 @@ select {
 ========================================*/
 body {
   background-color: #f8f9f9;
-  background-image: url(../img/bg3.png);
-  background-repeat: repeat;
-  background-position: center center;
-  background-attachment: fixed;
-  background-size: 60%;
   color: #60160f;
   min-height: 100vh;
   position: relative;

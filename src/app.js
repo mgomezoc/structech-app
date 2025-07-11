@@ -2,6 +2,7 @@
 // Punto de entrada principal - Inicializa toda la aplicación
 
 import { Capacitor } from '@capacitor/core';
+import { Keyboard } from '@capacitor/keyboard'; // <-- Nuevo import
 import { SplashScreen } from '@capacitor/splash-screen';
 import { setupRoutes } from './routes/index.js';
 import { eventBus } from './services/api.service.js';
@@ -23,7 +24,7 @@ defineElement(lottie.loadAnimation);
 
 // Tu licencia de BlinkID
 const LICENSE =
-  'sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEEyT0RjNE5UTXpORGdzSWtOeVpXRjBaV1JHYjNJaU9pSmtOVGxoT1dFMU5DMWlOV1EzTFRFek56VXRNRFkyWVMxbVlURmhZemcyTkdaa1pqSWlmUT09K5ZB12XvNfWakJN2x47CRJwF0oSGcF16bKfyRoB8L3L6cosgaXW2pCmyW9k5r+8al2MdRdf2/oLknazvBA/5PqICqpwic3+mjGl5aZcNm63iM/MA1FZx85cKqLZCw+RHY7Zt/VkBQaRfjbRlcRr2vow/EJLOp1TM';
+  'sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEl5TXpFMU5UWXhOVGdzSWtOeVpXRjBaV1JHYjNJaU9pSmtOVGxoT1dFMU5DMWlOV1EzTFRFek56VXRNRFkyWVMxbVlURmhZemcyTkdaa1pqSWlmUT09DbgY5pEazKW1FM0yIcUkMoZy1UkBI8dMWchnH/GnjczJHqe0hVr51BAiWM25FjsicPtpmfBLtmIZVE2lz8ARr4nB63QBhLjwccCjzYWTZrcqfe1yQzoHzujEn1ty9VpCVxIwM5HXmJPKNV7vgIiaeLyIQiTOQ3dE/A==';
 
 // Función principal de inicialización
 async function initializeApp() {
@@ -46,6 +47,11 @@ async function initializeApp() {
     // Hacer disponible la función de escaneo globalmente
     window.scanINE = scanINE;
 
+    // Configurar comportamiento global del teclado
+    if (Capacitor.isNativePlatform()) {
+      await configureKeyboard();
+    }
+
     // Ocultar splash screen si es app nativa
     if (Capacitor.isNativePlatform()) {
       await SplashScreen.hide();
@@ -62,9 +68,36 @@ async function initializeApp() {
   }
 }
 
+// Nueva función para configurar el teclado globalmente
+async function configureKeyboard() {
+  try {
+    // Listener global para cuando se muestra el teclado
+    Keyboard.addListener('keyboardWillShow', info => {
+      // Agregar clase al body para ajustes globales
+      document.body.classList.add('keyboard-visible');
+      document.body.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
+    });
+
+    Keyboard.addListener('keyboardWillHide', () => {
+      document.body.classList.remove('keyboard-visible');
+      document.body.style.removeProperty('--keyboard-height');
+    });
+
+    // Mostrar la barra de accesorios en iOS (Done button)
+    await Keyboard.setAccessoryBarVisible({ isVisible: true });
+
+    // Configurar el modo de resize
+    await Keyboard.setResizeMode({ mode: 'ionic' });
+
+    // Estilo del teclado (light/dark)
+    await Keyboard.setStyle({ style: 'light' });
+  } catch (error) {
+    console.error('Error configurando teclado:', error);
+  }
+}
+
 // ✅ Mostrar pantalla de carga usando dom helper
 function showLoadingScreen() {
-  // Crear elemento con dom helper
   const loaderHtml = `
     <div class="app-loader-container">
       <div class="loader-content">
@@ -74,20 +107,16 @@ function showLoadingScreen() {
           <div class="spinner-ring"></div>
         </div>
         <div class="loader-dots">
-          <span></span>
-          <span></span>
-          <span></span>
+          <span></span><span></span><span></span>
         </div>
         <p class="loader-text">Cargando</p>
       </div>
     </div>
   `;
 
-  // ✅ Crear loader usando dom helper
   const loader = dom(document.createElement('div'));
   loader.attr('id', 'app-loader').html(loaderHtml);
 
-  // Agregar estilos dinámicamente
   const styles = document.createElement('style');
   styles.textContent = getLoaderStyles();
 
@@ -99,20 +128,13 @@ function showLoadingScreen() {
 function hideLoadingScreen() {
   const loader = $('#app-loader');
   if (loader) {
-    // ✅ Usar dom helper para animación
     dom(loader).addClass('fade-out');
-
     setTimeout(() => {
-      // ✅ Remover elemento
-      if (loader.parentNode) {
-        loader.parentNode.removeChild(loader);
-      }
-
-      // Limpiar estilos también
-      const styles = $('style');
-      if (styles && styles.textContent.includes('#app-loader')) {
-        styles.parentNode.removeChild(styles);
-      }
+      loader.parentNode?.removeChild(loader);
+      // Limpiar estilos
+      document.querySelectorAll('style').forEach(s => {
+        if (s.textContent?.includes('#app-loader')) s.parentNode?.removeChild(s);
+      });
     }, 500);
   }
 }
@@ -126,38 +148,26 @@ function showErrorScreen(message) {
       <button id="retryButton">Reintentar</button>
     </div>
   `;
-
-  // ✅ Limpiar body y agregar error screen
   dom(document.body).html(errorHtml);
-
-  // ✅ Agregar evento al botón usando dom helper
-  dom('#retryButton').on('click', () => {
-    window.location.reload();
-  });
+  dom('#retryButton').on('click', () => window.location.reload());
 }
 
 // Configurar listeners globales
 function setupGlobalListeners() {
-  // Manejar errores no capturados
   window.addEventListener('unhandledrejection', async event => {
     console.error('Error no manejado:', event.reason);
-
-    await dialogService
-      .errorWithAction(
-        'Error Inesperado',
-        'Ha ocurrido un error inesperado en la aplicación.',
-        'Recargar',
-        'Continuar',
-      )
-      .then(async shouldReload => {
-        if (shouldReload) {
-          await hapticsService.medium();
-          window.location.reload();
-        }
-      });
+    const shouldReload = await dialogService.errorWithAction(
+      'Error Inesperado',
+      'Ha ocurrido un error inesperado en la aplicación.',
+      'Recargar',
+      'Continuar',
+    );
+    if (shouldReload) {
+      await hapticsService.medium();
+      window.location.reload();
+    }
   });
 
-  // Manejar cambios de conectividad
   window.addEventListener('online', async () => {
     await hapticsService.success();
     mostrarMensajeEstado('✅ Conexión restaurada', 2000);
@@ -171,67 +181,47 @@ function setupGlobalListeners() {
     );
   });
 
-  // Manejar botón atrás en Android
   if (Capacitor.isNativePlatform()) {
     document.addEventListener('backbutton', async () => {
-      const currentPath = window.location.hash;
-      if (currentPath === '#/login' || currentPath === '#/dashboard' || currentPath === '#/') {
-        // Usar diálogo nativo para confirmar salida
-        const shouldExit = await dialogService.confirmExit();
-        if (shouldExit) {
-          navigator.app?.exitApp();
-        }
+      const path = window.location.hash;
+      if (['#/login', '#/dashboard', '#/'].includes(path)) {
+        const exit = await dialogService.confirmExit();
+        if (exit) navigator.app?.exitApp();
       } else {
-        // En otras vistas, volver atrás
         window.history.back();
       }
     });
   }
 }
 
-// Tu función de escaneo existente (adaptada)
+// Función de escaneo con BlinkID
 async function scanINE() {
   await hapticsService.light();
-
   mostrarMensajeEstado('▶️ Solicitando permisos de cámara…');
-
   const { Camera } = Capacitor.Plugins;
   const perm = await Camera.requestPermissions();
   if (perm.camera !== 'granted') {
     await hapticsService.error();
-    mostrarMensajeEstado('❌ Permiso de cámara denegado', 3000);
-    return;
+    return mostrarMensajeEstado('❌ Permiso de cámara denegado', 3000);
   }
 
   try {
     const plugin = new BlinkID.BlinkIDPlugin();
     const recognizer = new BlinkID.BlinkIdMultiSideRecognizer();
-
-    // imágenes completas / faciales / firma
     recognizer.returnFullDocumentImage = true;
     recognizer.returnFaceImage = true;
     recognizer.returnSignatureImage = true;
-
-    // filtrado de mala calidad
     recognizer.enableBlurFilter = true;
     recognizer.enableGlareFilter = true;
-
-    // NO restringir solo a barcode (activar OCR + barcode)
     recognizer.allowBarcodeScanOnly = false;
-
-    // ajustes de DPI
     recognizer.fullDocumentImageDpi = 250;
     recognizer.faceImageDpi = 250;
     recognizer.signatureImageDpi = 250;
 
     const rc = new BlinkID.RecognizerCollection([recognizer]);
-
-    // Overlay con instrucciones en español
     const overlay = new BlinkID.BlinkIdOverlaySettings();
     overlay.language = 'es';
     overlay.country = 'MX';
-
-    // DESACTIVA TODOS LOS ELEMENTOS DE BRANDING
     overlay.showOnboardingInfo = false;
     overlay.showIntroductionDialog = false;
     overlay.showMicroblinkLogo = false;
@@ -240,21 +230,14 @@ async function scanINE() {
     overlay.showResultScreen = false;
     overlay.showSuccessFrame = false;
     overlay.showCameraListButton = false;
-
-    // Texto personalizado
+    overlay.showScanningLine = false;
     overlay.poweredByText = 'STRUCTECH';
-
-    // Solo mostrar lo necesario
     overlay.showDocumentNotSupportedDialog = true;
     overlay.showFlashlightWarning = true;
     overlay.showTorchButton = true;
     overlay.showCancelButton = true;
-
-    // Textos personalizados
     overlay.firstSideInstructionsText = 'Coloca el FRENTE de tu INE dentro del marco';
     overlay.flipInstructions = 'Ahora voltea tu INE y escanea el REVERSO';
-
-    // Resolución de cámara
     overlay.androidCameraResolutionPreset = BlinkID.AndroidCameraResolutionPreset.PresetFullHD;
     overlay.iosCameraResolutionPreset = BlinkID.iOSCameraResolutionPreset.PresetFullHD;
 
@@ -263,24 +246,16 @@ async function scanINE() {
       ios: LICENSE,
       showTimeLimitedLicenseKeyWarning: false,
     };
-
-    console.log('► Lanzando scanWithCamera…', { recognizer, overlay });
+    console.log('► Lanzando scanWithCamera…');
     const results = await plugin.scanWithCamera(overlay, rc, keys);
-    console.log('► Resultados:', results);
 
     if (!results.length) {
       await hapticsService.warning();
       mostrarMensajeEstado('⚠️ Usuario canceló el escaneo', 3000);
     } else {
       await hapticsService.warning();
-      // Emitir evento con los resultados
       eventBus.emit('scan:complete', results[0]);
-
-      // Si estamos en la vista del formulario, poblar datos
-      if (window.poblarFormulario) {
-        window.poblarFormulario(results[0]);
-      }
-
+      window.poblarFormulario?.(results[0]);
       mostrarMensajeEstado('✅ ¡Documento escaneado exitosamente!', 3000);
     }
   } catch (e) {
@@ -290,18 +265,12 @@ async function scanINE() {
   }
 }
 
-// ✅ Función mejorada para mostrar mensajes usando dom helper
+// Función para mostrar toasts
 function mostrarMensajeEstado(mensaje, duracion = 0) {
-  // Añadir haptic basado en el tipo de mensaje
-  if (mensaje.includes('✅')) {
-    hapticsService.light();
-  } else if (mensaje.includes('❌')) {
-    hapticsService.error();
-  } else if (mensaje.includes('⚠️')) {
-    hapticsService.warning();
-  }
+  if (mensaje.includes('✅')) hapticsService.light();
+  else if (mensaje.includes('❌')) hapticsService.error();
+  else if (mensaje.includes('⚠️')) hapticsService.warning();
 
-  // ✅ Crear toast usando dom helper
   const toast = dom(document.createElement('div')).addClass('toast-message').text(mensaje).css({
     position: 'fixed',
     bottom: '80px',
@@ -318,29 +287,16 @@ function mostrarMensajeEstado(mensaje, duracion = 0) {
 
   document.body.appendChild(toast.get());
 
-  if (duracion > 0) {
-    setTimeout(() => {
-      // ✅ Animar salida usando dom helper
-      toast.css('animation', 'slideDown 0.3s ease-out');
-      setTimeout(() => {
-        const toastElement = toast.get();
-        if (toastElement.parentNode) {
-          toastElement.parentNode.removeChild(toastElement);
-        }
-      }, 300);
-    }, duracion);
-  } else {
-    // Para mensajes sin duración, remover después de 10 segundos
-    setTimeout(() => {
-      const toastElement = toast.get();
-      if (toastElement.parentNode) {
-        toastElement.parentNode.removeChild(toastElement);
-      }
-    }, 10000);
-  }
+  const removeToast = () => {
+    toast.css('animation', 'slideDown 0.3s ease-out');
+    setTimeout(() => toast.get().remove(), 300);
+  };
+
+  if (duracion > 0) setTimeout(removeToast, duracion);
+  else setTimeout(removeToast, 10000);
 }
 
-// Función separada para obtener estilos del loader
+// Estilos del loader
 function getLoaderStyles() {
   return `
     #app-loader {
@@ -572,7 +528,7 @@ function getLoaderStyles() {
   `;
 }
 
-// Iniciar la aplicación cuando el DOM esté listo
+// Iniciar cuando el DOM esté listo
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
 } else {

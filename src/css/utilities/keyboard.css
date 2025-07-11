@@ -1,0 +1,169 @@
+.keyboard-aware-container {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: padding-bottom 0.3s ease-out;
+}
+.keyboard-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-bottom: 20px;
+}
+input[type='text'],
+input[type='email'],
+input[type='tel'],
+input[type='number'],
+input[type='password'],
+input[type='date'],
+textarea,
+select {
+  font-size: 16px !important;
+}
+@media (max-width: 768px) {
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='number'],
+  input[type='password'],
+  input[type='date'],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+.form-control {
+  transition: all 0.2s ease-out;
+}
+.form-control.keyboard-focused {
+  background-color: #ffffff;
+  border-color: #37a6a6;
+  box-shadow: 0 0 0 3px rgba(55, 166, 166, 0.15);
+  transform: scale(1.02);
+}
+.form-view-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.form-view-container .alta-header {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #ffffff;
+}
+.form-view-container .progress-indicator {
+  flex-shrink: 0;
+  position: sticky;
+  top: 60px;
+  z-index: 99;
+  background: #ffffff;
+  padding-bottom: 10px;
+}
+.form-view-container .form-container {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-bottom: env(keyboard-inset-height, 50px);
+}
+.form-section {
+  margin-bottom: 24px;
+}
+.form-section:last-child {
+  margin-bottom: 100px;
+}
+.keyboard-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  background: #f0f0f0;
+  border-top: 1px solid #d1d5db;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+  z-index: 1000;
+}
+.keyboard-toolbar.visible {
+  display: flex;
+  transform: translateY(0);
+}
+.keyboard-toolbar .toolbar-nav {
+  display: flex;
+  gap: 20px;
+}
+.keyboard-toolbar .toolbar-nav button {
+  background: none;
+  border: none;
+  color: #37a6a6;
+  font-size: 14px;
+  padding: 8px;
+}
+.keyboard-toolbar .toolbar-nav button:disabled {
+  color: #d1d5db;
+}
+.keyboard-toolbar .toolbar-action button {
+  background: none;
+  border: none;
+  color: #37a6a6;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 8px 12px;
+}
+.platform-ios .form-container {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 50px);
+}
+.platform-ios .form-control {
+  min-height: 44px;
+}
+.platform-android .form-container {
+  padding-bottom: 50px;
+}
+.platform-android.keyboard-visible .form-view-container {
+  height: calc(100vh - var(--keyboard-height, 0px));
+}
+@keyframes slideUpInput {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.slide-up-on-focus:focus {
+  animation: slideUpInput 0.3s ease-out;
+}
+.form-actions {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, #ffffff 80%, transparent);
+  padding: 20px 0 calc(env(safe-area-inset-bottom) + 20px);
+  margin-top: 20px;
+}
+.form-actions::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
+}
+.focus-trap:focus-within .form-section {
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+.focus-trap:focus-within .form-section:focus-within {
+  opacity: 1;
+}

@@ -709,3 +709,162 @@
     }
   }
 }
+
+// ============================================
+// OPTIMIZACIONES PARA TECLADO
+// ============================================
+
+// Asegurar que el contenedor principal use el sistema de keyboard-aware
+.form-view-container {
+  &.keyboard-aware-container {
+    // Se ajustará dinámicamente cuando aparezca el teclado
+    transition: padding-bottom 0.3s ease-out;
+  }
+}
+
+// Mejorar la experiencia con selects en móvil
+.select-wrapper {
+  position: relative;
+
+  select {
+    // Altura mínima para mejor toque
+    min-height: 48px;
+
+    // Mejorar la apariencia en iOS
+    -webkit-appearance: none;
+    background-color: #ffffff;
+
+    &:focus {
+      // Resaltar cuando tiene focus
+      background-color: #f0f9ff;
+    }
+  }
+}
+
+// Estados de focus mejorados para campos
+.form-control {
+  transition: all 0.2s ease-out;
+
+  &:focus {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 3px rgba(55, 166, 166, 0.15);
+    background-color: #ffffff;
+    z-index: 10;
+    position: relative;
+  }
+
+  // Prevenir zoom en iOS
+  @media (max-width: 768px) {
+    font-size: 16px !important;
+  }
+}
+
+// Mejorar espaciado cuando el teclado está activo
+.keyboard-active {
+  .form-section {
+    // Más padding inferior para dar espacio
+    padding-bottom: 24px;
+
+    &:last-child {
+      padding-bottom: 300px; // Espacio extra para el último section
+    }
+  }
+}
+
+// Gender options optimizados para touch
+.gender-option {
+  label {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+}
+
+// Toolbar del teclado (opcional)
+.keyboard-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #f8f9fa;
+  border-top: 1px solid #e5e7eb;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+  z-index: 1001;
+
+  &.visible {
+    transform: translateY(0);
+  }
+
+  .toolbar-info {
+    font-size: 14px;
+    color: #6b7280;
+  }
+
+  .toolbar-btn {
+    background: #37a6a6;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 16px;
+  }
+}
+
+// Optimización para el documento upload en móvil
+.document-upload-area {
+  // Mejorar el área táctil
+  min-height: 180px;
+
+  .upload-button {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+// Fix para el scroll en iOS cuando hay teclado
+@supports (-webkit-touch-callout: none) {
+  .form-container {
+    // iOS specific
+    -webkit-overflow-scrolling: touch;
+
+    &.keyboard-active {
+      // Ajuste específico para iOS
+      padding-bottom: calc(300px + env(safe-area-inset-bottom));
+    }
+  }
+}
+
+// Mejora visual para campos con error cuando hay teclado
+.form-control {
+  &.error {
+    border-color: #ef4444;
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    }
+  }
+}
+
+// Animación suave al cambiar de campo
+@keyframes fieldFocusIn {
+  from {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+.form-control:focus {
+  animation: fieldFocusIn 0.2s ease-out forwards;
+}

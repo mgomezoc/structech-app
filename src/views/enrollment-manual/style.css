@@ -543,3 +543,110 @@
     max-height: 200px;
   }
 }
+.form-view-container.keyboard-aware-container {
+  transition: padding-bottom 0.3s ease-out;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  min-height: 48px;
+  -webkit-appearance: none;
+  background-color: #ffffff;
+}
+.select-wrapper select:focus {
+  background-color: #f0f9ff;
+}
+.form-control {
+  transition: all 0.2s ease-out;
+}
+.form-control:focus {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 3px rgba(55, 166, 166, 0.15);
+  background-color: #ffffff;
+  z-index: 10;
+  position: relative;
+}
+@media (max-width: 768px) {
+  .form-control {
+    font-size: 16px !important;
+  }
+}
+.keyboard-active .form-section {
+  padding-bottom: 24px;
+}
+.keyboard-active .form-section:last-child {
+  padding-bottom: 300px;
+}
+.gender-option label {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.keyboard-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #f8f9fa;
+  border-top: 1px solid #e5e7eb;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+  z-index: 1001;
+}
+.keyboard-toolbar.visible {
+  transform: translateY(0);
+}
+.keyboard-toolbar .toolbar-info {
+  font-size: 14px;
+  color: #6b7280;
+}
+.keyboard-toolbar .toolbar-btn {
+  background: #37a6a6;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 16px;
+}
+.document-upload-area {
+  min-height: 180px;
+}
+.document-upload-area .upload-button {
+  min-height: 44px;
+  font-size: 16px;
+}
+@supports (-webkit-touch-callout: none) {
+  .form-container {
+    -webkit-overflow-scrolling: touch;
+  }
+  .form-container.keyboard-active {
+    padding-bottom: calc(300px + env(safe-area-inset-bottom));
+  }
+}
+.form-control.error {
+  border-color: #ef4444;
+}
+.form-control.error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+@keyframes fieldFocusIn {
+  from {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+.form-control:focus {
+  animation: fieldFocusIn 0.2s ease-out forwards;
+}

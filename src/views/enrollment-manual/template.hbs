@@ -43,7 +43,7 @@
                     <div class="form-group">
                         <label for="subestructura" class="required">
                             Subestructura
-                            
+
                         </label>
                         <div class="select-wrapper">
                             <select id="subestructura" name="subestructura" class="form-control" required disabled>
@@ -67,34 +67,41 @@
                     <div class="form-group flex-1">
                         <label for="nombre" class="required">
                             Nombre
-                            
+
                         </label>
-                        <input type="text" id="nombre" name="nombre" class="form-control" required />
+                        <input type="text" id="nombre" name="nombre" class="form-control" required
+                            autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="next"
+                            placeholder="Nombre(s)" />
                     </div>
                     <div class="form-group flex-1">
                         <label for="apellidoPaterno" class="required">
                             Apellido Paterno
-                            
+
                         </label>
-                        <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control" required />
+                        <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control" required
+                            autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="next"
+                            placeholder="Apellido paterno" />
                     </div>
                     <div class="form-group flex-1">
                         <label for="apellidoMaterno">Apellido Materno</label>
-                        <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control" />
+                        <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control"
+                            autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="next"
+                            placeholder="Apellido materno" />
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group flex-1">
                         <label for="fechaNacimiento" class="required">
                             Fecha de Nacimiento
-                            
+
                         </label>
-                        <input type="date" id="fechaNacimiento" name="fechaNacimiento" class="form-control" required />
+                        <input type="date" id="fechaNacimiento" name="fechaNacimiento" class="form-control" required
+                            max="2010-12-31" min="1920-01-01" />
                     </div>
                     <div class="form-group flex-1">
                         <label for="estadoNacimiento" class="required">
                             Lugar de Nacimiento
-                            
+
                         </label>
                         <div class="select-wrapper">
                             <select id="estadoNacimiento" name="estadoNacimiento" class="form-control" required>
@@ -110,7 +117,7 @@
                 <div class="form-group">
                     <label class="required">
                         Género
-                        
+
                     </label>
                     <div class="gender-group">
                         <div class="gender-option">
@@ -133,11 +140,12 @@
                 <div class="form-group curp-group">
                     <label for="curp" class="required">
                         CURP
-                        
+
                     </label>
                     <div class="input-with-button">
                         <input type="text" id="curp" name="curp" class="form-control" readonly
-                            placeholder="Se generará automáticamente" maxlength="18" required />
+                            placeholder="Se generará automáticamente" maxlength="18" required
+                            autocapitalize="characters" autocorrect="off" spellcheck="false" />
                     </div>
                 </div>
             </section>
@@ -151,14 +159,15 @@
                     <div class="form-group flex-1">
                         <label for="codigoPostal" class="required">
                             Código Postal
-                            
+
                         </label>
-                        <input type="number" id="codigoPostal" name="codigoPostal" class="form-control" required />
+                        <input type="number" id="codigoPostal" name="codigoPostal" class="form-control" required
+                            inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" placeholder="12345" />
                     </div>
                     <div class="form-group flex-1">
                         <label for="colonia" class="required">
                             Colonia
-                            
+
                         </label>
                         <div class="select-wrapper">
                             <select id="colonia" name="colonia" class="form-control" required disabled>
@@ -174,10 +183,11 @@
                 <div class="form-group">
                     <label for="calleNumero" class="required">
                         Dirección (calle y número)
-                        
+
                     </label>
                     <input type="text" id="calleNumero" name="calleNumero" class="form-control"
-                        placeholder="Ej: Morelos 426" required />
+                        placeholder="Ej: Morelos 426" required autocapitalize="sentences" autocorrect="off"
+                        enterkeyhint="next" />
                 </div>
             </section>
 
@@ -188,7 +198,8 @@
                 </div>
                 <div class="form-group">
                     <textarea id="observacion" name="observacion" class="form-control" rows="3"
-                        placeholder="Agregar observaciones..."></textarea>
+                        placeholder="Agregar observaciones..." autocapitalize="sentences" autocorrect="on"
+                        spellcheck="true" enterkeyhint="done"></textarea>
                 </div>
             </section>
 
@@ -201,13 +212,16 @@
                     <div class="form-group flex-1">
                         <label for="telefono" class="required">
                             Teléfono
-                            
+
                         </label>
-                        <input type="tel" id="telefono" name="telefono" class="form-control" required />
+                        <input type="tel" id="telefono" name="telefono" class="form-control" required inputmode="tel"
+                            pattern="[0-9]*" placeholder="10 dígitos" enterkeyhint="next" />
                     </div>
                     <div class="form-group flex-1">
                         <label for="email">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" />
+                        <input type="email" id="email" name="email" class="form-control" inputmode="email"
+                            autocapitalize="off" autocorrect="off" placeholder="correo@ejemplo.com"
+                            enterkeyhint="next" />
                     </div>
                 </div>
             </section>
@@ -220,17 +234,20 @@
                         <span>Sube una imagen clara del documento</span>
                     </div>
                 </div>
-            
+
                 <div class="document-upload-section">
                     <div class="document-upload-area" id="documentUploadArea">
                         <input type="file" id="otherFile" accept="image/*" class="file-input" />
-            
+
                         <!-- Estado inicial - sin archivo -->
                         <div class="upload-placeholder" id="uploadPlaceholder">
                             <div class="upload-icon">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M14 2H6C4.89 2 4 2.89 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2Z"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M14 2H6C4.89 2 4 2.89 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2Z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" />
                                     <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                         stroke-linejoin="round" />
                                     <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -252,7 +269,7 @@
                                 <span>Seleccionar archivo</span>
                             </button>
                         </div>
-            
+
                         <!-- Estado con archivo subido -->
                         <div class="document-preview" id="documentPreview" style="display: none;">
                             <div class="preview-header">
@@ -264,11 +281,12 @@
                                     </div>
                                 </div>
                                 <button type="button" class="remove-file" id="removeFileBtn">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round" />
-                                        <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round" />
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M18 6L6 18" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" />
+                                        <path d="M6 6L18 18" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
                                 </button>
                             </div>
@@ -277,7 +295,7 @@
                             </div>
                         </div>
                     </div>
-            
+
                     <!-- Campo oculto para los datos -->
                     <input type="hidden" id="otherData" name="otherData" />
                 </div>
@@ -334,5 +352,13 @@
                 </button>
             </section>
         </form>
+        <div class="keyboard-toolbar" id="keyboardToolbar" style="display: none;">
+            <div class="toolbar-info">
+                <span id="currentFieldName">Campo actual</span>
+            </div>
+            <div class="toolbar-actions">
+                <button type="button" class="toolbar-btn" id="keyboardDone">Listo</button>
+            </div>
+        </div>
     </div>
 </div>

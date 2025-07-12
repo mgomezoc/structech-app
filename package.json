@@ -33,6 +33,7 @@
     "@capacitor/preferences": "^7.0.1",
     "@capacitor/splash-screen": "^7.0.1",
     "@capacitor/status-bar": "^7.0.1",
+    "@ionic/pwa-elements": "^3.3.0",
     "@lordicon/element": "^1.11.0",
     "@microblink/blinkid-capacitor": "^6.13.1",
     "axios": "^1.10.0",

@@ -1,9 +1,9 @@
 // src/app.js
 // Punto de entrada principal - Inicializa toda la aplicación
-
 import { Capacitor } from '@capacitor/core';
 import { Keyboard } from '@capacitor/keyboard'; // <-- Nuevo import
 import { SplashScreen } from '@capacitor/splash-screen';
+import { defineCustomElements } from '@ionic/pwa-elements/loader';
 import { setupRoutes } from './routes/index.js';
 import { eventBus } from './services/api.service.js';
 import { authService } from './services/auth.service.js';
@@ -15,6 +15,8 @@ import { defineElement } from '@lordicon/element';
 import * as BlinkID from '@microblink/blinkid-capacitor';
 import lottie from 'lottie-web';
 import './css/style.less';
+
+defineCustomElements(window);
 
 // Hacer disponibles funciones globales que necesitas
 window.lottie = lottie;

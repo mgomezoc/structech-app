@@ -33,7 +33,6 @@
                 <div class="form-group">
                     <label for="citizen-selector-trigger" class="required">
                         Ciudadano
-                        <span class="required-mark">*</span>
                     </label>
             
                     <div class="custom-selector-trigger" id="citizen-selector-trigger" tabindex="0">
@@ -80,7 +79,7 @@
                     <div class="form-group">
                         <label for="typeSelect" class="required">
                             Tipo de gestión
-                            <span class="required-mark">*</span>
+
                         </label>
                         <div class="select-wrapper">
                             <select id="typeSelect" name="type" required>
@@ -96,7 +95,7 @@
                     <div class="form-group">
                         <label for="classificationSelect" class="required">
                             Clasificación
-                            <span class="required-mark">*</span>
+
                         </label>
                         <div class="select-wrapper">
                             <select id="classificationSelect" name="classification" required disabled>
@@ -123,7 +122,6 @@
                 <div class="form-group">
                     <label for="description" class="required">
                         Descripción
-                        <span class="required-mark">*</span>
                     </label>
                     <div class="textarea-wrapper">
                         <textarea id="description" name="description" rows="4"
@@ -138,29 +136,35 @@
             <!-- Archivo Section -->
             <section class="form-section">
                 <div class="section-header">
-                    <lord-icon src="https://cdn.lordicon.com/nxooksci.json" trigger="loop" delay="6000"
-                        colors="primary:#37a6a6" style="width:24px;height:24px">
+                    <lord-icon src="https://cdn.lordicon.com/nxooksci.json" trigger="loop" delay="6000" colors="primary:#37a6a6"
+                        style="width:24px;height:24px">
                     </lord-icon>
                     <h2>Documentación de apoyo</h2>
                 </div>
-
+            
                 <div class="form-group">
                     <label>Archivo adjunto (opcional)</label>
                     <div class="file-upload-area" id="fileUploadArea">
                         <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf" class="hidden"
                             aria-label="Seleccionar archivo" />
-
+            
                         <!-- Upload Content -->
                         <div class="file-upload-content" id="fileUploadContent">
                             {{{uploadIcon}}}
                             <p class="upload-text">Arrastra un archivo aquí o</p>
-                            <button type="button" class="btn-add-file" id="selectFileBtn">
-                                {{{plusIcon}}}
-                                Añadir archivo
-                            </button>
+                            <div class="upload-buttons">
+                                <button type="button" class="btn-add-file" id="selectFileBtn">
+                                    {{{plusIcon}}}
+                                    Añadir archivo
+                                </button>
+                                <button type="button" class="btn-take-photo" id="cameraBtn">
+                                    {{{cameraIcon}}}
+                                    Tomar foto
+                                </button>
+                            </div>
                             <p class="file-types">JPG, PNG o PDF (máx. 5MB)</p>
                         </div>
-
+            
                         <!-- File Preview -->
                         <div class="file-preview hidden" id="filePreview">
                             <div class="file-info">
@@ -170,8 +174,7 @@
                                     <p class="file-size" id="fileSize"></p>
                                 </div>
                             </div>
-                            <button type="button" class="btn-remove-file" id="removeFileBtn"
-                                aria-label="Eliminar archivo">
+                            <button type="button" class="btn-remove-file" id="removeFileBtn" aria-label="Eliminar archivo">
                                 {{{removeIcon}}}
                             </button>
                         </div>

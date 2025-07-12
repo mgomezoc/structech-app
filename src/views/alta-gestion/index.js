@@ -1,5 +1,5 @@
 // src/views/alta-gestion/index.js
-
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Geolocation } from '@capacitor/geolocation';
 import Handlebars from 'handlebars';
 import { router } from '../../routes/index.js';
@@ -41,6 +41,7 @@ export default class AltaGestionView {
       removeIcon: this._getRemoveIcon(),
       plusIcon: this._getPlusIcon(),
       chevronIcon: this._getChevronIcon(),
+      cameraIcon: this._getCameraIcon(),
     });
   }
 
@@ -59,6 +60,7 @@ export default class AltaGestionView {
     this.btnText = $('#btnText');
     this.btnLoader = $('#btnLoader');
     this.successOverlay = $('#successOverlay');
+    this.cameraBtn = $('#cameraBtn');
 
     // Referencias para el nuevo selector de ciudadano
     this.citizenSelector = {
@@ -86,6 +88,12 @@ export default class AltaGestionView {
     dom('#backBtn').on('click', async () => {
       await hapticsService.light();
       router.navigate(ROUTES.DASHBOARD);
+    });
+
+    // Botón de cámara
+    dom('#cameraBtn').on('click', async () => {
+      await hapticsService.light();
+      await this._takePicture();
     });
 
     // --- LÓGICA DEL NUEVO SELECTOR DE CIUDADANO ---
@@ -341,6 +349,113 @@ export default class AltaGestionView {
     }
   }
 
+  async _takePicture() {
+    try {
+      // 1. Permisos
+      const perms = await Camera.checkPermissions();
+      if (perms.camera !== 'granted') {
+        const req = await Camera.requestPermissions();
+        if (req.camera !== 'granted') {
+          await dialogService.alert(
+            'Permiso denegado',
+            'Se requiere acceso a la cámara para tomar fotos.',
+          );
+          return;
+        }
+      }
+
+      // 2. Abrir cámara
+      const image = await Camera.getPhoto({
+        quality: 10,
+        allowEditing: false,
+        resultType: CameraResultType.Uri, // <--- usamos URI para ahorrar memoria
+        source: CameraSource.Camera,
+        saveToGallery: false,
+      });
+
+      // 3. Descargar blob desde la URI
+      const response = await fetch(image.webPath);
+      const blob = await response.blob();
+      const arrayBuf = await blob.arrayBuffer();
+      const uint8Arr = new Uint8Array(arrayBuf);
+
+      // 4. Convertir a Base64
+      const base64Data = btoa(
+        uint8Arr.reduce((data, byte) => data + String.fromCharCode(byte), ''),
+      );
+
+      // 5. Preparar objeto "File" simulado
+      const mimeType = blob.type || 'image/jpeg';
+      const fileName = `foto_${Date.now()}.${mimeType.split('/')[1]}`;
+      const photoFile = {
+        name: fileName,
+        size: blob.size,
+        type: mimeType,
+      };
+
+      // 6. Actualizar estado y formulario
+      this.selectedFile = photoFile;
+      this.formData.File = base64Data;
+      await hapticsService.success();
+
+      // 7. Mostrar preview usando tu helper existente
+      this._showPhotoPreview(photoFile, base64Data);
+      this._validateForm();
+
+      // 8. Toast de éxito
+      window.mostrarMensajeEstado('📸 Foto capturada exitosamente', 2000);
+    } catch (error) {
+      console.error('Error al tomar foto:', error);
+      await hapticsService.error();
+
+      // Si el usuario canceló, no mostramos alerta
+      if (error.message?.includes('User cancelled')) {
+        return;
+      }
+
+      // Mensajes específicos
+      if (error.message?.includes('Camera service not available')) {
+        await dialogService.alert(
+          'Cámara no disponible',
+          'La cámara no está disponible en este dispositivo.',
+        );
+      } else {
+        await dialogService.alert(
+          'Error',
+          'No se pudo tomar la foto. Por favor, intenta de nuevo.',
+        );
+      }
+    }
+  }
+
+  _showPhotoPreview(file, base64Data) {
+    // Actualizar la información del archivo
+    $('#fileName').textContent = file.name;
+    $('#fileSize').textContent = this._formatFileSize(file.size);
+
+    // Para fotos, podemos mostrar un preview visual
+    const filePreview = $('#filePreview');
+
+    // Agregar una miniatura de la imagen si no existe
+    let thumbnail = filePreview.querySelector('.file-thumbnail');
+    if (!thumbnail) {
+      thumbnail = document.createElement('img');
+      thumbnail.className = 'file-thumbnail';
+      const fileInfo = filePreview.querySelector('.file-info');
+      if (fileInfo) {
+        fileInfo.insertBefore(thumbnail, fileInfo.firstChild);
+      }
+    }
+
+    // Establecer la imagen
+    thumbnail.src = `data:image/jpeg;base64,${base64Data}`;
+    thumbnail.alt = 'Vista previa de la foto';
+
+    // Mostrar el preview
+    dom(this.fileUploadContent).addClass('hidden');
+    dom(this.filePreview).removeClass('hidden');
+  }
+
   async _handleFileSelect(file) {
     const valid = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
     const max = 5 * 1024 * 1024;
@@ -388,6 +503,13 @@ export default class AltaGestionView {
     this.selectedFile = null;
     this.formData.File = '';
     this.fileInput.value = '';
+
+    // Remover miniatura si existe
+    const thumbnail = this.filePreview?.querySelector('.file-thumbnail');
+    if (thumbnail) {
+      thumbnail.remove();
+    }
+
     dom(this.fileUploadContent).removeClass('hidden');
     dom(this.filePreview).addClass('hidden');
     this._validateForm();
@@ -529,6 +651,12 @@ export default class AltaGestionView {
   _getChevronIcon() {
     return `<svg class="select-icon" viewBox="0 0 24 24" width="16" height="16">
       <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+    </svg>`;
+  }
+
+  _getCameraIcon() {
+    return `<svg viewBox="0 0 24 24" width="20" height="20">
+      <path fill="currentColor" d="M12 15.2c-1.7 0-3.1-1.4-3.1-3.1S10.3 9 12 9s3.1 1.4 3.1 3.1-1.4 3.1-3.1 3.1zm7-9.2h-2.4l-1.3-2h-6.6L7.4 6H5C3.3 6 2 7.3 2 9v9c0 1.7 1.3 3 3 3h14c1.7 0 3-1.3 3-3V9c0-1.7-1.3-3-3-3z"/>
     </svg>`;
   }
 

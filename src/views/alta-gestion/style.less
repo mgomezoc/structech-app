@@ -888,3 +888,115 @@
     background-position: 200% 0;
   }
 }
+
+// Contenedor de botones
+.upload-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+// Botón de tomar foto
+.btn-take-photo {
+  background: @bg-hover;
+  border: 1px solid @border-color;
+  padding: 10px 20px;
+  border-radius: @radius-sm;
+  font-size: 14px;
+  font-weight: 500;
+  color: @text-primary;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  .transition();
+
+  &:hover {
+    background: fade(@primary-color, 10%);
+    border-color: @primary-color;
+    color: @primary-color;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// Miniatura de imagen en el preview
+.file-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: @radius-sm;
+  margin-right: 12px;
+  border: 1px solid @border-color;
+}
+
+// Ajuste para el file-info cuando hay thumbnail
+.file-info {
+  &:has(.file-thumbnail) {
+    .file-icon {
+      display: none; // Ocultar el icono cuando hay miniatura
+    }
+  }
+}
+
+// Responsive para móviles
+@media (max-width: 640px) {
+  .upload-buttons {
+    flex-direction: column;
+    width: 100%;
+
+    .btn-add-file,
+    .btn-take-photo {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .file-thumbnail {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+// Estados de focus para accesibilidad
+.btn-take-photo:focus-visible {
+  outline: 2px solid @primary-color;
+  outline-offset: 2px;
+}
+
+// Animación de captura (opcional)
+@keyframes cameraFlash {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+    background: white;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.camera-flash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 9999;
+  pointer-events: none;
+  animation: cameraFlash 0.3s ease-out;
+}

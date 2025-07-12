@@ -8,7 +8,9 @@ import tplSource from './template.hbs?raw';
 import { DynamicQuestions } from '../../components/dynamicQuestions.js';
 import { navigateTo } from '../../routes/index.js';
 import { datosService } from '../../services/datos.service.js';
+import { dialogService } from '../../services/dialog.service.js';
 import { enrollmentService } from '../../services/enrollment.service.js';
+import { hapticsService } from '../../services/haptics.service.js';
 import { ROUTES } from '../../utils/constants.js';
 
 import { audioRecorder } from '../../js/audioRecorder.js';
@@ -462,7 +464,7 @@ export default class EnrollmentManualView {
     // habilitar botón solo si todo OK
     const hasSig = signatureManager.hasSignature();
     const curp18 = this.curpField.val().length === 18;
-    if (pct === 100 && hasSig && curp18) {
+    if (pct === 100) {
       this.submitBtn.removeAttr('disabled');
     } else {
       this.submitBtn.attr('disabled', 'true');
@@ -624,12 +626,57 @@ export default class EnrollmentManualView {
 
   async handleSubmit(e) {
     e.preventDefault();
+
     const btn = this.submitBtn;
     btn.addClass('loading').attr('disabled', 'true');
-    try {
-      if (!signatureManager.hasSignature()) throw new Error('Por favor, proporciona tu firma');
-      if (this.curpField.val().length !== 18) throw new Error('El CURP debe tener 18 caracteres');
 
+    try {
+      // 1. Validar firma con diálogo
+      if (!signatureManager.hasSignature()) {
+        await hapticsService.error();
+        await dialogService.alert(
+          'Firma Requerida',
+          'Por favor proporcione su firma antes de continuar.',
+        );
+        return;
+      }
+
+      // 2. Validar longitud del CURP
+      if (this.curpField.val().length !== 18) {
+        await hapticsService.error();
+        await dialogService.alert('CURP inválido', 'El CURP debe tener exactamente 18 caracteres.');
+        return;
+      }
+
+      // 3. Validar preguntas dinámicas (nuevo comportamiento)
+      if (this.dynamicQuestions) {
+        const { isValid, unanswered } = this.dynamicQuestions.validate();
+        if (!isValid) {
+          await hapticsService.error();
+          await dialogService.alert(
+            'Preguntas Incompletas',
+            `Por favor responde: ${unanswered.map(u => u.question).join(', ')}.`,
+          );
+          return;
+        }
+      }
+
+      // 4. Confirmación antes de enviar (nuevo comportamiento)
+      const shouldSubmit = await dialogService.confirm(
+        'Confirmar Registro',
+        '¿Estás seguro que deseas guardar este registro? Verifica que toda la información sea correcta.',
+        'Guardar',
+        'Revisar',
+      );
+
+      if (!shouldSubmit) {
+        btn.removeClass('loading').removeAttr('disabled');
+        return;
+      }
+
+      await hapticsService.medium();
+
+      // 5. Recoger datos del formulario
       const formData = new FormData(this.form.get());
       const data = Object.fromEntries(formData.entries());
 
@@ -640,12 +687,12 @@ export default class EnrollmentManualView {
       data.signatureData = signatureManager.getSignatureAsBase64();
 
       if (audioRecorder.hasRecording()) {
-        const { data: ad, mimeType } = audioRecorder.getAudioData();
-        data.audioData = ad;
-        data.audioMimeType = mimeType;
+        const audio = audioRecorder.getAudioData();
+        data.audioData = audio.data;
+        data.audioMimeType = audio.mimeType;
       }
 
-      // domicilio completo
+      // Construir domicilio
       const opt = this.coloniaSelect.get().selectedOptions[0];
       if (opt) {
         data.domicilio = [
@@ -659,14 +706,33 @@ export default class EnrollmentManualView {
           .join(', ');
       }
 
+      // 6. Enviar datos al servidor
       const result = await enrollmentService.enrollManual(data);
       if (!result.success) throw new Error(result.error || 'Error en enrolamiento');
 
-      window.mostrarMensajeEstado('✅ Enrolamiento exitoso', 3000);
+      await hapticsService.success();
+
+      // 7. Mostrar diálogo de éxito con opciones (nuevo comportamiento)
+      const cont = await dialogService.successWithContinue(
+        '¡Registro Guardado!',
+        'Los datos se han guardado correctamente en el sistema.',
+        'Crear Otro',
+        'Dar de Alta Gestión',
+      );
+
       this._resetForm();
+      signatureManager.clear();
+      audioRecorder.deleteRecording();
+
+      if (cont) {
+        window.location.reload();
+      } else {
+        setTimeout(() => navigateTo(ROUTES.ALTA_GESTION), 1000);
+      }
     } catch (err) {
+      await hapticsService.error();
+      await dialogService.alert('Error Inesperado', `Ha ocurrido un error: ${err.message}`);
       console.error(err);
-      window.mostrarMensajeEstado(`❌ ${err.message}`, 5000);
     } finally {
       btn.removeClass('loading').removeAttr('disabled');
     }

@@ -3,43 +3,6 @@
   background: #f0f2f2;
   animation: fadeIn 0.3s ease-out;
 }
-.alta-header {
-  background: #ffffff;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.alta-header .back-button {
-  background: none;
-  border: none;
-  padding: 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  color: #6b7280;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.alta-header .back-button:hover {
-  background: #f3f4f6;
-  color: #37a6a6;
-}
-.alta-header .back-button:active {
-  transform: scale(0.95);
-}
-.alta-header .view-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
-  flex: 1;
-}
 .progress-indicator {
   background: #ffffff;
   padding: 16px 20px;
@@ -497,12 +460,6 @@
   display: none !important;
 }
 @media (max-width: 640px) {
-  .alta-header {
-    padding: 12px 16px;
-  }
-  .alta-header .view-title {
-    font-size: 18px;
-  }
   .form-container {
     padding: 16px 16px 32px;
   }

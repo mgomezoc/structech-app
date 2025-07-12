@@ -1,85 +1,71 @@
 {{!-- src/views/dashboard/template.hbs --}}
-
 <div class="dashboard-container">
-    <!-- Header -->
-    <header class="app-header">
+    <!-- Header minimalista -->
+    <header class="dashboard-header">
         <div class="header-content">
-            <div class="header-left">
-                <img src="{{imgHeader}}" alt="StructTech" class="header-logo" />
-                <h1>StructTech</h1>
-            </div>
-            <div class="header-right">
-                <div class="user-info">
-                    <button id="logoutBtn" class="btn-logout" title="Cerrar sesión">
-                        <lord-icon src="https://cdn.lordicon.com/ldpyyqjp.json" trigger="in" colors="primary:#ffffff"
-                            style="width:20px;height:20px">
-                        </lord-icon>
-                    </button>
-                </div>
-            </div>
+            <h1 class="header-greeting">Bienvenido</h1>
+            <button id="logoutBtn" class="btn-logout" aria-label="Cerrar sesión">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </button>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="app-content">
-        <div class="welcome-section">
-            <p>Selecciona el tipo de registro que deseas realizar</p>
-        </div>
-
-        <div class="dashboard-grid">
-            <!-- Registro con Escaneo de INE -->
-            <div class="dashboard-card primary-card" id="scanCard">
-                <div class="card-icon">
-                    <lord-icon src="https://cdn.lordicon.com/fgkmrslx.json" trigger="hover" colors="primary:#0ea5e9"
-                        style="width:64px;height:64px">
-                    </lord-icon>
+    <!-- Main Actions -->
+    <main class="dashboard-main">
+        <section class="actions-section">
+            <!-- Registro con INE (Grande) -->
+            <button class="action-card scan-card large" id="scanCard">
+                <div class="card-background"></div>
+                <div class="card-content">
+                    <div class="card-icon">
+                        <lord-icon src="https://cdn.lordicon.com/hbvyhtse.json" trigger="loop" delay="2000" colors="primary:#ffffff"
+                            style="width:80px;height:80px">
+                        </lord-icon>
+                    </div>
+                    <h3>Registro con INE</h3>
+                    <p>Escanea y registra</p>
                 </div>
-                <h3>Registro con Escaneo de INE</h3>
-                <p>
-                    Captura automáticamente los datos escaneando una INE oficial mexicana.
-                    La forma más rápida y precisa de registrar.
-                </p>
-                <div class="card-features">
-                    <span class="feature-tag">✓ Escaneo automático</span>
-                    <span class="feature-tag">✓ Mayor precisión</span>
-                </div>
-                <button class="btn-card primary">Iniciar Registro</button>
+            </button>
+            
+            <!-- Grid secundario -->
+            <div class="actions-grid-secondary">
+                <button class="action-card enroll-card" id="enrollCard">
+                    <div class="card-background"></div>
+                    <div class="card-content">
+                        <div class="card-icon">
+                            <lord-icon src="https://cdn.lordicon.com/zfzufhzk.json" trigger="loop" delay="2000"
+                                colors="primary:#ffffff" style="width:60px;height:60px">
+                            </lord-icon>
+                        </div>
+                        <h3>Enrolamiento</h3>
+                        <p>Registro manual</p>
+                    </div>
+                </button>
+            
+                <button class="action-card gestion-card" id="altaGestionCard">
+                    <div class="card-background"></div>
+                    <div class="card-content">
+                        <div class="card-icon">
+                            <lord-icon src="https://cdn.lordicon.com/ftndcppj.json" trigger="loop" delay="2000"
+                                colors="primary:#ffffff" style="width:60px;height:60px">
+                            </lord-icon>
+                        </div>
+                        <h3>Nueva Gestión</h3>
+                        <p>Crear solicitud</p>
+                    </div>
+                </button>
             </div>
 
-            <!-- Enrolamiento Manual -->
-            <div class="dashboard-card secondary-card" id="enrollCard">
-                <div class="card-icon">
-                    <lord-icon src="https://cdn.lordicon.com/ulgefjgj.json" trigger="hover" colors="primary:#f59e0b"
-                        style="width:64px;height:64px">
-                    </lord-icon>
-                </div>
-                <h3>Enrolamiento Manual</h3>
-                <p>Registrar usuario sin escaneo de INE</p>
-                <div class="card-features">
-                    <span class="feature-tag">✓ Selección de estructura</span>
-                    <span class="feature-tag">✓ Previsualización de imagen</span>
-                </div>
-                <button class="btn-card secondary">Enrolar Manual</button>
-            </div>
+        </section>
 
-            <!-- Alta Gestión -->
-            <div class="dashboard-card tertiary-card" id="altaGestionCard">
-                <div class="card-icon">
-                    <lord-icon src="https://cdn.lordicon.com/dafdkyyt.json" trigger="hover" colors="primary:#10b981"
-                        style="width:64px;height:64px">
-                    </lord-icon>
-                </div>
-                <h3>Alta de Gestión</h3>
-                <p>
-                    Registra y da seguimiento a las gestiones ciudadanas.
-                    Adjunta archivos y clasifica por tipo.
-                </p>
-                <div class="card-features">
-                    <span class="feature-tag">✓ Clasificación por tipo</span>
-                    <span class="feature-tag">✓ Adjuntar archivos</span>
-                </div>
-                <button class="btn-card tertiary">Nueva Gestión</button>
-            </div>
-        </div>
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+            <img src="{{imgHeader}}" alt="Structech" class="footer-logo" />
+            <span class="footer-text">Structech © 2025</span>
+        </footer>
     </main>
 </div>

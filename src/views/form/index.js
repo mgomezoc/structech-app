@@ -1,6 +1,7 @@
 // src/views/form/index.js
 
 import Handlebars from 'handlebars';
+import '../../css/components/signature.less';
 import './style.less';
 import tplSource from './template.hbs?raw';
 

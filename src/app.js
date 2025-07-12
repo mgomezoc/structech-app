@@ -1,8 +1,9 @@
 // src/app.js
 // Punto de entrada principal - Inicializa toda la aplicación
 import { Capacitor } from '@capacitor/core';
-import { Keyboard } from '@capacitor/keyboard'; // <-- Nuevo import
+import { Keyboard } from '@capacitor/keyboard';
 import { SplashScreen } from '@capacitor/splash-screen';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { defineCustomElements } from '@ionic/pwa-elements/loader';
 import { setupRoutes } from './routes/index.js';
 import { eventBus } from './services/api.service.js';
@@ -48,6 +49,11 @@ async function initializeApp() {
 
     // Hacer disponible la función de escaneo globalmente
     window.scanINE = scanINE;
+
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setStyle({ style: Style.Dark });
+      StatusBar.setOverlaysWebView({ overlay: true });
+    }
 
     // Configurar comportamiento global del teclado
     if (Capacitor.isNativePlatform()) {

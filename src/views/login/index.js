@@ -236,6 +236,7 @@ export default class LoginView {
       window.mostrarMensajeEstado('✅ ¡Bienvenido!', 2000);
       // La navegación se dispara en el evento auth:login
     } else {
+      this._setLoading(false);
       await hapticsService.error();
       await dialogService.alert(
         'Error de Acceso',
@@ -271,8 +272,8 @@ export default class LoginView {
   _setLoading(on) {
     this.isLoading = on;
 
+    this.submitBtn.disabled = on;
     // ✅ Usando dom helper para manipulación más limpia
-    dom(this.submitBtn).attr('disabled', on || null);
     dom(this.btnText).css('display', on ? 'none' : 'inline');
     dom(this.btnLoader).css('display', on ? 'inline-flex' : 'none');
   }

@@ -2,24 +2,31 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
 
-    <title>StructTech App</title>
+    <!-- Color barra de estado y tema navegador (Android/iOS) -->
+    <meta name="theme-color" content="#000000" />
+
+    <!-- Título de la app -->
+    <title>Structech</title>
   </head>
-  <body>
-    <!-- Contenedor principal donde se cargarán las vistas -->
-    <div id="app" class="app"></div>
 
-    <!-- Script principal - nota la ruta relativa -->
+  <body>
+    <div id="app" class="app-container"></div>
+
+    <!-- Polyfill para transiciones de vistas -->
     <script>
       if (!document.startViewTransition) {
-        // carga dinámicamente el polyfill oficial
         const s = document.createElement('script');
         s.src = 'https://unpkg.com/@microsoft/view-transitions-polyfill';
         document.head.appendChild(s);
       }
     </script>
 
+    <!-- Script principal -->
     <script type="module" src="./app.js"></script>
   </body>
 </html>

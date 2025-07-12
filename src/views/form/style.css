@@ -2,8 +2,9 @@
   transform: translateY(-100%);
 }
 .alta-header {
-  background: #ffffff;
+  background: linear-gradient(135deg, #005f73, #0a9396);
   padding: 16px 20px;
+  padding-top: 65px;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -13,12 +14,13 @@
   z-index: 100;
   will-change: transform;
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  width: 100vw;
 }
 .alta-header .back-button {
   background: none;
   border: none;
   font-size: 20px;
-  color: #374151;
+  color: #eeeeee;
   cursor: pointer;
   padding: 8px;
   border-radius: 6px;
@@ -30,7 +32,7 @@
 .alta-header .view-title {
   font-size: 18px;
   font-weight: 600;
-  color: #374151;
+  color: #ffffff;
   margin: 0;
   flex: 1;
 }
@@ -66,7 +68,7 @@
 .form-container {
   max-width: 720px;
   margin: 0 auto;
-  padding: 24px 20px 80px;
+  padding: 24px 20px 80px !important;
 }
 .form-section {
   background: #ffffff;

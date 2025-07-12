@@ -10,9 +10,6 @@
             </div>
             <div class="header-right">
                 <div class="user-info">
-                    <span class="user-name">
-                        {{#if user.name}}{{user.name}}{{else if user.email}}{{user.email}}{{else}}Usuario{{/if}}
-                    </span>
                     <button id="logoutBtn" class="btn-logout" title="Cerrar sesión">
                         <lord-icon src="https://cdn.lordicon.com/ldpyyqjp.json" trigger="in" colors="primary:#ffffff"
                             style="width:20px;height:20px">
@@ -26,7 +23,6 @@
     <!-- Main Content -->
     <main class="app-content">
         <div class="welcome-section">
-            <h2>Bienvenido, {{#if user.name}}{{user.name}}{{else}}Usuario{{/if}}</h2>
             <p>Selecciona el tipo de registro que deseas realizar</p>
         </div>
 
@@ -85,57 +81,5 @@
                 <button class="btn-card tertiary">Nueva Gestión</button>
             </div>
         </div>
-
-        <!-- Estadísticas Rápidas -->
-        <div class="stats-section">
-            <div class="stat-card">
-                <lord-icon src="https://cdn.lordicon.com/kbtmbyzy.json" trigger="loop" delay="2000"
-                    colors="primary:#0ea5e9" style="width:32px;height:32px">
-                </lord-icon>
-                <div class="stat-content">
-                    <h4>Registros Hoy</h4>
-                    <p class="stat-number">12</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <lord-icon src="https://cdn.lordicon.com/fhtaantg.json" trigger="loop" delay="2500"
-                    colors="primary:#10b981" style="width:32px;height:32px">
-                </lord-icon>
-                <div class="stat-content">
-                    <h4>Total Registros</h4>
-                    <p class="stat-number">248</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <lord-icon src="https://cdn.lordicon.com/jxhgzthg.json" trigger="loop" delay="3000"
-                    colors="primary:#8b5cf6" style="width:32px;height:32px">
-                </lord-icon>
-                <div class="stat-content">
-                    <h4>Última Sincronización</h4>
-                    <p class="stat-time">Hace 5 min</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Actividad Reciente -->
-        <div class="recent-activity">
-            <div class="activity-header">
-                <h3>Actividad Reciente</h3>
-                <button class="btn-refresh" id="refreshActivity">
-                    <lord-icon src="https://cdn.lordicon.com/sihdhmit.json" trigger="click" target="#refreshActivity"
-                        colors="primary:#6b7280" style="width:20px;height:20px">
-                    </lord-icon>
-                </button>
-            </div>
-            <div id="activityList" class="activity-list">
-                <p class="loading-text">Cargando actividad...</p>
-            </div>
-        </div>
     </main>
 </div>
-
-<footer class="app-footer">
-    <div class="footer-content">
-        <p>&copy; 2023 StructTech. Todos los derechos reservados.</p>
-    </div>
-</footer>

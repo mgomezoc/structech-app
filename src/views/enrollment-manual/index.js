@@ -5,6 +5,7 @@ import '../form/style.less';
 import './style.less';
 import tplSource from './template.hbs?raw';
 
+import { DynamicQuestions } from '../../components/dynamicQuestions.js';
 import { navigateTo } from '../../routes/index.js';
 import { datosService } from '../../services/datos.service.js';
 import { enrollmentService } from '../../services/enrollment.service.js';
@@ -22,7 +23,10 @@ import { keyboardService } from '../../services/keyboard.service.js';
 const template = Handlebars.compile(tplSource);
 
 export default class EnrollmentManualView {
-  constructor() {}
+  constructor() {
+    this.dynamicQuestions = null;
+    this.questionsData = [];
+  }
 
   render() {
     return template({
@@ -56,6 +60,30 @@ export default class EnrollmentManualView {
 
     // 8. Activar soporte para teclado móvil
     await this.initKeyboard();
+
+    // 9. ** PREGUNTAS DINÁMICAS **
+    await this._initializeDynamicQuestions();
+  }
+
+  async _initializeDynamicQuestions() {
+    try {
+      const resp = await datosService.obtenerPreguntas();
+      if (resp.success && Array.isArray(resp.data) && resp.data.length) {
+        this.questionsData = resp.data;
+        // Mostrar la sección (debe existir <section id="questionsSection"> en tu template)
+        dom('#questionsSection').get().style.display = 'block';
+        // Inicializar el componente
+        this.dynamicQuestions = new DynamicQuestions(
+          'dynamicQuestionsContainer', // id del <div> donde renderiza
+          this.questionsData,
+        );
+        this.dynamicQuestions.init();
+        // Actualizar progreso cuando cambien
+        this.dynamicQuestions.onChange(() => this._updateProgress());
+      }
+    } catch (err) {
+      console.error('Error cargando preguntas dinámicas:', err);
+    }
   }
 
   _initializeDOMReferences() {
@@ -604,6 +632,11 @@ export default class EnrollmentManualView {
 
       const formData = new FormData(this.form.get());
       const data = Object.fromEntries(formData.entries());
+
+      if (this.dynamicQuestions) {
+        data.Questions = this.dynamicQuestions.getFormattedAnswers();
+      }
+
       data.signatureData = signatureManager.getSignatureAsBase64();
 
       if (audioRecorder.hasRecording()) {

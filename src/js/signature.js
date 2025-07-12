@@ -17,28 +17,27 @@ class SignatureManager {
     this.placeholder = document.getElementById('signaturePlaceholder');
     this.signatureBox = document.getElementById('signatureBox');
 
+    this.hasStartedDrawing = false;
+    this.isFromScan = false;
+
     if (!this.canvas) return;
 
-    // Configuración inicial
     this._resizeCanvas();
 
-    // Crear SignaturePad con opciones base
     this.signaturePad = new SignaturePad(this.canvas, {
       minWidth: 0.5,
       maxWidth: 2.5,
       throttle: 16,
-      backgroundColor: 'rgba(255,255,255,0)', // Transparente
+      backgroundColor: 'rgba(255,255,255,0)',
       penColor: 'rgb(0,0,0)',
       velocityFilterWeight: 0.7,
     });
 
-    // Agregar event listeners personalizados para detectar inicio/fin
     this._attachDrawingEvents();
-
-    // Listeners
     this._setupEventListeners();
+    this._showPlaceholder();
 
-    // Resize listener con debounce
+    // Manejar resize
     let resizeTimeout;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimeout);
@@ -49,27 +48,21 @@ class SignatureManager {
   _attachDrawingEvents() {
     if (!this.canvas) return;
 
-    // Detectar inicio de dibujo
     const handleStart = e => {
       e.preventDefault();
       this._handleDrawingStart();
     };
 
-    // Detectar fin de dibujo
     const handleEnd = e => {
       e.preventDefault();
       this._handleDrawingEnd();
     };
 
-    // Mouse events
     this.canvas.addEventListener('mousedown', handleStart);
     this.canvas.addEventListener('mouseup', handleEnd);
-
-    // Touch events
     this.canvas.addEventListener('touchstart', handleStart);
     this.canvas.addEventListener('touchend', handleEnd);
 
-    // Pointer events (más moderno, cubre mouse y touch)
     if ('PointerEvent' in window) {
       this.canvas.addEventListener('pointerdown', handleStart);
       this.canvas.addEventListener('pointerup', handleEnd);
@@ -83,7 +76,6 @@ class SignatureManager {
     clearBtn?.addEventListener('click', () => this.clear());
     undoBtn?.addEventListener('click', () => this.undo());
 
-    // Mouse enter/leave effects para el box
     this.signatureBox?.addEventListener('mouseenter', () => {
       if (!this.hasSignature() && this.placeholder) {
         this.placeholder.classList.add('hover');
@@ -100,26 +92,16 @@ class SignatureManager {
   _handleDrawingStart() {
     this.isFromScan = false;
 
-    // Ocultar placeholder con animación
     if (this.placeholder && !this.hasStartedDrawing) {
-      this.placeholder.style.opacity = '0';
-      this.placeholder.style.transform = 'translate(-50%, -50%) scale(0.8)';
+      this._hidePlaceholder();
       this.hasStartedDrawing = true;
 
-      // Haptic feedback
-      if (hapticsService) {
-        hapticsService.light();
-      }
-
-      // Cambiar estado visual del box
-      if (this.signatureBox) {
-        this.signatureBox.classList.add('signing');
-      }
+      hapticsService?.light();
+      this.signatureBox?.classList.add('signing');
     }
   }
 
   _handleDrawingEnd() {
-    // Guardar automáticamente al terminar cada trazo
     setTimeout(() => {
       this._autoSave();
     }, 100);
@@ -138,79 +120,14 @@ class SignatureManager {
     const ctx = this.canvas.getContext('2d');
     ctx.scale(ratio, ratio);
 
-    // Restaurar datos si existen
     if (this.signaturePad && data?.length) {
       this.signaturePad.fromData(data);
     }
   }
 
-  clear() {
-    if (this.signaturePad) {
-      this.signaturePad.clear();
-    }
-
-    this.isFromScan = false;
-    this.hasStartedDrawing = false;
-
-    this._showCanvas();
-    this._showPlaceholder();
-
-    // Remover clase de signing
-    if (this.signatureBox) {
-      this.signatureBox.classList.remove('signing');
-    }
-
-    // Limpiar campo oculto
-    const hiddenField = document.getElementById('signatureImageData');
-    if (hiddenField) {
-      hiddenField.value = '';
-    }
-
-    // Haptic feedback
-    if (hapticsService) {
-      hapticsService.medium();
-    }
-
-    // Mostrar mensaje de estado
-    if (window.mostrarMensajeEstado) {
-      window.mostrarMensajeEstado('✏️ Firma limpiada', 1500);
-    }
-  }
-
-  undo() {
-    // Si venía de un escaneo, limpia todo
-    if (this.isFromScan) {
-      return this.clear();
-    }
-
-    if (!this.signaturePad) return;
-
-    const data = this.signaturePad.toData();
-    if (!data || data.length === 0) return;
-
-    data.pop(); // quita el último stroke
-    this.signaturePad.clear();
-    this.signaturePad.fromData(data);
-
-    // Si no quedan trazos, mostrar placeholder
-    if (data.length === 0) {
-      this.hasStartedDrawing = false;
-      this._showPlaceholder();
-      if (this.signatureBox) {
-        this.signatureBox.classList.remove('signing');
-      }
-    }
-
-    // Haptic feedback
-    if (hapticsService) {
-      hapticsService.light();
-    }
-
-    this._autoSave();
-  }
-
   _showPlaceholder() {
     if (this.placeholder) {
+      this.placeholder.style.display = 'block';
       this.placeholder.style.opacity = '1';
       this.placeholder.style.transform = 'translate(-50%, -50%) scale(1)';
       this.placeholder.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
@@ -222,11 +139,71 @@ class SignatureManager {
       this.placeholder.style.opacity = '0';
       this.placeholder.style.transform = 'translate(-50%, -50%) scale(0.8)';
       this.placeholder.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+      setTimeout(() => {
+        this.placeholder.style.display = 'none';
+      }, 300);
+    }
+  }
+
+  clear() {
+    this.signaturePad?.clear();
+    this.isFromScan = false;
+    this.hasStartedDrawing = false;
+
+    this._showCanvas();
+    this._showPlaceholder();
+
+    this.signatureBox?.classList.remove('signing');
+
+    const hiddenField = document.getElementById('signatureImageData');
+    if (hiddenField) hiddenField.value = '';
+
+    hapticsService?.medium();
+    window.mostrarMensajeEstado?.('✏️ Firma limpiada', 1500);
+  }
+
+  undo() {
+    if (this.isFromScan) return this.clear();
+
+    if (!this.signaturePad) return;
+
+    const data = this.signaturePad.toData();
+    if (!data || data.length === 0) return;
+
+    data.pop();
+    this.signaturePad.clear();
+    this.signaturePad.fromData(data);
+
+    if (data.length === 0) {
+      this.hasStartedDrawing = false;
+      this._showPlaceholder();
+      this.signatureBox?.classList.remove('signing');
+    }
+
+    hapticsService?.light();
+    this._autoSave();
+  }
+
+  _showCanvas() {
+    const img = document.getElementById('signatureImage');
+    const canvas = this.canvas;
+
+    if (img && canvas) {
+      img.style.display = 'none';
+      canvas.style.display = 'block';
+      this.signatureBox?.classList.remove('has-scan');
+    }
+  }
+
+  _autoSave() {
+    const base64 = this.getSignatureAsBase64();
+    const hiddenField = document.getElementById('signatureImageData');
+    if (hiddenField && base64) {
+      hiddenField.value = base64;
     }
   }
 
   showScannedSignature(base64) {
-    // Crear o obtener imagen
     let img = document.getElementById('signatureImage');
     if (!img) {
       img = document.createElement('img');
@@ -238,11 +215,9 @@ class SignatureManager {
       this.signatureBox?.appendChild(img);
     }
 
-    const canvas = this.canvas;
+    if (!img || !this.canvas) return;
 
-    if (!img || !canvas) return;
-
-    canvas.style.display = 'none';
+    this.canvas.style.display = 'none';
     img.style.display = 'block';
     img.src = `data:image/png;base64,${base64}`;
 
@@ -250,47 +225,17 @@ class SignatureManager {
     this.hasStartedDrawing = true;
     this._hidePlaceholder();
 
-    if (this.signatureBox) {
-      this.signatureBox.classList.add('signing', 'has-scan');
-    }
+    this.signatureBox?.classList.add('signing', 'has-scan');
 
     const hiddenField = document.getElementById('signatureImageData');
-    if (hiddenField) {
-      hiddenField.value = base64;
-    }
+    if (hiddenField) hiddenField.value = base64;
 
-    // Mensaje de confirmación
-    if (window.mostrarMensajeEstado) {
-      window.mostrarMensajeEstado('✅ Firma cargada desde INE', 2000);
-    }
-  }
-
-  _showCanvas() {
-    const img = document.getElementById('signatureImage');
-    const canvas = this.canvas;
-
-    if (img && canvas) {
-      img.style.display = 'none';
-      canvas.style.display = 'block';
-      if (this.signatureBox) {
-        this.signatureBox.classList.remove('has-scan');
-      }
-    }
-  }
-
-  _autoSave() {
-    // Guardar automáticamente en el campo oculto
-    const base64 = this.getSignatureAsBase64();
-    const hiddenField = document.getElementById('signatureImageData');
-    if (hiddenField && base64) {
-      hiddenField.value = base64;
-    }
+    window.mostrarMensajeEstado?.('✅ Firma cargada desde INE', 2000);
   }
 
   getSignatureAsBase64() {
     if (this.isFromScan) {
-      const hiddenField = document.getElementById('signatureImageData');
-      return hiddenField?.value || '';
+      return document.getElementById('signatureImageData')?.value || '';
     }
 
     if (this.signaturePad && !this.signaturePad.isEmpty()) {
@@ -303,8 +248,7 @@ class SignatureManager {
 
   hasSignature() {
     if (this.isFromScan) {
-      const hiddenField = document.getElementById('signatureImageData');
-      return !!hiddenField?.value;
+      return !!document.getElementById('signatureImageData')?.value;
     }
 
     return this.signaturePad && !this.signaturePad.isEmpty();
@@ -331,22 +275,18 @@ class SignatureManager {
         this.signaturePad.fromDataURL(`data:image/png;base64,${base64}`);
         this.hasStartedDrawing = true;
         this._hidePlaceholder();
-        if (this.signatureBox) {
-          this.signatureBox.classList.add('signing');
-        }
+        this.signatureBox?.classList.add('signing');
       } catch (error) {
         console.error('Error loading signature:', error);
       }
     }
   }
 
-  // Método para validar la firma
   validateSignature() {
     if (!this.hasSignature()) {
       return { valid: false, message: 'Por favor proporcione su firma' };
     }
 
-    // Validar que tenga al menos algunos trazos si es dibujada
     if (!this.isFromScan && this.signaturePad) {
       const data = this.signaturePad.toData();
       if (!data || data.length < 2) {
@@ -357,7 +297,6 @@ class SignatureManager {
     return { valid: true };
   }
 
-  // Método para exportar firma en diferentes formatos
   exportSignature(format = 'png') {
     if (!this.hasSignature()) return null;
 

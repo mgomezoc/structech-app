@@ -26,7 +26,7 @@
 .dashboard-header .header-content .btn-logout {
   background: transparent;
   border: none;
-  color: #6b7280;
+  color: #eeeeee;
   cursor: pointer;
   transition: color 0.2s;
 }

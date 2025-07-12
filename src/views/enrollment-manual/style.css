@@ -154,25 +154,6 @@
 .curp-group .curp-wrapper #recalcularCurp:hover {
   background: rgba(14, 165, 233, 0.1);
 }
-.gender-group {
-  display: flex;
-  gap: 16px;
-}
-.gender-group .gender-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-}
-.gender-group .gender-option input[type='radio'] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-}
-.gender-group .gender-option label {
-  margin: 0;
-  font-size: 14px;
-}
 .file-preview {
   margin-top: 8px;
 }

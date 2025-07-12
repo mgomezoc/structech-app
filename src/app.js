@@ -33,41 +33,33 @@ const LICENSE =
 async function initializeApp() {
   try {
     console.log('🚀 Iniciando StructTech App...');
-
-    // Mostrar mensaje de carga
     showLoadingScreen();
 
     // Inicializar servicios
     const isAuthenticated = await authService.init();
     console.log('🔐 Estado de autenticación:', isAuthenticated);
 
-    // Configurar sistema de rutas
+    // Configurar rutas
     setupRoutes();
 
     // Configurar listeners globales
     setupGlobalListeners();
 
-    // Hacer disponible la función de escaneo globalmente
+    // Escaneo INE disponible globalmente
     window.scanINE = scanINE;
 
+    // ✅ Configuraciones específicas para entorno nativo
     if (Capacitor.isNativePlatform()) {
-      StatusBar.setStyle({ style: Style.Dark });
-      StatusBar.setOverlaysWebView({ overlay: true });
+      await Promise.all([
+        StatusBar.setStyle({ style: Style.Dark }),
+        StatusBar.setOverlaysWebView({ overlay: true }),
+        SplashScreen.hide(),
+        configureKeyboard(),
+      ]);
     }
 
-    // Configurar comportamiento global del teclado
-    if (Capacitor.isNativePlatform()) {
-      await configureKeyboard();
-    }
-
-    // Ocultar splash screen si es app nativa
-    if (Capacitor.isNativePlatform()) {
-      await SplashScreen.hide();
-    }
-
-    // Ocultar pantalla de carga
+    // Ocultar loader
     hideLoadingScreen();
-
     console.log('✅ App inicializada correctamente');
   } catch (error) {
     console.error('❌ Error al inicializar la app:', error);
@@ -164,12 +156,16 @@ function showErrorScreen(message) {
 function setupGlobalListeners() {
   window.addEventListener('unhandledrejection', async event => {
     console.error('Error no manejado:', event.reason);
+
+    const msg = event.reason?.message || String(event.reason) || 'Error desconocido';
+
     const shouldReload = await dialogService.errorWithAction(
       'Error Inesperado',
-      'Ha ocurrido un error inesperado en la aplicación.',
+      `Ha ocurrido un error inesperado en la aplicación:\n\n${msg}`,
       'Recargar',
       'Continuar',
     );
+
     if (shouldReload) {
       await hapticsService.medium();
       window.location.reload();

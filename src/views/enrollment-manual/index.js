@@ -311,7 +311,13 @@ export default class EnrollmentManualView {
   }
   // --- Fin keyboardService ---
   _setupEventListeners() {
-    this.backBtn.on('click', () => navigateTo(ROUTES.DASHBOARD));
+    this.backBtn.on('click', async () => {
+      const ok = await this._confirmBackWithData();
+      if (ok) {
+        await hapticsService.light();
+        navigateTo(ROUTES.DASHBOARD);
+      }
+    });
     this.form.on('submit', e => this.handleSubmit(e));
     this.clearSigBtn.on('click', () => signatureManager.clear());
     this.undoSigBtn.on('click', () => signatureManager.undo());
@@ -622,6 +628,30 @@ export default class EnrollmentManualView {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  async _confirmBackWithData() {
+    const form = this.form.get();
+    const fd = new FormData(form);
+    let hasData = false;
+
+    for (const [, v] of fd.entries()) {
+      if (v && v.toString().trim()) {
+        hasData = true;
+        break;
+      }
+    }
+
+    if (hasData || signatureManager.hasSignature() || audioRecorder.hasRecording()) {
+      return await dialogService.confirm(
+        'Datos sin Guardar',
+        'Tienes información sin guardar. ¿Estás seguro que deseas salir?',
+        'Salir sin Guardar',
+        'Quedarme',
+      );
+    }
+
+    return true;
   }
 
   async handleSubmit(e) {

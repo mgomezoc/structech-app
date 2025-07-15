@@ -5,7 +5,6 @@ import './style.less';
 import tplSource from './template.hbs?raw';
 
 import { DynamicQuestions } from '../../components/dynamicQuestions.js';
-import logoUrl from '../../img/logo-icono-structech.png';
 import { navigateTo } from '../../routes/index.js';
 import { authService } from '../../services/auth.service.js';
 import { datosService } from '../../services/datos.service.js';
@@ -24,8 +23,8 @@ const template = Handlebars.compile(tplSource);
 export default class FormView {
   constructor() {
     this.user = authService.getCurrentUser();
-    this.dynamicQuestions = null; // Nueva propiedad
-    this.questionsData = []; // Nueva propiedad
+    this.dynamicQuestions = null;
+    this.questionsData = [];
   }
 
   render() {
@@ -33,7 +32,6 @@ export default class FormView {
       user: {
         name: this.user?.name || this.user?.email || 'Usuario',
       },
-      logoUrl,
     });
   }
 
@@ -171,7 +169,14 @@ export default class FormView {
 
   async loadInitialData() {
     const res = await datosService.obtenerEstructuras();
-    if (res.success) {
+    const estructuraSection = document.getElementById('estructuraSection');
+    // Elimina posibles campos ocultos previos
+    document.getElementById('estructuraHidden')?.remove();
+    document.getElementById('subestructuraHidden')?.remove();
+
+    if (res.success && res.muestraEstructura) {
+      estructuraSection.style.display = '';
+      // Mostrar selects normales
       const sel = document.getElementById('estructura');
       sel.innerHTML = `<option value="">Sin selección</option>`;
       res.data.forEach(e => {
@@ -180,6 +185,25 @@ export default class FormView {
       document.getElementById(
         'subestructura',
       ).innerHTML = `<option value="">Sin selección</option>`;
+    } else if (res.success && !res.muestraEstructura) {
+      // Eliminar la sección completa del DOM
+      estructuraSection?.remove();
+
+      // Agregar campos ocultos al formulario
+      const form = document.getElementById('formPersona');
+      const hiddenEstructura = document.createElement('input');
+      hiddenEstructura.type = 'hidden';
+      hiddenEstructura.id = 'estructuraHidden';
+      hiddenEstructura.name = 'estructura';
+      hiddenEstructura.value = 1;
+      form.appendChild(hiddenEstructura);
+
+      const hiddenSubestructura = document.createElement('input');
+      hiddenSubestructura.type = 'hidden';
+      hiddenSubestructura.id = 'subestructuraHidden';
+      hiddenSubestructura.name = 'subestructura';
+      hiddenSubestructura.value = 1;
+      form.appendChild(hiddenSubestructura);
     }
   }
 
@@ -190,15 +214,6 @@ export default class FormView {
     btn.classList.add('loading');
 
     try {
-      if (!signatureManager.hasSignature()) {
-        await hapticsService.error();
-        await dialogService.alert(
-          'Firma Requerida',
-          'Por favor proporcione su firma antes de continuar.',
-        );
-        return;
-      }
-
       if (this.dynamicQuestions) {
         const { isValid, unanswered } = this.dynamicQuestions.validate();
         if (!isValid) {
@@ -212,25 +227,43 @@ export default class FormView {
         }
       }
 
+      if (!signatureManager.hasSignature()) {
+        await hapticsService.error();
+        await dialogService.alert(
+          'Firma Requerida',
+          'Por favor proporcione su firma antes de continuar.',
+        );
+        return;
+      }
+
+      if (!audioRecorder.hasRecording()) {
+        await hapticsService.error();
+        await dialogService.alert(
+          'Audio Requerido',
+          'Por favor proporcione un audio antes de continuar.',
+        );
+        return;
+      }
+
       const shouldSubmit = await dialogService.confirm(
         'Confirmar Registro',
         '¿Estás seguro que deseas guardar este registro? Verifica que toda la información sea correcta.',
         'Guardar',
         'Revisar',
       );
+
       if (!shouldSubmit) return;
 
       await hapticsService.medium();
       const data = Object.fromEntries(new FormData(e.target).entries());
-
+      //Agrega preguntas dinámicas
       data.Questions = this.dynamicQuestions.getFormattedAnswers();
+      //Agrega firma
       data.signatureData = signatureManager.getSignatureAsBase64();
-
-      if (audioRecorder.hasRecording()) {
-        const audio = audioRecorder.getAudioData();
-        data.audioData = audio.data;
-        data.audioMimeType = audio.mimeType;
-      }
+      //Agrega audio
+      const audio = audioRecorder.getAudioData();
+      data.audioData = audio.data;
+      data.audioMimeType = audio.mimeType;
 
       const result = await datosService.enviarFormularioPersona(data);
       if (!result.success) throw new Error(result.error);

@@ -23,7 +23,7 @@
         <form id="formPersona" class="alta-form" novalidate>
 
             <!-- Estructura Section -->
-            <section class="form-section">
+            <section id="estructuraSection" class="form-section">
                 <div class="section-header">
                     <h2>Selección de estructura</h2>
                 </div>
@@ -163,12 +163,12 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="telefono">Teléfono</label>
+                        <label for="telefono" class="required">Teléfono</label>
                         <input type="tel" id="telefono" name="telefono" class="form-control"
                             placeholder="Número de teléfono" required />
                     </div>
                     <div class="form-group">
-                        <label for="email">Email</label>
+                        <label for="email" class="required">Email</label>
                         <input type="email" id="email" name="email" class="form-control"
                             placeholder="Correo electrónico" required />
                     </div>

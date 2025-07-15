@@ -85,12 +85,20 @@ class DatosService {
   async obtenerEstructuras() {
     try {
       const response = await apiService.get(API_CONFIG.ENDPOINTS.CATALOGS);
-      return { success: true, data: response.data };
+      const data = response.data;
+      const muestraEstructura = !(
+        Array.isArray(data) &&
+        data.length === 1 &&
+        data[0].iCatalogId === 1 &&
+        data[0].vcCatalog === 'NA'
+      );
+      return { success: true, data, muestraEstructura };
     } catch (error) {
       console.error('Error al obtener estructuras:', error);
       return { success: false, error: 'No se pudieron cargar las estructuras' };
     }
   }
+  // ...existing
 
   // Obtener lista de preguntas
   async obtenerPreguntas() {

@@ -420,13 +420,42 @@ export default class EnrollmentManualView {
   }
 
   async _loadInitialData() {
-    const estrRes = await datosService.obtenerEstructuras();
-    if (estrRes.success) {
-      estrRes.data.forEach(e =>
-        this.estrSelect
-          .get()
-          .appendChild(createElement('option', { value: e.iCatalogId }, e.vcCatalog)),
-      );
+    const res = await datosService.obtenerEstructuras();
+    const estructuraSection = document.getElementById('estructuraSection');
+    // Elimina posibles campos ocultos previos
+    document.getElementById('estructuraHidden')?.remove();
+    document.getElementById('subestructuraHidden')?.remove();
+
+    if (res.success && res.muestraEstructura) {
+      estructuraSection.style.display = '';
+      // Mostrar selects normales
+      const sel = document.getElementById('estructura');
+      sel.innerHTML = `<option value="">Sin selección</option>`;
+      res.data.forEach(e => {
+        sel.innerHTML += `<option value="${e.iCatalogId}">${e.vcCatalog}</option>`;
+      });
+      document.getElementById(
+        'subestructura',
+      ).innerHTML = `<option value="">Sin selección</option>`;
+    } else if (res.success && !res.muestraEstructura) {
+      // Eliminar la sección completa del DOM
+      estructuraSection?.remove();
+
+      // Agregar campos ocultos al formulario
+      const form = document.getElementById('enrollForm');
+      const hiddenEstructura = document.createElement('input');
+      hiddenEstructura.type = 'hidden';
+      hiddenEstructura.id = 'estructuraHidden';
+      hiddenEstructura.name = 'estructura';
+      hiddenEstructura.value = 1;
+      form.appendChild(hiddenEstructura);
+
+      const hiddenSubestructura = document.createElement('input');
+      hiddenSubestructura.type = 'hidden';
+      hiddenSubestructura.id = 'subestructuraHidden';
+      hiddenSubestructura.name = 'subestructura';
+      hiddenSubestructura.value = 1;
+      form.appendChild(hiddenSubestructura);
     }
   }
 
@@ -661,24 +690,7 @@ export default class EnrollmentManualView {
     btn.addClass('loading').attr('disabled', 'true');
 
     try {
-      // 1. Validar firma con diálogo
-      if (!signatureManager.hasSignature()) {
-        await hapticsService.error();
-        await dialogService.alert(
-          'Firma Requerida',
-          'Por favor proporcione su firma antes de continuar.',
-        );
-        return;
-      }
-
-      // 2. Validar longitud del CURP
-      if (this.curpField.val().length !== 18) {
-        await hapticsService.error();
-        await dialogService.alert('CURP inválido', 'El CURP debe tener exactamente 18 caracteres.');
-        return;
-      }
-
-      // 3. Validar preguntas dinámicas (nuevo comportamiento)
+      // Validar preguntas dinámicas (nuevo comportamiento)
       if (this.dynamicQuestions) {
         const { isValid, unanswered } = this.dynamicQuestions.validate();
         if (!isValid) {
@@ -691,7 +703,43 @@ export default class EnrollmentManualView {
         }
       }
 
-      // 4. Confirmación antes de enviar (nuevo comportamiento)
+      // Valida que exista otherData  (Documento de identificación)
+      if (!this.hiddenOtherData.exists() || !this.hiddenOtherData.val()) {
+        await hapticsService.error();
+        await dialogService.alert(
+          'Documento de identificación',
+          'Por favor proporcione el documento de identificación antes de continuar.',
+        );
+        return;
+      }
+
+      // Validar firma con diálogo
+      if (!signatureManager.hasSignature()) {
+        await hapticsService.error();
+        await dialogService.alert(
+          'Firma Requerida',
+          'Por favor proporcione su firma antes de continuar.',
+        );
+        return;
+      }
+      /// Validar firma con diálogo
+      if (!audioRecorder.hasRecording()) {
+        await hapticsService.error();
+        await dialogService.alert(
+          'Audio Requerido',
+          'Por favor proporcione su audio antes de continuar.',
+        );
+        return;
+      }
+
+      // Validar longitud del CURP
+      if (this.curpField.val().length !== 18) {
+        await hapticsService.error();
+        await dialogService.alert('CURP inválido', 'El CURP debe tener exactamente 18 caracteres.');
+        return;
+      }
+
+      // 4. Confirmación antes de enviar
       const shouldSubmit = await dialogService.confirm(
         'Confirmar Registro',
         '¿Estás seguro que deseas guardar este registro? Verifica que toda la información sea correcta.',
@@ -710,17 +758,11 @@ export default class EnrollmentManualView {
       const formData = new FormData(this.form.get());
       const data = Object.fromEntries(formData.entries());
 
-      if (this.dynamicQuestions) {
-        data.Questions = this.dynamicQuestions.getFormattedAnswers();
-      }
-
+      data.Questions = this.dynamicQuestions.getFormattedAnswers();
       data.signatureData = signatureManager.getSignatureAsBase64();
-
-      if (audioRecorder.hasRecording()) {
-        const audio = audioRecorder.getAudioData();
-        data.audioData = audio.data;
-        data.audioMimeType = audio.mimeType;
-      }
+      const audio = audioRecorder.getAudioData();
+      data.audioData = audio.data;
+      data.audioMimeType = audio.mimeType;
 
       // Construir domicilio
       const opt = this.coloniaSelect.get().selectedOptions[0];
@@ -736,13 +778,13 @@ export default class EnrollmentManualView {
           .join(', ');
       }
 
-      // 6. Enviar datos al servidor
+      // Enviar datos al servidor
       const result = await enrollmentService.enrollManual(data);
       if (!result.success) throw new Error(result.error || 'Error en enrolamiento');
 
       await hapticsService.success();
 
-      // 7. Mostrar diálogo de éxito con opciones (nuevo comportamiento)
+      // Mostrar diálogo de éxito con opciones (nuevo comportamiento)
       const cont = await dialogService.successWithContinue(
         '¡Registro Guardado!',
         'Los datos se han guardado correctamente en el sistema.',

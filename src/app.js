@@ -199,9 +199,6 @@ async function loadHeavyDeps() {
  * Crear función scanINE optimizada
  */
 function createScanINE(BlinkID) {
-  const LICENSE =
-    'sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEl5TXpFMU5UWXhOVGdzSWtOeVpXRjBaV1JHYjNJaU9pSmtOVGxoT1dFMU5DMWlOV1EzTFRFek56VXRNRFkyWVMxbVlURmhZemcyTkdaa1pqSWlmUT09DbgY5pEazKW1FM0yIcUkMoZy1UkBI8dMWchnH/GnjczJHqe0hVr51BAiWM25FjsicPtpmfBLtmIZVE2lz8ARr4nB63QBhLjwccCjzYWTZrcqfe1yQzoHzujEn1ty9VpCVxIwM5HXmJPKNV7vgIiaeLyIQiTOQ3dE/A==';
-
   return async function scanINE() {
     await hapticsService.light();
     mostrarMensajeEstado('▶️ Iniciando escáner...', 2000);
@@ -240,8 +237,9 @@ function createScanINE(BlinkID) {
       overlay.flipInstructions = 'Ahora voltea tu INE y escanea el REVERSO';
 
       const keys = {
-        android: LICENSE,
-        ios: LICENSE,
+        android:
+          'sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEl5TXpFMU5UWXhOVGdzSWtOeVpXRjBaV1JHYjNJaU9pSmtOVGxoT1dFMU5DMWlOV1EzTFRFek56VXRNRFkyWVMxbVlURmhZemcyTkdaa1pqSWlmUT09DbgY5pEazKW1FM0yIcUkMoZy1UkBI8dMWchnH/GnjczJHqe0hVr51BAiWM25FjsicPtpmfBLtmIZVE2lz8ARr4nB63QBhLjwccCjzYWTZrcqfe1yQzoHzujEn1ty9VpCVxIwM5HXmJPKNV7vgIiaeLyIQiTOQ3dE/A==',
+        ios: 'sRwCABFjb20uc3RydWN0ZWNoLmFwcAFsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVE14TXpNNU9EYzNOemtzSWtOeVpXRjBaV1JHYjNJaU9pSXlNMlUzTnpOaE9DMWlNR1psTFRSaE1tWXRZamcwWWkxbFl6RTFOVEl6TlRRd1pXRWlmUT098MOKFFUd9CB7cDpanesmv+eVgOtIPW7mQeCWUIU8zdEwDGCKryKH/LJNovAdusPR7E6R0WQedamA04VC+jEpns4JwlpvxdZ3365XvQpZekRqPtOsHO719Nm8GZC/',
         showTimeLimitedLicenseKeyWarning: false,
       };
 

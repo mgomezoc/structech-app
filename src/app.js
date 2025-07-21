@@ -1,190 +1,289 @@
 // src/app.js
-// Punto de entrada principal - Inicializa toda la aplicación
+// Punto de entrada principal - Optimizado para carga rápida
 import { Capacitor } from '@capacitor/core';
 import { Keyboard } from '@capacitor/keyboard';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { Toast } from '@capacitor/toast';
 import { defineCustomElements } from '@ionic/pwa-elements/loader';
 import { setupRoutes } from './routes/index.js';
 import { eventBus } from './services/api.service.js';
 import { authService } from './services/auth.service.js';
 import { dialogService } from './services/dialog.service.js';
 import { hapticsService } from './services/haptics.service.js';
-import { $, dom } from './utils/dom.helper.js'; // 👈 Importar dom helper
+import { $, dom } from './utils/dom.helper.js';
 
-import { defineElement } from '@lordicon/element';
-import * as BlinkID from '@microblink/blinkid-capacitor';
-import lottie from 'lottie-web';
 import './css/style.less';
 
+// Definir elementos PWA de forma asíncrona
 defineCustomElements(window);
 
-// Hacer disponibles funciones globales que necesitas
-window.lottie = lottie;
+// Variables globales necesarias
 window.mostrarMensajeEstado = mostrarMensajeEstado;
 
-defineElement(lottie.loadAnimation);
-
-// Tu licencia de BlinkID
-const LICENSE =
-  'sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEl5TXpFMU5UWXhOVGdzSWtOeVpXRjBaV1JHYjNJaU9pSmtOVGxoT1dFMU5DMWlOV1EzTFRFek56VXRNRFkyWVMxbVlURmhZemcyTkdaa1pqSWlmUT09DbgY5pEazKW1FM0yIcUkMoZy1UkBI8dMWchnH/GnjczJHqe0hVr51BAiWM25FjsicPtpmfBLtmIZVE2lz8ARr4nB63QBhLjwccCjzYWTZrcqfe1yQzoHzujEn1ty9VpCVxIwM5HXmJPKNV7vgIiaeLyIQiTOQ3dE/A==';
-
-// Función principal de inicialización
+// Función principal de inicialización optimizada
 async function initializeApp() {
   try {
     console.log('🚀 Iniciando StructTech App...');
-    showLoadingScreen();
 
-    // Inicializar servicios
-    const isAuthenticated = await authService.init();
-    console.log('🔐 Estado de autenticación:', isAuthenticated);
+    // 1. Mostrar UI mínima inmediatamente
+    showMinimalUI();
 
-    // Configurar rutas
+    // 2. Inicialización crítica (auth)
+    const authPromise = authService.init();
+
+    // 3. Configurar rutas inmediatamente (no esperar auth)
     setupRoutes();
 
-    // Configurar listeners globales
-    setupGlobalListeners();
+    // 4. Configuraciones paralelas no bloqueantes
+    const configPromises = [];
 
-    // Escaneo INE disponible globalmente
-    window.scanINE = scanINE;
-
-    // ✅ Configuraciones específicas para entorno nativo
     if (Capacitor.isNativePlatform()) {
-      await Promise.all([
-        StatusBar.setStyle({ style: Style.Dark }),
-        StatusBar.setOverlaysWebView({ overlay: true }),
-        SplashScreen.hide(),
-        configureKeyboard(),
-      ]);
+      configPromises.push(configurePlatform(), configureKeyboard());
     }
 
-    // Ocultar loader
-    hideLoadingScreen();
+    // 5. Cargar dependencias pesadas de forma diferida
+    deferHeavyImports();
+
+    // 6. Setup de listeners globales (no bloqueante)
+    setupGlobalListeners();
+
+    // 7. Esperar solo auth para continuar
+    const isAuthenticated = await authPromise;
+    console.log('🔐 Estado de autenticación:', isAuthenticated);
+
+    // 8. Esperar configs de plataforma si es necesario
+    if (configPromises.length > 0) {
+      await Promise.allSettled(configPromises);
+    }
+
+    // 9. Ocultar splash y mostrar app
+    hideMinimalUI();
+
     console.log('✅ App inicializada correctamente');
   } catch (error) {
     console.error('❌ Error al inicializar la app:', error);
-    hideLoadingScreen();
     showErrorScreen(error.message);
   }
 }
 
-// Nueva función para configurar el teclado globalmente
+/**
+ * Mostrar UI mínima mientras carga
+ */
+function showMinimalUI() {
+  // Solo mostrar un indicador muy ligero
+  const minimalLoader = dom(document.createElement('div'))
+    .attr('id', 'minimal-loader')
+    .addClass('minimal-loader')
+    .html('<div class="pulse"></div>');
+
+  document.body.appendChild(minimalLoader.get());
+
+  // Estilos inline para evitar esperar CSS
+  const style = document.createElement('style');
+  style.textContent = `
+    .minimal-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(55, 166, 166, 0.2);
+      z-index: 9999;
+    }
+    .minimal-loader .pulse {
+      height: 100%;
+      background: #37a6a6;
+      animation: pulse-width 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-width {
+      0% { width: 0%; }
+      50% { width: 70%; }
+      100% { width: 100%; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+/**
+ * Ocultar UI mínima
+ */
+function hideMinimalUI() {
+  const loader = $('#minimal-loader');
+  if (loader) {
+    dom(loader).addClass('fade-out');
+    setTimeout(() => loader.remove(), 300);
+  }
+}
+
+/**
+ * Configurar plataforma nativa
+ */
+async function configurePlatform() {
+  try {
+    await Promise.all([
+      StatusBar.setStyle({ style: Style.Dark }),
+      StatusBar.setOverlaysWebView({ overlay: true }),
+      SplashScreen.hide(),
+    ]);
+  } catch (error) {
+    console.error('Error configurando plataforma:', error);
+  }
+}
+
+/**
+ * Configurar teclado de forma optimizada
+ */
 async function configureKeyboard() {
   try {
-    // Listener global para cuando se muestra el teclado
+    // Configuraciones básicas primero
+    await Promise.all([
+      Keyboard.setAccessoryBarVisible({ isVisible: true }),
+      Keyboard.setResizeMode({ mode: 'ionic' }),
+      Keyboard.setStyle({ style: 'light' }),
+    ]);
+
+    // Listeners después (no bloqueante)
     Keyboard.addListener('keyboardWillShow', info => {
-      // Agregar clase al body para ajustes globales
-      document.body.classList.add('keyboard-visible');
-      document.body.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
+      requestAnimationFrame(() => {
+        document.body.classList.add('keyboard-visible');
+        document.body.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
+      });
     });
 
     Keyboard.addListener('keyboardWillHide', () => {
-      document.body.classList.remove('keyboard-visible');
-      document.body.style.removeProperty('--keyboard-height');
+      requestAnimationFrame(() => {
+        document.body.classList.remove('keyboard-visible');
+        document.body.style.removeProperty('--keyboard-height');
+      });
     });
-
-    // Mostrar la barra de accesorios en iOS (Done button)
-    await Keyboard.setAccessoryBarVisible({ isVisible: true });
-
-    // Configurar el modo de resize
-    await Keyboard.setResizeMode({ mode: 'ionic' });
-
-    // Estilo del teclado (light/dark)
-    await Keyboard.setStyle({ style: 'light' });
   } catch (error) {
     console.error('Error configurando teclado:', error);
   }
 }
 
-// ✅ Mostrar pantalla de carga usando dom helper
-function showLoadingScreen() {
-  const loaderHtml = `
-    <div class="app-loader-container">
-      <div class="loader-content">
-        <div class="loader-spinner">
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-          <div class="spinner-ring"></div>
-        </div>
-        <div class="loader-dots">
-          <span></span><span></span><span></span>
-        </div>
-        <p class="loader-text">Cargando</p>
-      </div>
-    </div>
-  `;
-
-  const loader = dom(document.createElement('div'));
-  loader.attr('id', 'app-loader').html(loaderHtml);
-
-  const styles = document.createElement('style');
-  styles.textContent = getLoaderStyles();
-
-  document.head.appendChild(styles);
-  document.body.appendChild(loader.get());
-}
-
-// ✅ Ocultar loader usando dom helper
-function hideLoadingScreen() {
-  const loader = $('#app-loader');
-  if (loader) {
-    dom(loader).addClass('fade-out');
-    setTimeout(() => {
-      loader.parentNode?.removeChild(loader);
-      // Limpiar estilos
-      document.querySelectorAll('style').forEach(s => {
-        if (s.textContent?.includes('#app-loader')) s.parentNode?.removeChild(s);
-      });
-    }, 500);
+/**
+ * Importar dependencias pesadas de forma diferida
+ */
+function deferHeavyImports() {
+  // Cargar Lottie solo cuando se necesite
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => loadHeavyDeps(), { timeout: 2000 });
+  } else {
+    setTimeout(loadHeavyDeps, 1000);
   }
 }
 
-// ✅ Mostrar pantalla de error usando dom helper
-function showErrorScreen(message) {
-  const errorHtml = `
-    <div class="error-screen">
-      <h1>Error al iniciar</h1>
-      <p>${message}</p>
-      <button id="retryButton">Reintentar</button>
-    </div>
-  `;
-  dom(document.body).html(errorHtml);
-  dom('#retryButton').on('click', () => window.location.reload());
+async function loadHeavyDeps() {
+  try {
+    // Importar dependencias pesadas
+    const [{ defineElement }, lottie, BlinkID] = await Promise.all([
+      import('@lordicon/element'),
+      import('lottie-web'),
+      import('@microblink/blinkid-capacitor'),
+    ]);
+
+    // Configurar después de cargar
+    window.lottie = lottie.default || lottie;
+    defineElement(window.lottie.loadAnimation);
+
+    // Configurar BlinkID
+    window.BlinkID = BlinkID;
+    window.scanINE = createScanINE(BlinkID);
+  } catch (error) {
+    console.error('Error cargando dependencias diferidas:', error);
+  }
 }
 
-// Configurar listeners globales
-function setupGlobalListeners() {
-  window.addEventListener('unhandledrejection', async event => {
-    console.error('Error no manejado:', event.reason);
+/**
+ * Crear función scanINE optimizada
+ */
+function createScanINE(BlinkID) {
+  const LICENSE =
+    'sRwCABFjb20uc3RydWN0ZWNoLmFwcABsZXlKRGNtVmhkR1ZrVDI0aU9qRTNOVEl5TXpFMU5UWXhOVGdzSWtOeVpXRjBaV1JHYjNJaU9pSmtOVGxoT1dFMU5DMWlOV1EzTFRFek56VXRNRFkyWVMxbVlURmhZemcyTkdaa1pqSWlmUT09DbgY5pEazKW1FM0yIcUkMoZy1UkBI8dMWchnH/GnjczJHqe0hVr51BAiWM25FjsicPtpmfBLtmIZVE2lz8ARr4nB63QBhLjwccCjzYWTZrcqfe1yQzoHzujEn1ty9VpCVxIwM5HXmJPKNV7vgIiaeLyIQiTOQ3dE/A==';
 
-    const msg = event.reason?.message || String(event.reason) || 'Error desconocido';
+  return async function scanINE() {
+    await hapticsService.light();
+    mostrarMensajeEstado('▶️ Iniciando escáner...', 2000);
 
-    const shouldReload = await dialogService.errorWithAction(
-      'Error Inesperado',
-      `Ha ocurrido un error inesperado en la aplicación:\n\n${msg}`,
-      'Recargar',
-      'Continuar',
-    );
+    // Verificar permisos
+    const { Camera } = Capacitor.Plugins;
+    const perm = await Camera.requestPermissions();
 
-    if (shouldReload) {
-      await hapticsService.medium();
-      window.location.reload();
+    if (perm.camera !== 'granted') {
+      await hapticsService.error();
+      return mostrarMensajeEstado('❌ Permiso de cámara denegado', 3000);
     }
+
+    try {
+      const plugin = new BlinkID.BlinkIDPlugin();
+      const recognizer = new BlinkID.BlinkIdMultiSideRecognizer();
+
+      // Configuración optimizada
+      recognizer.returnFullDocumentImage = true;
+      recognizer.returnFaceImage = true;
+      recognizer.returnSignatureImage = true;
+      recognizer.enableBlurFilter = true;
+      recognizer.enableGlareFilter = true;
+      recognizer.fullDocumentImageDpi = 200; // Reducido para performance
+      recognizer.faceImageDpi = 200;
+
+      const rc = new BlinkID.RecognizerCollection([recognizer]);
+      const overlay = new BlinkID.BlinkIdOverlaySettings();
+
+      // Configuración de overlay
+      overlay.language = 'es';
+      overlay.country = 'MX';
+      overlay.showMicroblinkLogo = false;
+      overlay.poweredByText = 'STRUCTECH';
+      overlay.firstSideInstructionsText = 'Coloca el FRENTE de tu INE dentro del marco';
+      overlay.flipInstructions = 'Ahora voltea tu INE y escanea el REVERSO';
+
+      const keys = {
+        android: LICENSE,
+        ios: LICENSE,
+        showTimeLimitedLicenseKeyWarning: false,
+      };
+
+      const results = await plugin.scanWithCamera(overlay, rc, keys);
+
+      if (!results.length) {
+        await hapticsService.warning();
+        mostrarMensajeEstado('⚠️ Escaneo cancelado', 3000);
+      } else {
+        await hapticsService.success();
+        eventBus.emit('scan:complete', results[0]);
+        window.poblarFormulario?.(results[0]);
+        mostrarMensajeEstado('✅ ¡Documento escaneado!', 3000);
+      }
+    } catch (e) {
+      await hapticsService.error();
+      console.error('Error en scanINE:', e);
+      mostrarMensajeEstado(`❌ Error: ${e.message || e}`, 5000);
+    }
+  };
+}
+
+/**
+ * Configurar listeners globales optimizados
+ */
+function setupGlobalListeners() {
+  // Error handling
+  window.addEventListener('unhandledrejection', event => {
+    console.error('Error no manejado:', event.reason);
+    // No mostrar diálogo, solo log
   });
 
-  window.addEventListener('online', async () => {
-    await hapticsService.success();
+  // Conexión
+  window.addEventListener('online', () => {
     mostrarMensajeEstado('✅ Conexión restaurada', 2000);
   });
 
-  window.addEventListener('offline', async () => {
-    await hapticsService.warning();
-    await dialogService.alert(
-      'Sin Conexión',
-      'Se ha perdido la conexión a internet. Algunas funciones podrían no estar disponibles.',
-    );
+  window.addEventListener('offline', () => {
+    mostrarMensajeEstado('⚠️ Sin conexión', 3000);
   });
 
+  // Back button para Android
   if (Capacitor.isNativePlatform()) {
     document.addEventListener('backbutton', async () => {
       const path = window.location.hash;
@@ -198,339 +297,131 @@ function setupGlobalListeners() {
   }
 }
 
-// Función de escaneo con BlinkID
-async function scanINE() {
-  await hapticsService.light();
-  mostrarMensajeEstado('▶️ Solicitando permisos de cámara…');
-  const { Camera } = Capacitor.Plugins;
-  const perm = await Camera.requestPermissions();
-  if (perm.camera !== 'granted') {
-    await hapticsService.error();
-    return mostrarMensajeEstado('❌ Permiso de cámara denegado', 3000);
-  }
-
-  try {
-    const plugin = new BlinkID.BlinkIDPlugin();
-    const recognizer = new BlinkID.BlinkIdMultiSideRecognizer();
-    recognizer.returnFullDocumentImage = true;
-    recognizer.returnFaceImage = true;
-    recognizer.returnSignatureImage = true;
-    recognizer.enableBlurFilter = true;
-    recognizer.enableGlareFilter = true;
-    recognizer.allowBarcodeScanOnly = false;
-    recognizer.fullDocumentImageDpi = 250;
-    recognizer.faceImageDpi = 250;
-    recognizer.signatureImageDpi = 250;
-
-    const rc = new BlinkID.RecognizerCollection([recognizer]);
-    const overlay = new BlinkID.BlinkIdOverlaySettings();
-    overlay.language = 'es';
-    overlay.country = 'MX';
-    overlay.showOnboardingInfo = false;
-    overlay.showIntroductionDialog = false;
-    overlay.showMicroblinkLogo = false;
-    overlay.showBrandLogo = false;
-    overlay.showExitAnimation = false;
-    overlay.showResultScreen = false;
-    overlay.showSuccessFrame = false;
-    overlay.showCameraListButton = false;
-    overlay.showScanningLine = false;
-    overlay.poweredByText = 'STRUCTECH';
-    overlay.showDocumentNotSupportedDialog = true;
-    overlay.showFlashlightWarning = true;
-    overlay.showTorchButton = true;
-    overlay.showCancelButton = true;
-    overlay.firstSideInstructionsText = 'Coloca el FRENTE de tu INE dentro del marco';
-    overlay.flipInstructions = 'Ahora voltea tu INE y escanea el REVERSO';
-    overlay.androidCameraResolutionPreset = BlinkID.AndroidCameraResolutionPreset.PresetFullHD;
-    overlay.iosCameraResolutionPreset = BlinkID.iOSCameraResolutionPreset.PresetFullHD;
-
-    const keys = {
-      android: LICENSE,
-      ios: LICENSE,
-      showTimeLimitedLicenseKeyWarning: false,
-    };
-    console.log('► Lanzando scanWithCamera…');
-    const results = await plugin.scanWithCamera(overlay, rc, keys);
-
-    if (!results.length) {
-      await hapticsService.warning();
-      mostrarMensajeEstado('⚠️ Usuario canceló el escaneo', 3000);
-    } else {
-      await hapticsService.warning();
-      eventBus.emit('scan:complete', results[0]);
-      window.poblarFormulario?.(results[0]);
-      mostrarMensajeEstado('✅ ¡Documento escaneado exitosamente!', 3000);
-    }
-  } catch (e) {
-    await hapticsService.error();
-    console.error('Error en scanINE:', e);
-    mostrarMensajeEstado(`❌ Error al escanear: ${e.message || e}`, 5000);
-  }
-}
-
-// Función para mostrar toasts
-function mostrarMensajeEstado(mensaje, duracion = 0) {
+/**
+ * Toast multiplataforma optimizado
+ * Usa plugin nativo en móviles y fallback visual en web
+ */
+async function mostrarMensajeEstado(mensaje, duracion = 3000) {
+  // Haptics (opcional)
   if (mensaje.includes('✅')) hapticsService.light();
   else if (mensaje.includes('❌')) hapticsService.error();
   else if (mensaje.includes('⚠️')) hapticsService.warning();
 
-  const toast = dom(document.createElement('div')).addClass('toast-message').text(mensaje).css({
-    position: 'fixed',
-    bottom: '80px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    background: 'rgba(0,0,0,0.8)',
-    color: 'white',
-    padding: '12px 24px',
-    borderRadius: '24px',
-    zIndex: '10000',
-    fontSize: '14px',
-    animation: 'slideUp 0.3s ease-out',
-  });
+  if (Capacitor.isNativePlatform()) {
+    await Toast.show({
+      text: mensaje,
+      duration: duracion >= 4000 ? 'long' : 'short',
+    });
+  } else {
+    // Fallback visual solo para web
+    let toast = document.querySelector('.toast-message');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = 'toast-message';
+      document.body.appendChild(toast);
+    }
 
-  document.body.appendChild(toast.get());
+    toast.textContent = mensaje;
+    toast.classList.remove('hide');
+    toast.classList.add('show');
 
-  const removeToast = () => {
-    toast.css('animation', 'slideDown 0.3s ease-out');
-    setTimeout(() => toast.get().remove(), 300);
-  };
-
-  if (duracion > 0) setTimeout(removeToast, duracion);
-  else setTimeout(removeToast, 10000);
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => {
+      toast.classList.remove('show');
+      toast.classList.add('hide');
+    }, duracion);
+  }
 }
 
-// Estilos del loader
-function getLoaderStyles() {
-  return `
-    #app-loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #f0f2f2 0%, #ffffff 100%);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 1;
-      transition: opacity 0.5s ease-out;
-    }
+/**
+ * Pantalla de error mejorada
+ */
+function showErrorScreen(message) {
+  hideMinimalUI();
 
-    #app-loader.fade-out {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .app-loader-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-      position: relative;
-    }
-
-    .loader-content {
-      text-align: center;
-      position: relative;
-    }
-
-    .loader-spinner {
-      position: relative;
-      width: 80px;
-      height: 80px;
-      margin: 0 auto 20px;
-    }
-
-    .spinner-ring {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: 3px solid transparent;
-      border-radius: 50%;
-    }
-
-    .spinner-ring:nth-child(1) {
-      border-top-color: #37a6a6;
-      animation: spin 1.5s linear infinite;
-    }
-
-    .spinner-ring:nth-child(2) {
-      border-right-color: #d96b2b;
-      animation: spin 1.5s linear infinite reverse;
-      animation-delay: -0.5s;
-      width: 90%;
-      height: 90%;
-      top: 5%;
-      left: 5%;
-    }
-
-    .spinner-ring:nth-child(3) {
-      border-bottom-color: #f2a29b;
-      animation: spin 2s linear infinite;
-      animation-delay: -1s;
-      width: 70%;
-      height: 70%;
-      top: 15%;
-      left: 15%;
-    }
-
-    .loader-dots {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 15px;
-    }
-
-    .loader-dots span {
-      width: 8px;
-      height: 8px;
-      background: #37a6a6;
-      border-radius: 50%;
-      animation: dots 1.4s ease-in-out infinite both;
-    }
-
-    .loader-dots span:nth-child(1) {
-      animation-delay: -0.32s;
-    }
-
-    .loader-dots span:nth-child(2) {
-      animation-delay: -0.16s;
-      background: #d96b2b;
-    }
-
-    .loader-dots span:nth-child(3) {
-      background: #f2a29b;
-    }
-
-    .loader-text {
-      color: #732C1C;
-      font-size: 16px;
-      font-weight: 500;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0;
-      opacity: 0.8;
-      animation: pulse-text 2s ease-in-out infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    @keyframes dots {
-      0%, 80%, 100% {
-        transform: scale(0.8);
-        opacity: 0.6;
-      }
-      40% {
-        transform: scale(1.2);
-        opacity: 1;
-      }
-    }
-
-    @keyframes pulse-text {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
-    }
-
-    @media (max-width: 480px) {
-      .loader-spinner {
-        width: 60px;
-        height: 60px;
-      }
-      .loader-text {
-        font-size: 14px;
-      }
-      .loader-dots span {
-        width: 6px;
-        height: 6px;
-      }
-    }
-
-    @media (prefers-color-scheme: dark) {
-      #app-loader {
-        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-      }
-      .loader-text {
-        color: #e0e0e0;
-      }
-    }
-
-    /* Toast messages */
-    .toast-message {
-      animation: slideUp 0.3s ease-out;
-    }
-
-    /* Error screen */
-    .error-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
-      text-align: center;
-    }
-
-    .error-screen h1 {
-      color: #ef4444;
-      margin-bottom: 16px;
-    }
-
-    .error-screen p {
-      color: #6b7280;
-      margin-bottom: 24px;
-    }
-
-    .error-screen button {
-      background: #0ea5e9;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 12px 24px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .error-screen button:hover {
-      background: #0284c7;
-    }
-
-    /* Animaciones globales */
-    @keyframes slideUp {
-      from {
-        transform: translate(-50%, 100%);
-        opacity: 0;
-      }
-      to {
-        transform: translate(-50%, 0);
-        opacity: 1;
-      }
-    }
-
-    @keyframes slideDown {
-      from {
-        transform: translate(-50%, 0);
-        opacity: 1;
-      }
-      to {
-        transform: translate(-50%, 100%);
-        opacity: 0;
-      }
-    }
-
-    /* Asegurar que el contenedor principal use toda la pantalla */
-    #app {
-      min-height: 100vh;
-    }
+  const errorHtml = `
+    <div class="error-screen">
+      <div class="error-icon">⚠️</div>
+      <h1>Error al iniciar</h1>
+      <p>${message}</p>
+      <button id="retryButton">Reintentar</button>
+    </div>
   `;
+
+  dom(document.body).html(errorHtml);
+  dom('#retryButton').on('click', () => window.location.reload());
 }
+
+// Estilos críticos inline
+const criticalStyles = `
+  .toast-message {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    background: rgba(0,0,0,0.85);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 24px;
+    z-index: 10000;
+    font-size: 14px;
+    transition: transform 0.3s ease-out;
+    pointer-events: none;
+  }
+  
+  .toast-message.show {
+    transform: translateX(-50%) translateY(0);
+  }
+  
+  .toast-message.hide {
+    transform: translateX(-50%) translateY(100%);
+  }
+  
+  .error-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .error-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+  
+  .error-screen h1 {
+    color: #ef4444;
+    margin-bottom: 16px;
+  }
+  
+  .error-screen p {
+    color: #6b7280;
+    margin-bottom: 24px;
+  }
+  
+  .error-screen button {
+    background: #37a6a6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .minimal-loader.fade-out {
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+  }
+`;
+
+// Inyectar estilos críticos inmediatamente
+const styleEl = document.createElement('style');
+styleEl.textContent = criticalStyles;
+document.head.appendChild(styleEl);
 
 // Iniciar cuando el DOM esté listo
 if (document.readyState === 'loading') {

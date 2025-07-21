@@ -3,7 +3,7 @@ import Navigo from 'navigo';
 import { eventBus } from '../services/api.service.js';
 import { authService } from '../services/auth.service.js';
 import { ROUTES } from '../utils/constants.js';
-import { $, dom } from '../utils/dom.helper.js'; // 👈 Importar dom helper
+import { $, dom } from '../utils/dom.helper.js';
 import { authGuard, combineGuards, guestGuard, roleGuard } from './guards.js';
 
 // Creamos el router en modo hash
@@ -12,257 +12,288 @@ export const router = new Navigo('/', { hash: true });
 // Contenedor principal
 const appContainer = $('#app') || document.body;
 
-// Variable para manejar cleanup de vista actual
+// Variables para manejar estado actual
 let currentViewCleanup = null;
-let currentViewLoader = null; // 👈 Variable para manejar el loader de vista
+let currentView = null;
+let isTransitioning = false;
+
+// Cache de vistas precargadas
+const viewCache = new Map();
 
 /**
- * Helper para cargar vistas dinámicamente desde src/views/{viewName}/index.js
+ * Precargar vistas comunes para mejorar performance
+ */
+async function preloadCommonViews() {
+  const commonViews = ['dashboard', 'form', 'enrollment-manual'];
+
+  commonViews.forEach(viewName => {
+    // Precarga diferida para no bloquear el inicio
+    setTimeout(() => {
+      import(`../views/${viewName}/index.js`)
+        .then(module => viewCache.set(viewName, module))
+        .catch(() => {}); // Silenciar errores de precarga
+    }, 2000);
+  });
+}
+
+/**
+ * Helper mejorado para cargar vistas con renderizado progresivo
  * @param {string} viewName - Nombre de la vista a cargar
  * @param {object} context - Contexto con params, query, etc.
  */
 async function loadView(viewName, context = {}) {
+  // Evitar transiciones múltiples simultáneas
+  if (isTransitioning) {
+    console.warn('⚠️ Transición en progreso, cancelando nueva navegación');
+    return;
+  }
+
+  isTransitioning = true;
+
   try {
     console.log(`📄 Cargando vista: ${viewName}`);
 
-    // Ejecutar cleanup de vista anterior
+    // 1. Cleanup inmediato de vista anterior (no bloqueante)
     if (currentViewCleanup) {
-      try {
-        await currentViewCleanup();
-      } catch (error) {
-        console.error('Error en cleanup anterior:', error);
-      }
+      Promise.resolve(currentViewCleanup()).catch(console.error);
       currentViewCleanup = null;
     }
 
-    // ✅ Mostrar loader específico para la vista
-    showViewLoader(viewName);
+    // 2. Aplicar clase de ruta inmediatamente
+    dom(appContainer)
+      .removeClass(className => className.startsWith('route-'))
+      .addClass(`route-${viewName}`);
 
-    await new Promise(requestAnimationFrame);
+    // 3. Mostrar skeleton loader inmediato (más ligero)
+    showSkeletonLoader(viewName);
 
-    // ✅ Aplicar clase de ruta usando dom helper
-    dom(appContainer).removeClass(className => className.startsWith('route-'));
-    dom(appContainer).addClass(`route-${viewName}`);
+    // 4. Importar la vista (desde cache si existe)
+    let module;
+    if (viewCache.has(viewName)) {
+      module = viewCache.get(viewName);
+    } else {
+      module = await import(`../views/${viewName}/index.js`);
+      viewCache.set(viewName, module);
+    }
 
-    // Importar dinámicamente y renderizar
-    const module = await import(`../views/${viewName}/index.js`);
     const View = module.default;
-    const view = new View(context);
-    const content = await view.render();
+    currentView = new View(context);
 
-    // Función para hacer commit de la transición
-    const commit = async () => {
-      // ✅ Ocultar loader antes de mostrar contenido
-      hideViewLoader();
+    // 5. Renderizar contenido base (HTML estático)
+    const content = await currentView.render();
+
+    // 6. Commit rápido del contenido principal
+    const fastCommit = () => {
+      // Ocultar cualquier toast previo
+      const toast = document.querySelector('.toast-message');
+      if (toast && toast.parentElement) toast.parentElement.removeChild(toast);
 
       appContainer.innerHTML = content;
+      hideSkeletonLoader();
 
-      if (view.afterRender) {
-        await view.afterRender();
+      // 7. Ejecutar afterRender de forma NO bloqueante
+      if (currentView.afterRender) {
+        // Usar requestIdleCallback si está disponible
+        const runAfterRender = () => {
+          currentView.afterRender().catch(error => {
+            console.error('Error en afterRender:', error);
+          });
+        };
+
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(runAfterRender, { timeout: 50 });
+        } else {
+          setTimeout(runAfterRender, 0);
+        }
       }
 
       // Guardar cleanup para la próxima navegación
-      currentViewCleanup = view.cleanup ? () => view.cleanup() : null;
+      currentViewCleanup = currentView.cleanup ? () => currentView.cleanup() : null;
     };
 
-    // Usar View Transition API si está disponible
-    if (document.startViewTransition) {
-      document.startViewTransition(commit);
+    // 8. Usar transición suave si está disponible
+    if (document.startViewTransition && !isMobileDevice()) {
+      await document.startViewTransition(fastCommit).finished;
     } else {
-      await commit();
+      fastCommit();
     }
   } catch (error) {
     console.error(`Error al cargar vista ${viewName}:`, error);
-
-    // ✅ Ocultar loader en caso de error
-    hideViewLoader();
-
-    // ✅ Mostrar error usando dom helper
-    const errorHtml = `
-      <div class="error-view">
-        <div class="error-content">
-          <h2>Error al cargar la página</h2>
-          <p>${error.message}</p>
-          <div class="error-actions">
-            <button id="reloadBtn" class="btn-primary">Recargar</button>
-            <button id="dashboardBtn" class="btn-secondary">Ir al Dashboard</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    dom(appContainer).html(errorHtml);
-
-    // ✅ Agregar eventos a los botones de error
-    dom('#reloadBtn').on('click', () => window.location.reload());
-    dom('#dashboardBtn').on('click', () => router.navigate(ROUTES.DASHBOARD));
+    showErrorView(error);
+  } finally {
+    isTransitioning = false;
   }
 }
 
 /**
- * ✅ Mostrar loader específico para carga de vistas
- * @param {string} viewName - Nombre de la vista que se está cargando
+ * Skeleton loader ligero para transiciones más fluidas
  */
-function showViewLoader(viewName = '') {
-  // Remover loader anterior si existe
-  hideViewLoader();
-
-  const loaderHtml = `
-    <div class="view-loader-container">
-      <div class="view-loader-content">
-        <div class="view-loader-spinner">
-          <div class="spinner-ring primary"></div>
-          <div class="spinner-ring secondary"></div>
+function showSkeletonLoader(viewName) {
+  const skeletons = {
+    dashboard: `
+      <div class="skeleton-container">
+        <div class="skeleton-header"></div>
+        <div class="skeleton-grid">
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
         </div>
-        <div class="view-loader-text">
-          <p>Cargando ${getViewDisplayName(viewName)}...</p>
+      </div>
+    `,
+    form: `
+      <div class="skeleton-container">
+        <div class="skeleton-header"></div>
+        <div class="skeleton-form">
+          <div class="skeleton-input"></div>
+          <div class="skeleton-input"></div>
+          <div class="skeleton-input"></div>
+        </div>
+      </div>
+    `,
+    default: `
+      <div class="skeleton-container">
+        <div class="skeleton-header"></div>
+        <div class="skeleton-content">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+      </div>
+    `,
+  };
+
+  const skeleton = skeletons[viewName] || skeletons.default;
+
+  // Aplicar skeleton con fade-in rápido
+  dom(appContainer).addClass('skeleton-loading').html(skeleton);
+
+  // Agregar estilos si no existen
+  addSkeletonStyles();
+}
+
+/**
+ * Ocultar skeleton loader
+ */
+function hideSkeletonLoader() {
+  dom(appContainer).removeClass('skeleton-loading');
+}
+
+/**
+ * Detectar si es dispositivo móvil (para deshabilitar transiciones pesadas)
+ */
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+/**
+ * Mostrar vista de error mejorada
+ */
+function showErrorView(error) {
+  const errorHtml = `
+    <div class="error-view fade-in">
+      <div class="error-content">
+        <div class="error-icon">⚠️</div>
+        <h2>Error al cargar la página</h2>
+        <p>${error.message || 'Error desconocido'}</p>
+        <div class="error-actions">
+          <button id="reloadBtn" class="btn-primary">
+            <span>🔄</span> Reintentar
+          </button>
+          <button id="dashboardBtn" class="btn-secondary">
+            <span>🏠</span> Ir al inicio
+          </button>
         </div>
       </div>
     </div>
   `;
 
-  // ✅ Crear loader usando dom helper
-  currentViewLoader = dom(document.createElement('div'))
-    .attr('id', 'view-loader')
-    .addClass('view-loader')
-    .html(loaderHtml);
+  dom(appContainer).html(errorHtml);
 
-  // Agregar estilos si no existen
-  addViewLoaderStyles();
-
-  // ✅ Agregar al contenedor principal
-  appContainer.appendChild(currentViewLoader.get());
+  // Eventos con delegation para mejor performance
+  dom('#reloadBtn').on('click', () => window.location.reload());
+  dom('#dashboardBtn').on('click', () => router.navigate(ROUTES.DASHBOARD));
 }
 
 /**
- * ✅ Ocultar loader de vista
+ * Agregar estilos optimizados para skeleton loader
  */
-function hideViewLoader() {
-  if (currentViewLoader) {
-    const loader = currentViewLoader.get();
-    if (loader && loader.parentNode) {
-      // ✅ Animación de salida
-      dom(loader).addClass('fade-out');
-      setTimeout(() => {
-        if (loader.parentNode) {
-          loader.parentNode.removeChild(loader);
-        }
-      }, 300);
-    }
-    currentViewLoader = null;
-  }
-}
+function addSkeletonStyles() {
+  if ($('#skeleton-styles')) return;
 
-/**
- * ✅ Obtener nombre amigable de la vista para mostrar
- * @param {string} viewName
- * @returns {string}
- */
-function getViewDisplayName(viewName) {
-  const displayNames = {
-    login: 'Inicio de Sesión',
-    dashboard: 'Panel Principal',
-    form: 'Formulario',
-    'enrollment-manual': 'Registro Manual',
-    admin: 'Panel de Administración',
-  };
-
-  return displayNames[viewName] || viewName;
-}
-
-/**
- * ✅ Agregar estilos del loader de vista
- */
-function addViewLoaderStyles() {
-  // Verificar si los estilos ya existen
-  if ($('#view-loader-styles')) return;
-
-  const styles = dom(document.createElement('style')).attr('id', 'view-loader-styles');
+  const styles = dom(document.createElement('style')).attr('id', 'skeleton-styles');
 
   styles.get().textContent = `
-    .view-loader {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(240, 242, 242, 0.95);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 1;
-      transition: opacity 0.3s ease-out;
+    /* Skeleton loader styles */
+    .skeleton-loading {
+      animation: fadeIn 0.2s ease-out;
     }
 
-    .view-loader.fade-out {
-      opacity: 0;
+    .skeleton-container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
-    .view-loader-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
+    .skeleton-header {
+      height: 60px;
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 8px;
+      margin-bottom: 24px;
     }
 
-    .view-loader-content {
-      text-align: center;
-      background: white;
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(55, 166, 166, 0.15);
-      border: 1px solid rgba(55, 166, 166, 0.1);
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
     }
 
-    .view-loader-spinner {
-      position: relative;
-      width: 50px;
-      height: 50px;
-      margin: 0 auto 20px;
+    .skeleton-card {
+      height: 200px;
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 12px;
     }
 
-    .view-loader-spinner .spinner-ring {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: 3px solid transparent;
-      border-radius: 50%;
+    .skeleton-form {
+      max-width: 600px;
     }
 
-    .view-loader-spinner .spinner-ring.primary {
-      border-top-color: #37a6a6;
-      animation: viewSpin 1.2s linear infinite;
+    .skeleton-input {
+      height: 48px;
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 6px;
+      margin-bottom: 16px;
     }
 
-    .view-loader-spinner .spinner-ring.secondary {
-      border-bottom-color: #d96b2b;
-      animation: viewSpin 1.2s linear infinite reverse;
-      animation-delay: -0.6s;
-      width: 80%;
-      height: 80%;
-      top: 10%;
-      left: 10%;
+    .skeleton-line {
+      height: 16px;
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 4px;
+      margin-bottom: 12px;
     }
 
-    .view-loader-text p {
-      margin: 0;
-      color: #732C1C;
-      font-size: 14px;
-      font-weight: 500;
-      opacity: 0.8;
+    .skeleton-line.short {
+      width: 60%;
     }
 
-    @keyframes viewSpin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
     }
 
-    /* Error view styles */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Error view optimizada */
     .error-view {
       display: flex;
       align-items: center;
@@ -271,19 +302,27 @@ function addViewLoaderStyles() {
       padding: 20px;
     }
 
+    .error-view.fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
     .error-content {
       text-align: center;
       background: white;
       padding: 40px;
       border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.1);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
       max-width: 400px;
     }
 
-    .error-content h2 {
-      color: #ef4444;
+    .error-icon {
+      font-size: 48px;
       margin-bottom: 16px;
+    }
+
+    .error-content h2 {
+      color: #374151;
+      margin-bottom: 12px;
       font-size: 20px;
     }
 
@@ -297,96 +336,68 @@ function addViewLoaderStyles() {
       display: flex;
       gap: 12px;
       justify-content: center;
-      flex-wrap: wrap;
     }
 
-    .error-actions .btn-primary,
-    .error-actions .btn-secondary {
+    .error-actions button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       padding: 10px 20px;
       border: none;
       border-radius: 8px;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    .error-actions .btn-primary {
+    .error-actions button:active {
+      transform: scale(0.95);
+    }
+
+    .btn-primary {
       background: #37a6a6;
       color: white;
     }
 
-    .error-actions .btn-primary:hover {
-      background: #2d8a8a;
+    .btn-primary:hover {
+      box-shadow: 0 4px 12px rgba(55, 166, 166, 0.3);
     }
 
-    .error-actions .btn-secondary {
+    .btn-secondary {
       background: #f3f4f6;
       color: #374151;
-      border: 1px solid #d1d5db;
     }
 
-    .error-actions .btn-secondary:hover {
-      background: #e5e7eb;
+    .btn-secondary:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    /* 404 styles */
-    .not-found-view {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 60vh;
-      text-align: center;
-      padding: 20px;
-    }
-
-    .not-found-view h1 {
-      font-size: 72px;
-      color: #37a6a6;
-      margin-bottom: 16px;
-      font-weight: 700;
-    }
-
-    .not-found-view p {
-      color: #6b7280;
-      margin-bottom: 24px;
-      font-size: 18px;
-    }
-
-    .not-found-view a {
-      color: #37a6a6;
-      text-decoration: none;
-      font-weight: 500;
-      padding: 12px 24px;
-      border: 2px solid #37a6a6;
-      border-radius: 8px;
-      transition: all 0.2s;
-    }
-
-    .not-found-view a:hover {
-      background: #37a6a6;
-      color: white;
-    }
-
-    /* Responsive */
+    /* Optimizaciones para móvil */
     @media (max-width: 480px) {
-      .view-loader-content {
-        padding: 20px;
-        margin: 20px;
+      .skeleton-container {
+        padding: 16px;
       }
       
       .error-content {
-        padding: 30px 20px;
-        margin: 20px;
+        padding: 24px;
       }
       
       .error-actions {
         flex-direction: column;
+        width: 100%;
       }
       
-      .not-found-view h1 {
-        font-size: 48px;
+      .error-actions button {
+        width: 100%;
+      }
+    }
+
+    /* Deshabilitar transiciones en preferencias de usuario */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
       }
     }
   `;
@@ -395,9 +406,12 @@ function addViewLoaderStyles() {
 }
 
 /**
- * Configuración de todas las rutas de la aplicación
+ * Configuración de todas las rutas
  */
 export function setupRoutes() {
+  // Precargar vistas comunes después del inicio
+  setTimeout(preloadCommonViews, 1000);
+
   // Ruta raíz - redirección inteligente
   router.on(ROUTES.HOME, async () => {
     console.log('🏠 Accediendo a ruta raíz');
@@ -405,131 +419,76 @@ export function setupRoutes() {
     router.navigate(isAuth ? ROUTES.DASHBOARD : ROUTES.LOGIN);
   });
 
-  // Login (ruta pública con guard para usuarios autenticados)
-  router.on(
-    ROUTES.LOGIN,
-    (params, query) => {
-      console.log('🔑 Cargando login');
-      loadView('login', { params, query });
-    },
-    {
-      before: guestGuard,
-    },
-  );
+  // Login (ruta pública)
+  router.on(ROUTES.LOGIN, (params, query) => loadView('login', { params, query }), {
+    before: guestGuard,
+  });
 
   // Dashboard (ruta privada)
-  router.on(
-    ROUTES.DASHBOARD,
-    (params, query) => {
-      console.log('📊 Cargando dashboard');
-      loadView('dashboard', { params, query });
-    },
-    {
-      before: authGuard,
-    },
-  );
+  router.on(ROUTES.DASHBOARD, (params, query) => loadView('dashboard', { params, query }), {
+    before: authGuard,
+  });
 
   // Formulario (ruta privada)
-  router.on(
-    ROUTES.FORM,
-    (params, query) => {
-      console.log('📝 Cargando formulario');
-      loadView('form', { params, query });
-    },
-    {
-      before: authGuard,
-    },
-  );
+  router.on(ROUTES.FORM, (params, query) => loadView('form', { params, query }), {
+    before: authGuard,
+  });
 
-  // Formulario con parámetros opcionales
-  router.on(
-    ROUTES.FORM + '/:id',
-    (params, query) => {
-      console.log('📝 Cargando formulario con ID:', params.id);
-      loadView('form', { params, query });
-    },
-    {
-      before: authGuard,
-    },
-  );
+  // Formulario con ID
+  router.on(ROUTES.FORM + '/:id', (params, query) => loadView('form', { params, query }), {
+    before: authGuard,
+  });
 
-  // Enrollment manual (ruta privada)
+  // Enrollment manual
   router.on(
     ROUTES.ENROLLMENT_MANUAL,
-    (params, query) => {
-      console.log('📋 Cargando enrollment manual');
-      loadView('enrollment-manual', { params, query });
-    },
-    {
-      before: authGuard,
-    },
+    (params, query) => loadView('enrollment-manual', { params, query }),
+    { before: authGuard },
   );
 
-  // Alta Gestión (ruta privada)
-  router.on(
-    ROUTES.ALTA_GESTION,
-    (params, query) => {
-      console.log('📝 Cargando alta gestión');
-      loadView('alta-gestion', { params, query });
-    },
-    {
-      before: authGuard,
-    },
-  );
+  // Alta Gestión
+  router.on(ROUTES.ALTA_GESTION, (params, query) => loadView('alta-gestion', { params, query }), {
+    before: authGuard,
+  });
 
-  // Admin (requiere rol admin)
-  router.on(
-    '/admin',
-    (params, query) => {
-      console.log('⚙️ Cargando panel admin');
-      loadView('admin', { params, query });
-    },
-    {
-      before: combineGuards(authGuard, roleGuard('admin')),
-    },
-  );
+  // Admin
+  router.on('/admin', (params, query) => loadView('admin', { params, query }), {
+    before: combineGuards(authGuard, roleGuard('admin')),
+  });
 
-  // ✅ Ruta 404 mejorada
+  // 404 mejorado
   router.notFound(() => {
     console.log('❌ Ruta no encontrada');
-
     const notFoundHtml = `
-      <div class="not-found-view">
-        <h1>404</h1>
-        <p>Página no encontrada</p>
-        <a href="#${ROUTES.HOME}" id="homeLink">Volver al inicio</a>
+      <div class="error-view fade-in">
+        <div class="error-content">
+          <div class="error-icon">🔍</div>
+          <h2>404 - Página no encontrada</h2>
+          <p>La página que buscas no existe</p>
+          <button id="homeBtn" class="btn-primary">
+            <span>🏠</span> Volver al inicio
+          </button>
+        </div>
       </div>
     `;
 
     dom(appContainer).html(notFoundHtml);
-
-    // ✅ Agregar evento al enlace
-    dom('#homeLink').on('click', e => {
-      e.preventDefault();
-      router.navigate(ROUTES.HOME);
-    });
+    dom('#homeBtn').on('click', () => router.navigate(ROUTES.HOME));
   });
 
-  // Eventos globales de autenticación
+  // Eventos globales optimizados
   eventBus.on('auth:logout', () => {
-    console.log('🚪 Logout detectado, redirigiendo a login');
-    // Ejecutar cleanup antes de logout
     if (currentViewCleanup) {
-      currentViewCleanup();
+      Promise.resolve(currentViewCleanup()).catch(console.error);
       currentViewCleanup = null;
     }
-    // ✅ Limpiar loader también
-    hideViewLoader();
     router.navigate(ROUTES.LOGIN);
   });
 
   eventBus.on('auth:login', () => {
-    console.log('✅ Login exitoso, redirigiendo');
     const redirectPath = sessionStorage.getItem('redirectAfterLogin');
-
     if (redirectPath && redirectPath !== '#' + ROUTES.LOGIN) {
       sessionStorage.removeItem('redirectAfterLogin');
-      // Limpiar el hash si es necesario
       const cleanPath = redirectPath.startsWith('#') ? redirectPath.substring(1) : redirectPath;
       router.navigate(cleanPath);
     } else {
@@ -537,16 +496,15 @@ export function setupRoutes() {
     }
   });
 
-  // Hook global para manejar errores de navegación
+  // Hooks optimizados
   router.hooks({
-    before: (done, params, query) => {
-      console.log('🧭 Navegación iniciada:', window.location.hash);
+    before: done => {
+      // Scroll suave al top
+      window.scrollTo({ top: 0, behavior: 'instant' });
       done();
     },
     after: () => {
       console.log('✅ Navegación completada');
-      // Scroll to top en cada navegación
-      window.scrollTo(0, 0);
     },
   });
 
@@ -554,53 +512,38 @@ export function setupRoutes() {
   router.resolve();
 }
 
-/**
- * Helpers de navegación para uso en toda la aplicación
- */
+// Helpers públicos
 export function navigateTo(path, data = {}) {
-  console.log('➡️ Navegando a:', path);
-  router.navigate(path, data);
+  if (!isTransitioning) {
+    router.navigate(path, data);
+  }
 }
 
 export function getRouteParams() {
   const location = router.getCurrentLocation();
-  return location ? location.params || {} : {};
+  return location?.params || {};
 }
 
 export function getQueryParams() {
   const location = router.getCurrentLocation();
-  if (!location || !location.queryString) return {};
+  if (!location?.queryString) return {};
 
-  // Parse query string manually
   const params = new URLSearchParams(location.queryString);
-  const result = {};
-  for (const [key, value] of params) {
-    result[key] = value;
-  }
-  return result;
+  return Object.fromEntries(params);
 }
 
-/**
- * Helper para obtener la ruta actual
- */
 export function getCurrentRoute() {
   const location = router.getCurrentLocation();
-  return location ? location.url : ROUTES.HOME;
+  return location?.url || ROUTES.HOME;
 }
 
-/**
- * Helper para verificar si estamos en una ruta específica
- */
 export function isCurrentRoute(route) {
   return getCurrentRoute() === route;
 }
 
-/**
- * ✅ Cleanup global al cerrar la aplicación
- */
+// Cleanup optimizado al cerrar
 window.addEventListener('beforeunload', () => {
   if (currentViewCleanup) {
     currentViewCleanup();
   }
-  hideViewLoader();
 });

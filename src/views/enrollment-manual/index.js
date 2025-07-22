@@ -120,6 +120,8 @@ export default class EnrollmentManualView {
     this.previewContent = dom('#previewContent');
     this.clearSigBtn = dom('#clearSignature');
     this.undoSigBtn = dom('#undoSignature');
+    this.cameraInput = dom('#cameraInput');
+    this.takePhotoBtn = dom('#takePhotoBtn');
   }
 
   enhanceHeader() {
@@ -392,10 +394,32 @@ export default class EnrollmentManualView {
   }
 
   _setupDocumentHandlers() {
+    // abrir selector de archivos
     if (this.selectFileBtn.exists())
       this.selectFileBtn.on('click', () => this.fileInput.get().click());
+
+    // disparar cámara en móvil
+    if (this.takePhotoBtn.exists())
+      this.takePhotoBtn.on('click', () => this.cameraInput.get().click());
+
+    // manejar selección de archivo
+    if (this.fileInput.exists())
+      this.fileInput.on('change', e => {
+        const file = e.target.files[0];
+        if (file) this._handleFile(file);
+      });
+
+    // manejar foto tomada
+    if (this.cameraInput.exists())
+      this.cameraInput.on('change', e => {
+        const file = e.target.files[0];
+        if (file) this._handleFile(file);
+      });
+
+    // botón quitar
     if (this.removeFileBtn.exists()) this.removeFileBtn.on('click', () => this._removeFile());
 
+    // drag & drop opcional
     if (this.documentUploadArea.exists()) {
       this.documentUploadArea
         .on('dragover', e => {
@@ -409,13 +433,6 @@ export default class EnrollmentManualView {
           const files = e.dataTransfer.files;
           if (files.length) this._handleFile(files[0]);
         });
-    }
-
-    if (this.fileInput.exists()) {
-      this.fileInput.on('change', e => {
-        const file = e.target.files[0];
-        if (file) this._handleFile(file);
-      });
     }
   }
 
@@ -535,121 +552,70 @@ export default class EnrollmentManualView {
 
   async _handleFile(file) {
     try {
-      // Validar tipo de archivo
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-      if (!allowedTypes.includes(file.type)) {
-        window.mostrarMensajeEstado('❌ Tipo de archivo no soportado', 3000);
+      const allowed = ['image/jpeg', 'image/png', 'application/pdf'];
+      if (!allowed.includes(file.type)) {
+        window.mostrarMensajeEstado('❌ Tipo no soportado', 3000);
         return;
       }
-
-      // Validar tamaño (5MB máximo)
       if (file.size > 5 * 1024 * 1024) {
-        window.mostrarMensajeEstado('❌ El archivo es demasiado grande (máximo 5MB)', 3000);
+        window.mostrarMensajeEstado('❌ Máx. 5MB', 3000);
         return;
       }
 
-      // Mostrar información del archivo solo si los elementos existen
-      if (this.fileName.exists()) {
-        this.fileName.text(file.name);
-      }
-      if (this.fileSize.exists()) {
-        this.fileSize.text(this._formatFileSize(file.size));
-      }
+      // nombre y tamaño
+      this.fileName.text(file.name);
+      this.fileSize.text(this._formatFileSize(file.size));
 
-      // Convertir a base64 de forma más robusta
+      // convertir a base64
       const base64 = await this._fileToBase64(file);
+      this.hiddenOtherData.val(base64);
 
-      // Guardar en campo oculto
-      if (this.hiddenOtherData.exists()) {
-        this.hiddenOtherData.val(base64);
-      }
-
-      // Mostrar preview según el tipo de archivo
-      if (this.previewContent.exists()) {
-        if (file.type.startsWith('image/')) {
-          // Para imágenes, usar URL temporal que es más eficiente
-          const imageUrl = URL.createObjectURL(file);
-          this.previewContent.html(
-            `<img src="${imageUrl}" alt="Preview del documento" style="max-width: 100%; height: auto;" onload="URL.revokeObjectURL(this.src)" />`,
-          );
-        } else {
-          // Para PDFs
-          this.previewContent.html(`
-            <div style="padding: 40px; text-align: center; color: #6b7280;">
-              <div style="font-size: 48px; margin-bottom: 12px;">📄</div>
-              <p>Archivo PDF subido correctamente</p>
-            </div>
-          `);
-        }
+      // render preview
+      if (file.type.startsWith('image/')) {
+        const url = URL.createObjectURL(file);
+        this.previewContent.html(
+          `<img src="${url}" onload="URL.revokeObjectURL(this.src)" style="max-width:100%;"/>`,
+        );
+      } else {
+        this.previewContent.html(`
+          <div style="text-align:center;padding:40px;color:#666;">
+            <div style="font-size:48px;">📄</div>
+            <p>PDF cargado</p>
+          </div>
+        `);
       }
 
-      // Cambiar estado visual solo si los elementos existen
-      if (this.uploadPlaceholder.exists()) {
-        this.uploadPlaceholder.hide();
-      }
-      if (this.documentPreview.exists()) {
-        this.documentPreview.show();
-      }
-      if (this.documentUploadArea.exists()) {
-        this.documentUploadArea.addClass('has-success');
-      }
-
-      // Actualizar progreso
+      // mostrar preview
+      this.uploadPlaceholder.hide();
+      this.documentPreview.show();
+      this.documentUploadArea.addClass('has-success');
       this._updateProgress();
-    } catch (error) {
-      console.error('Error procesando archivo:', error);
-      window.mostrarMensajeEstado('❌ Error al procesar el archivo', 3000);
+    } catch (err) {
+      console.error(err);
+      window.mostrarMensajeEstado('❌ Error procesando', 3000);
     }
   }
 
   // Método helper para convertir archivo a base64
   _fileToBase64(file) {
-    return new Promise((resolve, reject) => {
+    return new Promise((res, rej) => {
       const reader = new FileReader();
-
       reader.onload = () => {
-        try {
-          const result = reader.result;
-          const base64 = result.split(',')[1]; // Extraer solo la parte base64
-          resolve(base64);
-        } catch (error) {
-          reject(error);
-        }
+        const b64 = reader.result.split(',')[1];
+        res(b64);
       };
-
-      reader.onerror = () => {
-        reject(new Error('Error al leer el archivo'));
-      };
-
+      reader.onerror = () => rej('Error leyendo archivo');
       reader.readAsDataURL(file);
     });
   }
 
   _removeFile() {
-    // Limpiar datos
-    if (this.fileInput.exists()) {
-      this.fileInput.val('');
-    }
-    if (this.hiddenOtherData.exists()) {
-      this.hiddenOtherData.val('');
-    }
-
-    // Restaurar estado visual solo si los elementos existen
-    if (this.documentPreview && this.documentPreview.exists()) {
-      this.documentPreview.hide();
-    }
-
-    if (this.uploadPlaceholder && this.uploadPlaceholder.exists()) {
-      this.uploadPlaceholder.show();
-    }
-
-    // Remover clases de estado solo si el elemento existe
-    if (this.documentUploadArea && this.documentUploadArea.exists()) {
-      this.documentUploadArea.removeClass('has-success');
-      this.documentUploadArea.removeClass('has-error');
-    }
-
-    // Actualizar progreso
+    this.fileInput.val('');
+    this.cameraInput.val('');
+    this.hiddenOtherData.val('');
+    this.documentPreview.hide();
+    this.uploadPlaceholder.show();
+    this.documentUploadArea.removeClass('has-success has-error');
     this._updateProgress();
   }
 

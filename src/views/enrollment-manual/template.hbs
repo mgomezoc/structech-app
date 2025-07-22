@@ -243,43 +243,47 @@
                         <span>Sube una imagen clara del documento</span>
                     </div>
                 </div>
-
+            
                 <div class="document-upload-section">
                     <div class="document-upload-area" id="documentUploadArea">
-                        <input type="file" id="otherFile" accept="image/*" class="file-input" />
-
-                        <!-- Estado inicial - sin archivo -->
+                        {{!-- input original para subir archivo --}}
+                        <input type="file" id="otherFile" accept="image/*,application/pdf" class="file-input"
+                            style="display:none" />
+            
+                        {{!-- nuevo input para cámara --}}
+                        <input type="file" id="cameraInput" accept="image/*" capture="environment" class="file-input"
+                            style="display:none" />
+            
+                        <!-- Placeholder inicial -->
                         <div class="upload-placeholder" id="uploadPlaceholder">
                             <div class="upload-icon">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
-                                    xmlns="http://www.w3.org/2000/svg">
-                                    <path
-                                        d="M14 2H6C4.89 2 4 2.89 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2Z"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round" />
-                                    <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round" />
-                                    <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round" />
-                                    <path d="M16 17H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round" />
-                                    <path d="M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round" />
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M14 2H6C4.89 2 4 2.89 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2Z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M16 17H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                             </div>
                             <div class="upload-content">
                                 <h3>Subir documento</h3>
-                                <p>Arrastra y suelta tu archivo aquí o haz clic para seleccionar</p>
+                                <p>Selecciona tu archivo o toma una foto</p>
                                 <div class="upload-formats">
                                     <span>Formatos soportados: JPG, PNG, PDF</span>
                                 </div>
                             </div>
-                            <button type="button" class="upload-button" id="selectFileBtn">
-                                <span>Seleccionar archivo</span>
-                            </button>
+                            <div class="upload-actions">
+                                <button type="button" class="upload-button" id="selectFileBtn">
+                                    <span>Seleccionar archivo</span>
+                                </button>
+                                <button type="button" class="upload-button" id="takePhotoBtn">
+                                    <span>Tomar foto</span>
+                                </button>
+                            </div>
                         </div>
-
-                        <!-- Estado con archivo subido -->
+            
+                        <!-- Preview cuando ya hay archivo/foto -->
                         <div class="document-preview" id="documentPreview" style="display: none;">
                             <div class="preview-header">
                                 <div class="file-info">
@@ -290,22 +294,19 @@
                                     </div>
                                 </div>
                                 <button type="button" class="remove-file" id="removeFileBtn">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M18 6L6 18" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" />
-                                        <path d="M6 6L18 18" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" />
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
                                 </button>
                             </div>
                             <div class="preview-content" id="previewContent">
-                                <!-- Aquí se mostrará la imagen -->
+                                <!-- Aquí irá la img o mensaje PDF -->
                             </div>
                         </div>
                     </div>
-
-                    <!-- Campo oculto para los datos -->
+            
+                    <!-- Campo oculto para base64 -->
                     <input type="hidden" id="otherData" name="otherData" />
                 </div>
             </section>

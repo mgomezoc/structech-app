@@ -415,11 +415,29 @@
   transform: none;
   box-shadow: none;
 }
+.btn-primary.loading {
+  pointer-events: none;
+  overflow: hidden;
+}
+.btn-primary.loading .btn-ripple {
+  display: none !important;
+}
 .btn-primary.loading #btnText {
   opacity: 0;
+  transition: opacity 0.2s ease;
 }
 .btn-primary.loading .btn-loader {
   display: flex;
+  opacity: 0;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease forwards;
+}
+.btn-primary.loading .btn-loader .spinner {
+  margin-right: 8px;
+  width: 18px;
+  height: 18px;
+  border-width: 3px;
 }
 .btn-secondary {
   position: relative;
@@ -758,5 +776,13 @@
   }
   .login-container {
     backdrop-filter: blur(10px);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

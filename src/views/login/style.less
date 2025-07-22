@@ -546,12 +546,35 @@
   }
 
   &.loading {
-    #btnText {
-      opacity: 0;
+    pointer-events: none; // deshabilitar clicks
+    overflow: hidden;
+
+    // Ocultamos totalmente el ripple
+    .btn-ripple {
+      display: none !important;
     }
 
+    // Escondemos el texto principal
+    #btnText {
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    // Mostramos el loader con fade-in
     .btn-loader {
       display: flex;
+      opacity: 0;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    // Ajustes extra al spinner para que quede perfectamente centrado
+    .btn-loader .spinner {
+      margin-right: 8px; // un pequeño espaciado
+      width: 18px; // un poco más grande
+      height: 18px;
+      border-width: 3px; // bordes un poco más gruesos
     }
   }
 }
@@ -957,5 +980,15 @@
 
   .login-container {
     backdrop-filter: blur(10px); // Reducir blur para mejor rendimiento
+  }
+}
+
+// Keyframes para un fade-in suave
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

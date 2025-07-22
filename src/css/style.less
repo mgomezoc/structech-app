@@ -831,3 +831,13 @@ body {
     opacity: 1;
   }
 }
+
+/* oculta el elemento pero preserva el espacio para evitar reflow brusco */
+.loading-hidden {
+  visibility: hidden;
+  height: 0; /* opcional, si quieres colapsar espacio */
+  overflow: hidden; /* opcional */
+  transition: none; /* evita animaciones indeseadas */
+  padding: 0 !important; /* evita padding extra */
+  margin: 0 !important; /* evita margen extra */
+}

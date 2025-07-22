@@ -539,6 +539,14 @@ body.keyboard-visible {
     opacity: 1;
   }
 }
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
 .loading {
   position: relative;
   min-height: 100px;
@@ -597,9 +605,6 @@ body.keyboard-visible {
 }
 .stats-grid.fade-in .stat-card:nth-child(5) {
   animation-delay: 0.5s;
-}
-.stats-grid.fade-in .stat-card:nth-child(6) {
-  animation-delay: 0.6s;
 }
 .stat-card {
   background: white;
@@ -764,12 +769,77 @@ body.keyboard-visible {
 .menu-card.accent .menu-title {
   color: white;
 }
+.skeleton-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: fadeIn 0.2s ease-out;
+}
+.skeleton-header {
+  height: 60px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+.skeleton-card {
+  height: 200px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 12px;
+}
+.skeleton-form {
+  max-width: 600px;
+}
+.skeleton-input {
+  height: 48px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+.skeleton-content {
+  margin-top: 20px;
+}
+.skeleton-line {
+  height: 16px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.skeleton-line.short {
+  width: 60%;
+}
 @media (max-width: 768px) {
   .stats-grid {
     grid-template-columns: 1fr;
   }
   .menu-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .skeleton-container {
+    padding: 16px;
+  }
+  .menu-card .menu-icon {
+    font-size: 28px;
+  }
+  .menu-card .menu-title {
+    font-size: 12px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -786,12 +856,116 @@ body.keyboard-visible {
   transform: translateZ(0);
   backface-visibility: hidden;
 }
-#app {
-  min-height: 100vh;
-  position: relative;
-}
 #app.skeleton-loading {
   overflow: hidden;
+}
+.error-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 20px;
+}
+.error-view.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+.error-content {
+  text-align: center;
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+}
+.error-content .error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+.error-content h2 {
+  color: #374151;
+  margin-bottom: 12px;
+  font-size: 20px;
+}
+.error-content p {
+  color: #6b7280;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+.error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.error-actions button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.error-actions button:active {
+  transform: scale(0.95);
+}
+.error-actions button span {
+  font-size: 16px;
+}
+.error-actions .btn-primary {
+  background: #37a6a6;
+  color: white;
+}
+.error-actions .btn-primary:hover {
+  box-shadow: 0 4px 12px rgba(55, 166, 166, 0.3);
+}
+.error-actions .btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+.error-actions .btn-secondary:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+@media (max-width: 480px) {
+  .error-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .error-actions button {
+    width: 100%;
+  }
+}
+.skeleton-select {
+  background-image: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+select.loading {
+  color: #999;
+  background-color: #f8f8f8;
+}
+.form-section.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 /*========================================
   1. PALETA CORPORATIVA
@@ -1486,4 +1660,18 @@ select.form-control {
     transform: translateX(0);
     opacity: 1;
   }
+}
+/* oculta el elemento pero preserva el espacio para evitar reflow brusco */
+.loading-hidden {
+  visibility: hidden;
+  height: 0;
+  /* opcional, si quieres colapsar espacio */
+  overflow: hidden;
+  /* opcional */
+  transition: none;
+  /* evita animaciones indeseadas */
+  padding: 0 !important;
+  /* evita padding extra */
+  margin: 0 !important;
+  /* evita margen extra */
 }

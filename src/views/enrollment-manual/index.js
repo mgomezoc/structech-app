@@ -437,6 +437,8 @@ export default class EnrollmentManualView {
       document.getElementById(
         'subestructura',
       ).innerHTML = `<option value="">Sin selección</option>`;
+
+      estructuraSection.classList.remove('loading-hidden');
     } else if (res.success && !res.muestraEstructura) {
       // Eliminar la sección completa del DOM
       estructuraSection?.remove();

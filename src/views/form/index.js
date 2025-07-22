@@ -143,7 +143,7 @@ export default class FormView {
         // Ocultar sección y agregar campos ocultos
         this.handleHiddenEstructuras();
       }
-
+      estructuraSection?.classList.remove('loading-hidden');
       // Actualizar progreso
       this._updateProgress();
     } catch (error) {

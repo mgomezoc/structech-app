@@ -1,84 +1,62 @@
 // src/views/dashboard/style.less
+// Optimizado para iOS/Android con animaciones nativas
 
-// Variables (Paleta StructTech)
+// Variables mejoradas
 @primary-color: #37a6a6;
 @secondary-color: #d96b2b;
 @accent-color: #f2a29b;
-@burgundy-color: #8c2016;
 
-// Colores de Cards
-@scan-color: #0ea5e9;
-@enroll-color: #f59e0b;
-@gestion-color: #10b981;
-
-// Grises y Neutrales
+// Sistema de colores más consistente
+@white: #ffffff;
 @gray-50: #f9fafb;
 @gray-100: #f3f4f6;
+@gray-200: #e5e7eb;
 @gray-300: #d1d5db;
 @gray-400: #9ca3af;
 @gray-500: #6b7280;
 @gray-900: #111827;
 
-// Sombras mejoradas
-@shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-@shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-@shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-@shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-@shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+// Sombras optimizadas para dispositivos móviles
+@shadow-mobile: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+@shadow-card: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.06);
+@shadow-elevated: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
 
-// Container Principal
+// Timing functions nativos de iOS/Android
+@ease-ios: cubic-bezier(0.25, 0.1, 0.25, 1);
+@ease-material: cubic-bezier(0.4, 0, 0.2, 1);
+@ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+// Container Principal - Corregido para iOS
 .dashboard-container {
   min-height: 100vh;
-  background: linear-gradient(
-    135deg,
-    #37a6a6 0%,
-    #2d8a8a 25%,
-    #1e6b73 50%,
-    #005f73 75%,
-    #37a6a6 100%
-  );
-  background-size: 300% 300%;
-  animation: gradientBackground 25s ease infinite;
+  min-height: 100dvh; // Soporte para viewport dinámico
+  background: linear-gradient(135deg, @primary-color 0%, darken(@primary-color, 15%) 100%);
   display: flex;
   flex-direction: column;
   width: 100%;
   position: relative;
   overflow-x: hidden;
-  padding-top: env(safe-area-inset-top);
+
+  // Safe area para iOS - Aplicado correctamente
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+
+  // Evitar problemas de superposición
+  isolation: isolate;
 }
 
-// Animación de fondo gradiente más sutil
-@keyframes gradientBackground {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  20% {
-    background-position: 50% 0%;
-  }
-  40% {
-    background-position: 100% 50%;
-  }
-  60% {
-    background-position: 50% 100%;
-  }
-  80% {
-    background-position: 0% 50%;
-  }
-}
-
-// Header mejorado
+// Header simplificado y optimizado
 .dashboard-header {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px); // Safari
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 20px 20px;
-  padding-top: calc(20px + env(safe-area-inset-top));
-  position: sticky;
-  top: 0;
+  padding: 16px 20px;
+  position: relative;
   z-index: 100;
-  animation: slideInFromTop 0.8s ease-out;
-  margin-top: calc(-1 * env(safe-area-inset-top));
+
+  // Animación de entrada más rápida y natural
+  animation: slideDown 0.4s @ease-ios both;
 
   .header-content {
     max-width: 800px;
@@ -90,126 +68,118 @@
     .header-left {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
 
       .header-greeting {
         font-size: 24px;
-        color: #ffffff;
+        color: @white;
         font-weight: 700;
         margin: 0;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        animation: textGlow 3s ease-in-out infinite alternate;
+        letter-spacing: -0.5px;
+        // Animación más sutil
+        animation: fadeInLeft 0.5s @ease-ios 0.1s both;
       }
 
       .header-subtitle {
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255, 255, 255, 0.75);
         font-weight: 500;
-        opacity: 0;
-        animation: fadeInUp 1s ease-out 0.5s forwards;
+        animation: fadeInLeft 0.5s @ease-ios 0.2s both;
       }
     }
 
     .header-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-
-      .user-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, @primary-color, @secondary-color);
+      .btn-logout {
+        background: rgba(255, 255, 255, 0.12);
+        border: none;
+        color: @white;
+        padding: 10px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s @ease-material;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 14px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        animation: pulseAvatar 4s ease-in-out infinite;
-        cursor: pointer;
-        transition: all 0.3s ease;
 
         &:hover {
-          transform: scale(1.1);
-          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-      }
-
-      .btn-logout {
-        background: rgba(255, 255, 255, 0.15);
-        border: none;
-        color: white;
-        padding: 8px;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.25);
-          transform: translateY(-2px);
-          box-shadow: @shadow-lg;
+          background: rgba(255, 255, 255, 0.2);
+          transform: scale(1.05);
         }
 
         &:active {
-          transform: translateY(0);
+          transform: scale(0.95);
+          background: rgba(255, 255, 255, 0.25);
+        }
+
+        svg {
+          display: block;
         }
       }
     }
   }
 }
 
-// Status section
-.status-section {
-  display: none; /* Ocultar hasta que esté implementado */
-}
-
-// Main content
+// Main content - Corregido para evitar superposición
 .dashboard-main {
   flex: 1;
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  padding-bottom: calc(24px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 60vh;
   width: 100%;
+
+  // Asegurar que no se superponga con otros elementos
+  position: relative;
+  z-index: 1;
+
+  // Altura mínima para contenido
+  min-height: calc(100vh - 120px);
+  min-height: calc(100dvh - 120px);
 }
 
-// Actions section mejorada
+// Actions section mejorada con animaciones nativas
 .actions-section {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  animation: slideInFromBottom 1s ease-out 0.6s both;
+  gap: 16px;
+  flex: 1;
+
+  // Animación de entrada escalonada
+  animation: slideUp 0.5s @ease-ios 0.3s both;
 
   .action-card {
     position: relative;
-    border-radius: 24px;
+    border-radius: 20px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: none;
     padding: 0;
-    height: 160px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: @shadow-card;
+
+    // Transición más rápida y natural
+    transition: all 0.2s @ease-material;
+
+    // Soporte para feedback táctil
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 
     &.large {
-      height: 200px;
+      height: 180px;
       width: 100%;
+      margin-bottom: 4px;
     }
 
     .card-background {
       position: absolute;
       inset: 0;
-      opacity: 0.9;
-      transition: all 0.5s ease;
+      opacity: 1;
+      transition: transform 0.3s @ease-material;
       z-index: 1;
     }
 
@@ -217,14 +187,13 @@
       position: absolute;
       inset: 0;
       background: linear-gradient(
-        45deg,
-        rgba(0, 0, 0, 0.6) 0%,
-        rgba(0, 0, 0, 0.3) 40%,
-        rgba(0, 0, 0, 0.1) 70%,
-        rgba(255, 255, 255, 0.1) 100%
+        135deg,
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0.2) 50%,
+        rgba(0, 0, 0, 0.1) 100%
       );
       z-index: 2;
-      transition: all 0.3s ease;
+      transition: background 0.2s @ease-material;
     }
 
     .card-content {
@@ -235,149 +204,102 @@
       align-items: center;
       justify-content: center;
       padding: 24px;
-      color: #fff;
+      color: @white;
       text-align: center;
       z-index: 3;
 
       .card-icon {
-        width: 48px;
-        height: 48px;
-        margin-bottom: 16px;
-        background: rgba(255, 255, 255, 0.25);
-        border-radius: 16px;
+        width: 44px;
+        height: 44px;
+        margin-bottom: 12px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.3s ease;
-        animation: iconFloat 6s ease-in-out infinite;
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+
+        // Transición más suave
+        transition: all 0.2s @ease-material;
 
         svg {
-          width: 24px;
-          height: 24px;
-          stroke: white;
+          width: 22px;
+          height: 22px;
+          stroke: @white;
           stroke-width: 2.5;
-          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
       }
 
       h3 {
         font-size: 18px;
         font-weight: 700;
-        margin: 0 0 8px 0;
-        text-shadow: 0 3px 12px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.8);
-        letter-spacing: -0.5px;
-        color: #ffffff;
+        margin: 0 0 6px 0;
+        letter-spacing: -0.3px;
+        color: @white;
+        line-height: 1.2;
       }
 
       p {
         font-size: 14px;
         margin: 0;
-        opacity: 0.95;
+        opacity: 0.9;
         font-weight: 500;
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.8);
-        color: rgba(255, 255, 255, 0.95);
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.3;
       }
     }
 
-    .card-badge {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      backdrop-filter: blur(15px);
-      color: #fff;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      z-index: 4;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-      animation: badgePulse 4s ease-in-out infinite;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-
-      &.primary {
-        background: linear-gradient(135deg, rgba(55, 166, 166, 0.9), rgba(14, 165, 233, 0.9));
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      }
-
-      &.secondary {
-        background: linear-gradient(135deg, rgba(217, 107, 43, 0.85), rgba(180, 83, 9, 0.85));
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      }
-
-      &.success {
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9));
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      }
-    }
-
-    // Efectos hover mejorados
-    &:hover:not(:disabled) {
-      transform: translateY(-8px) scale(1.02);
-      box-shadow: @shadow-2xl;
+    // Efectos hover/touch optimizados para móvil
+    &:hover,
+    &:focus {
+      transform: translateY(-2px);
+      box-shadow: @shadow-elevated;
 
       .card-background {
-        opacity: 1;
-        transform: scale(1.1);
+        transform: scale(1.02);
       }
 
       .card-overlay {
         background: linear-gradient(
-          45deg,
-          rgba(0, 0, 0, 0.4) 0%,
-          rgba(0, 0, 0, 0.2) 40%,
-          rgba(0, 0, 0, 0.05) 70%,
-          rgba(255, 255, 255, 0.15) 100%
+          135deg,
+          rgba(0, 0, 0, 0.3) 0%,
+          rgba(0, 0, 0, 0.15) 50%,
+          rgba(0, 0, 0, 0.05) 100%
         );
       }
 
       .card-icon {
-        transform: scale(1.15) rotate(5deg);
-        background: rgba(255, 255, 255, 0.35);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-      }
-
-      .card-badge {
-        transform: scale(1.05);
+        transform: scale(1.1);
+        background: rgba(255, 255, 255, 0.3);
       }
     }
 
-    &:active:not(:disabled) {
-      transform: translateY(-4px) scale(1.01);
+    // Efecto active para feedback táctil
+    &:active {
+      transform: translateY(-1px) scale(0.98);
+      transition: all 0.1s @ease-material;
     }
 
-    &:disabled {
-      cursor: not-allowed;
-      opacity: 0.6;
-      filter: grayscale(100%);
-    }
-
-    // Backgrounds con animación shimmer
+    // Backgrounds específicos
     &.scan-card .card-background {
       background: url(../../img/dashboard-1.jpg) center center / cover no-repeat;
-      animation: shimmerEffect 8s ease-in-out infinite;
     }
 
     &.enroll-card .card-background {
       background: url(../../img/dashboard-2.png) center center / cover no-repeat;
-      animation: shimmerEffect 8s ease-in-out infinite 2s;
     }
 
     &.gestion-card .card-background {
       background: url(../../img/dashboard-3.png) center center / cover no-repeat;
-      animation: shimmerEffect 8s ease-in-out infinite 4s;
     }
   }
 
   .actions-grid-secondary {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 12px;
 
     .action-card {
       height: 140px;
@@ -387,81 +309,40 @@
 
 // Footer mejorado
 .dashboard-footer {
-  padding-top: 40px;
-  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  margin-top: auto;
+  padding: 24px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  margin-top: auto;
-  animation: fadeInUp 1s ease-out 1s both;
+  gap: 8px;
+
+  // Animación de entrada
+  animation: fadeInUp 0.5s @ease-ios 0.5s both;
 
   .footer-logo {
-    width: 40px;
-    height: 40px;
-    opacity: 0.8;
-    transition: all 0.3s ease;
-    animation: logoSpin 20s linear infinite;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    width: 32px;
+    height: 32px;
+    opacity: 0.7;
+    transition: opacity 0.2s @ease-material;
+    filter: brightness(0) invert(1);
 
     &:hover {
       opacity: 1;
-      transform: scale(1.1);
     }
   }
 
   .footer-text {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 }
 
-// Elementos flotantes para ambiente
-.floating-elements {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-
-  .floating-circle {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(2px);
-
-    &.circle-1 {
-      width: 120px;
-      height: 120px;
-      top: 10%;
-      right: 10%;
-      animation: floatUpDown 8s ease-in-out infinite;
-    }
-
-    &.circle-2 {
-      width: 80px;
-      height: 80px;
-      bottom: 20%;
-      left: 15%;
-      animation: floatUpDown 10s ease-in-out infinite reverse;
-    }
-
-    &.circle-3 {
-      width: 60px;
-      height: 60px;
-      top: 60%;
-      right: 20%;
-      animation: floatUpDown 12s ease-in-out infinite 3s;
-    }
-  }
-}
-
-// Animaciones sofisticadas
-@keyframes slideInFromTop {
+// Animaciones optimizadas para dispositivos móviles
+@keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-50px);
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;
@@ -469,29 +350,7 @@
   }
 }
 
-@keyframes slideInFromLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInFromBottom {
-  from {
-    opacity: 0;
-    transform: translateY(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInUp {
+@keyframes slideUp {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -502,198 +361,107 @@
   }
 }
 
-@keyframes textGlow {
+@keyframes fadeInLeft {
   from {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  to {
-    text-shadow: 0 2px 20px rgba(255, 255, 255, 0.3);
-  }
-}
-
-@keyframes pulseAvatar {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
-  }
-}
-
-@keyframes iconFloat {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
-@keyframes badgePulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.9;
-  }
-}
-
-@keyframes shimmerEffect {
-  0%,
-  100% {
-    filter: brightness(1) contrast(1) saturate(1);
-  }
-  25% {
-    filter: brightness(1.1) contrast(1.1) saturate(1.2);
-  }
-  75% {
-    filter: brightness(0.95) contrast(0.95) saturate(0.9);
-  }
-}
-
-@keyframes countUp {
-  from {
-    transform: scale(0) rotate(180deg);
     opacity: 0;
+    transform: translateX(-15px);
   }
   to {
-    transform: scale(1) rotate(0deg);
     opacity: 1;
+    transform: translateX(0);
   }
 }
 
-@keyframes logoSpin {
+@keyframes fadeInUp {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(15px);
   }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes floatUpDown {
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-20px) rotate(180deg);
-  }
-}
-
-// Focus states mejorados para accesibilidad
+// Focus states para accesibilidad
 .action-card:focus-visible,
 .btn-logout:focus-visible {
-  outline: 3px solid rgba(255, 255, 255, 0.6);
-  outline-offset: 3px;
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
 }
 
-// Mejoras para PWA y safe areas
-@media (display-mode: standalone) {
+// Optimizaciones específicas para iOS
+@supports (-webkit-touch-callout: none) {
   .dashboard-container {
-    padding-top: env(safe-area-inset-top);
+    // Evitar rebote en iOS
+    overscroll-behavior: none;
   }
 
-  .dashboard-header {
-    padding-top: calc(20px + env(safe-area-inset-top));
-    margin-top: calc(-1 * env(safe-area-inset-top));
-  }
-
-  .dashboard-footer {
-    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  .action-card {
+    // Optimizar toques en iOS
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
   }
 }
 
-// Safe area para todos los dispositivos
-@supports (padding: max(0px)) {
+// Optimizaciones para Android
+@media (max-device-width: 768px) and (orientation: portrait) {
   .dashboard-container {
-    padding-top: max(env(safe-area-inset-top), 0px);
+    // Mejorar rendimiento en Android
+    will-change: auto;
   }
 
-  .dashboard-header {
-    padding-top: max(calc(20px + env(safe-area-inset-top)), 20px);
-    margin-top: max(calc(-1 * env(safe-area-inset-top)), 0px);
-  }
-
-  .dashboard-footer {
-    padding-bottom: max(calc(20px + env(safe-area-inset-bottom)), 20px);
+  .action-card {
+    // Reducir complejidad visual en dispositivos menos potentes
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.98);
   }
 }
 
-// Responsividad móvil mejorada
+// Responsividad móvil optimizada
 @media (max-width: 640px) {
   .dashboard-container {
-    padding-top: env(safe-area-inset-top);
+    padding-top: max(env(safe-area-inset-top), 0px);
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
   }
 
   .dashboard-header {
-    padding: 16px 16px;
-    padding-top: calc(16px + env(safe-area-inset-top));
-    margin-top: calc(-1 * env(safe-area-inset-top));
+    padding: 12px 16px;
 
     .header-content {
       .header-left .header-greeting {
         font-size: 20px;
       }
 
-      .header-right .user-avatar {
-        width: 36px;
-        height: 36px;
-        font-size: 12px;
-      }
-    }
-  }
-
-  .status-section {
-    padding: 16px;
-
-    .status-bar {
-      padding: 16px;
-
-      .status-item {
-        padding: 8px;
-
-        .status-number {
-          font-size: 20px;
-        }
-      }
-    }
-  }
-
-  .action-card.large {
-    height: 160px;
-
-    .card-content {
-      padding: 20px;
-
-      h3 {
-        font-size: 16px;
-      }
-
-      p {
+      .header-left .header-subtitle {
         font-size: 13px;
       }
+
+      .header-right .btn-logout {
+        padding: 8px;
+      }
     }
   }
 
-  .actions-grid-secondary {
+  .dashboard-main {
+    padding: 16px 12px;
+    min-height: calc(100vh - 100px);
+    min-height: calc(100dvh - 100px);
+  }
+
+  .actions-section {
     gap: 12px;
 
-    .action-card {
-      height: 120px;
+    .action-card.large {
+      height: 160px;
 
       .card-content {
-        padding: 16px;
+        padding: 20px;
 
         .card-icon {
           width: 40px;
           height: 40px;
-          margin-bottom: 12px;
 
           svg {
             width: 20px;
@@ -702,45 +470,95 @@
         }
 
         h3 {
-          font-size: 14px;
+          font-size: 16px;
         }
 
         p {
-          font-size: 12px;
+          font-size: 13px;
+        }
+      }
+    }
+
+    .actions-grid-secondary {
+      gap: 10px;
+
+      .action-card {
+        height: 120px;
+
+        .card-content {
+          padding: 16px;
+
+          .card-icon {
+            width: 36px;
+            height: 36px;
+            margin-bottom: 10px;
+
+            svg {
+              width: 18px;
+              height: 18px;
+            }
+          }
+
+          h3 {
+            font-size: 14px;
+          }
+
+          p {
+            font-size: 12px;
+          }
         }
       }
     }
   }
 
-  .dashboard-main {
-    padding: 16px 12px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom));
-  }
-
   .dashboard-footer {
-    padding-top: 20px;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    padding: 16px 0;
 
     .footer-logo {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
+    }
+
+    .footer-text {
+      font-size: 12px;
     }
   }
+}
 
-  .floating-elements .floating-circle {
-    &.circle-1 {
-      width: 80px;
-      height: 80px;
-    }
+// Mejoras para dispositivos con notch
+@media (max-width: 430px) {
+  .dashboard-header {
+    padding: 8px 16px;
+  }
 
-    &.circle-2 {
-      width: 60px;
-      height: 60px;
-    }
+  .dashboard-main {
+    padding: 12px;
+  }
+}
 
-    &.circle-3 {
-      width: 40px;
-      height: 40px;
+// Dark mode support (opcional)
+@media (prefers-color-scheme: dark) {
+  .action-card {
+    background: rgba(255, 255, 255, 0.1);
+
+    .card-overlay {
+      background: linear-gradient(
+        135deg,
+        rgba(0, 0, 0, 0.6) 0%,
+        rgba(0, 0, 0, 0.4) 50%,
+        rgba(0, 0, 0, 0.2) 100%
+      );
     }
+  }
+}
+
+// Reduce motion para usuarios con preferencias de accesibilidad
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

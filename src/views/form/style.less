@@ -1,141 +1,182 @@
+// src/views/form/style.less
+
 // Variables
 @primary-color: #0ea5e9;
+@secondary-color: @success-color; // we’ll use success-color as secondary gradient
 @danger-color: #ef4444;
 @success-color: #10b981;
 @border-color: #d1d5db;
-@text-muted: #6b7280;
+@text-primary: #374151;
+@text-secondary: #6b7280;
+@text-hint: #9ca3af;
 @white: #ffffff;
+@shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+@radius-sm: 6px;
+@radius-md: 8px;
+@radius-lg: 12px;
 
-// Header
-.header {
-  background: @primary-color;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+//----------------------------------------
+// Layout Containers
+//----------------------------------------
+.keyboard-visible .alta-header {
+  transform: translateY(-100%);
+}
+.alta-header {
+  background-color: #005f73;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 304 304' width='304' height='304'%3E%3Cpath fill='%230a9396' fill-opacity='0.4' d='M44.1 224a5 5 0 1 1 0 2H0v-2h44.1zm160 48a5 5 0 1 1 0 2H82v-2h122.1zm57.8-46a5 5 0 1 1 0-2H304v2h-42.1zm0 16a5 5 0 1 1 0-2H304v2h-42.1zm6.2-114a5 5 0 1 1 0 2h-86.2a5 5 0 1 1 0-2h86.2zm-256-48a5 5 0 1 1 0 2H0v-2h12.1zm185.8 34a5 5 0 1 1 0-2h86.2a5 5 0 1 1 0 2h-86.2zM258 12.1a5 5 0 1 1-2 0V0h2v12.1zm-64 208a5 5 0 1 1-2 0v-54.2a5 5 0 1 1 2 0v54.2zm48-198.2V80h62v2h-64V21.9a5 5 0 1 1 2 0zm16 16V64h46v2h-48V37.9a5 5 0 1 1 2 0zm-128 96V208h16v12.1a5 5 0 1 1-2 0V210h-16v-76.1a5 5 0 1 1 2 0zm-5.9-21.9a5 5 0 1 1 0 2H114v48H85.9a5 5 0 1 1 0-2H112v-48h12.1zm-6.2 130a5 5 0 1 1 0-2H176v-74.1a5 5 0 1 1 2 0V242h-60.1zm-16-64a5 5 0 1 1 0-2H114v48h10.1a5 5 0 1 1 0 2H112v-48h-10.1zM66 284.1a5 5 0 1 1-2 0V274H50v30h-2v-32h18v12.1zM236.1 176a5 5 0 1 1 0 2H226v94h48v32h-2v-30h-48v-98h12.1zm25.8-30a5 5 0 1 1 0-2H274v44.1a5 5 0 1 1-2 0V146h-10.1zm-64 96a5 5 0 1 1 0-2H208v-80h16v-14h-42.1a5 5 0 1 1 0-2H226v18h-16v80h-12.1zm86.2-210a5 5 0 1 1 0 2H272V0h2v32h10.1zM98 101.9V146H53.9a5 5 0 1 1 0-2H96v-42.1a5 5 0 1 1 2 0zM53.9 34a5 5 0 1 1 0-2H80V0h2v34H53.9zm60.1 3.9V66H82v64H69.9a5 5 0 1 1 0-2H80V64h32V37.9a5 5 0 1 1 2 0zM101.9 82a5 5 0 1 1 0-2H128V37.9a5 5 0 1 1 2 0V82h-28.1zm16-64a5 5 0 1 1 0-2H146v44.1a5 5 0 1 1-2 0V18h-26.1zm102.2 270a5 5 0 1 1 0 2H98v14h-2v-16h124.1zM242 149.9V160h16v34h-16v62h48v48h-2v-46h-48v-66h16v-30h-16v-12.1a5 5 0 1 1 2 0zM53.9 18a5 5 0 1 1 0-2H64V2H48V0h18v18H53.9zm112 32a5 5 0 1 1 0-2H192V0h50v2h-48v48h-28.1zm-48-48a5 5 0 0 1-9.8-2h2.07a3 3 0 1 0 5.66 0H178v34h-18V21.9a5 5 0 1 1 2 0V32h14V2h-58.1zm0 96a5 5 0 1 1 0-2H137l32-32h39V21.9a5 5 0 1 1 2 0V66h-40.17l-32 32H117.9zm28.1 90.1a5 5 0 1 1-2 0v-76.51L175.59 80H224V21.9a5 5 0 1 1 2 0V82h-49.59L146 112.41v75.69zm16 32a5 5 0 1 1-2 0v-99.51L184.59 96H300.1a5 5 0 0 1 3.9-3.9v2.07a3 3 0 0 0 0 5.66v2.07a5 5 0 0 1-3.9-3.9H185.41L162 121.41v98.69zm-144-64a5 5 0 1 1-2 0v-3.51l48-48V48h32V0h2v50H66v55.41l-48 48v2.69zM50 53.9v43.51l-48 48V208h26.1a5 5 0 1 1 0 2H0v-65.41l48-48V53.9a5 5 0 1 1 2 0zm-16 16V89.41l-34 34v-2.82l32-32V69.9a5 5 0 1 1 2 0zM12.1 32a5 5 0 1 1 0 2H9.41L0 43.41V40.6L8.59 32h3.51zm265.8 18a5 5 0 1 1 0-2h18.69l7.41-7.41v2.82L297.41 50H277.9zm-16 160a5 5 0 1 1 0-2H288v-71.41l16-16v2.82l-14 14V210h-28.1zm-208 32a5 5 0 1 1 0-2H64v-22.59L40.59 194H21.9a5 5 0 1 1 0-2H41.41L66 216.59V242H53.9zm150.2 14a5 5 0 1 1 0 2H96v-56.6L56.6 162H37.9a5 5 0 1 1 0-2h19.5L98 200.6V256h106.1zm-150.2 2a5 5 0 1 1 0-2H80v-46.59L48.59 178H21.9a5 5 0 1 1 0-2H49.41L82 208.59V258H53.9zM34 39.8v1.61L9.41 66H0v-2h8.59L32 40.59V0h2v39.8zM2 300.1a5 5 0 0 1 3.9 3.9H3.83A3 3 0 0 0 0 302.17V256h18v48h-2v-46H2v42.1zM34 241v63h-2v-62H0v-2h34v1zM17 18H0v-2h16V0h2v18h-1zm273-2h14v2h-16V0h2v16zm-32 273v15h-2v-14h-14v14h-2v-16h18v1zM0 92.1A5.02 5.02 0 0 1 6 97a5 5 0 0 1-6 4.9v-2.07a3 3 0 1 0 0-5.66V92.1zM80 272h2v32h-2v-32zm37.9 32h-2.07a3 3 0 0 0-5.66 0h-2.07a5 5 0 0 1 9.8 0zM5.9 0A5.02 5.02 0 0 1 0 5.9V3.83A3 3 0 0 0 3.83 0H5.9zm294.2 0h2.07A3 3 0 0 0 304 3.83V5.9a5 5 0 0 1-3.9-5.9zm3.9 300.1v2.07a3 3 0 0 0-1.83 1.83h-2.07a5 5 0 0 1 3.9-3.9zM97 100a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-48 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 48a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 96a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-144a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-96 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm96 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-32 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM49 36a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-32 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM33 68a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-48a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 240a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm80-176a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 48a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm112 176a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 180a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 84a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'%3E%3C/path%3E%3C/svg%3E");
+  padding: 16px 20px;
+  padding-top: 65px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: @shadow-sm;
   position: sticky;
   top: 0;
   z-index: 100;
-}
+  will-change: transform;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  width: 100vw;
 
-.header-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 1200px;
-  margin: 0 auto;
-
-  h1 {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: @white;
+  .back-button {
+    background: none;
+    border: none;
     font-size: 20px;
+    color: #eeeeee;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: @radius-sm;
+    transition: background 0.2s;
+
+    &:hover {
+      background: fade(@text-primary, 10%);
+    }
+  }
+
+  .view-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
     margin: 0;
-  }
-
-  .logo {
-    width: 32px;
-    height: 32px;
+    flex: 1;
   }
 }
 
-.btn-back {
-  background: none;
-  border: none;
-  color: @white;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 6px;
-  transition: background 0.2s;
+.progress-indicator {
+  background: @white;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 20px;
+  border-top: 1px solid @border-color;
+  z-index: 1000;
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: fade(@border-color, 30%);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, @primary-color 0%, @secondary-color 100%);
+    transition: width 0.3s ease;
+  }
+
+  .progress-text {
+    font-size: 12px;
+    color: @text-secondary;
+    text-align: center;
   }
 }
 
-.user-badge {
-  background: rgba(255, 255, 255, 0.2);
-  color: @white;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-// Container
-.container {
-  max-width: 600px;
+.form-container {
+  max-width: 720px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 24px 20px 80px !important; // bottom padding for fixed progress bar
 }
 
-// Profile Section
-.profile-section {
-  text-align: center;
-  margin-bottom: 32px;
+//----------------------------------------
+// Form Sections
+//----------------------------------------
 
-  .profile-photo {
-    position: relative;
-    width: 200px;
-    height: 200px;
-    margin: 0 auto;
-  }
-
-  #profilePlaceholder {
-    width: 100%;
-    height: 100%;
-    background: #f3f4f6;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  #profileImage {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 4px solid @white;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-}
-
-// Form Section
 .form-section {
   background: @white;
+  border-radius: @radius-lg;
   padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  box-shadow: @shadow-sm;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid @border-color;
+
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: @text-primary;
+      margin: 0;
+    }
+  }
 }
 
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+//----------------------------------------
+// Form Controls
+//----------------------------------------
+
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 
   label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     font-weight: 500;
-    color: #374151;
-    font-size: 14px;
+    color: @text-primary;
+
+    &.required {
+      &::after {
+        content: ' *';
+        color: @danger-color;
+      }
+    }
   }
 
   .form-control {
     width: 100%;
     padding: 10px 14px;
     border: 1px solid @border-color;
-    border-radius: 6px;
+    border-radius: @radius-md;
     font-size: 16px;
-    transition: all 0.2s;
-    background-color: @white;
+    background: @white;
+    transition: border-color 0.2s, box-shadow 0.2s;
 
     &:focus {
       outline: none;
       border-color: @primary-color;
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+      box-shadow: 0 0 0 3px fade(@primary-color, 10%);
     }
 
     &.error {
@@ -143,243 +184,120 @@
     }
 
     &[disabled] {
-      background-color: #f3f4f6;
+      background: #f3f4f6;
       cursor: not-allowed;
+      opacity: 0.7;
     }
-  }
-
-  textarea.form-control {
-    resize: vertical;
-    min-height: 80px;
   }
 }
 
-// Gender Group
-.gender-group {
-  display: flex;
-  gap: 24px;
+//----------------------------------------
+// Audio Recorder
+//----------------------------------------
 
-  .gender-option {
+.audio-section {
+  .audio-controls {
     display: flex;
     align-items: center;
-    gap: 8px;
-    cursor: pointer;
+    gap: 16px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: @radius-md;
+    margin-bottom: 12px;
 
-    input[type="radio"] {
-      width: 18px;
-      height: 18px;
+    #audioBtn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      background: @primary-color;
+      color: @white;
+      font-size: 24px;
       cursor: pointer;
+      transition: transform 0.3s, background 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background: darken(@primary-color, 10%);
+        transform: scale(1.05);
+      }
+      &:active {
+        transform: scale(0.95);
+      }
+
+      &.recording {
+        background: @danger-color;
+        animation: pulse 1.5s infinite;
+      }
     }
 
-    label {
-      margin-bottom: 0;
-      font-weight: normal;
-      cursor: pointer;
-      user-select: none;
-    }
-  }
-}
+    .audio-info {
+      flex: 1;
 
-// Signature Section
-.signature-section {
-  margin-top: 32px;
+      #audioTimer {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1f2937;
+        font-variant-numeric: tabular-nums;
+      }
 
-  label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #374151;
-  }
-}
-
-.signature-box {
-  position: relative;
-  background: #f9fafb;
-  border-radius: 8px;
-  padding: 4px;
-  margin-bottom: 12px;
-
-  #signatureCanvas {
-    display: block;
-    width: 100%;
-    height: 150px;
-    border: 1px solid @border-color;
-    border-radius: 6px;
-    background: @white;
-    cursor: crosshair;
-    touch-action: none;
-  }
-
-  #signaturePlaceholder {
-    display: none;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 48px;
-    color: #e5e7eb;
-    pointer-events: none;
-  }
-}
-
-.signature-controls {
-  display: flex;
-  gap: 10px;
-
-  button {
-    flex: 1;
-    padding: 8px 16px;
-    border: 1px solid @border-color;
-    background: @white;
-    color: #374151;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &:hover {
-      background: #f3f4f6;
+      #audioHint {
+        font-size: 12px;
+        color: @text-hint;
+        margin-top: 4px;
+      }
     }
 
-    &#clearSignature {
+    #audioDelete {
+      background: none;
+      border: none;
       color: @danger-color;
-      border-color: @danger-color;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: @radius-sm;
+      transition: background 0.2s;
 
       &:hover {
         background: #fef2f2;
       }
     }
+  }
 
-    &#undoSignature {
-      color: @primary-color;
-      border-color: @primary-color;
+  .audio-wave {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 40px;
 
-      &:hover {
-        background: #eff6ff;
+    span {
+      width: 3px;
+      background: @primary-color;
+      border-radius: 3px;
+      animation: wave 1.2s ease-in-out infinite;
+      &:nth-child(1) {
+        animation-delay: -1.2s;
+      }
+      &:nth-child(2) {
+        animation-delay: -1.1s;
+      }
+      &:nth-child(3) {
+        animation-delay: -1s;
+      }
+      &:nth-child(4) {
+        animation-delay: -0.9s;
+      }
+      &:nth-child(5) {
+        animation-delay: -0.8s;
       }
     }
   }
 }
 
-// Audio Section
-.audio-section {
-  margin-top: 32px;
-
-  label {
-    display: block;
-    margin-bottom: 12px;
-    font-weight: 500;
-    color: #374151;
-  }
-}
-
-.audio-controls {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  margin-bottom: 12px;
-
-  #audioBtn {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: none;
-    background: @primary-color;
-    color: @white;
-    font-size: 24px;
-    cursor: pointer;
-    transition: all 0.3s;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    &:hover {
-      background: darken(@primary-color, 10%);
-      transform: scale(1.05);
-    }
-
-    &:active {
-      transform: scale(0.95);
-    }
-
-    &.recording {
-      background: @danger-color;
-      animation: pulse 1.5s infinite;
-    }
-  }
-
-  .audio-info {
-    flex: 1;
-
-    #audioTimer {
-      font-size: 18px;
-      font-weight: 600;
-      color: #1f2937;
-      font-variant-numeric: tabular-nums;
-    }
-
-    #audioHint {
-      font-size: 12px;
-      color: @text-muted;
-      display: block;
-      margin-top: 4px;
-    }
-  }
-
-  #audioDelete {
-    background: none;
-    border: none;
-    color: @danger-color;
-    cursor: pointer;
-    font-size: 24px;
-    padding: 8px;
-    border-radius: 6px;
-    transition: all 0.2s;
-
-    &:hover {
-      background: #fef2f2;
-    }
-  }
-}
-
-.audio-wave {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  height: 40px;
-
-  span {
-    display: block;
-    width: 3px;
-    height: 100%;
-    background: @primary-color;
-    border-radius: 3px;
-    animation: wave 1.2s ease-in-out infinite;
-
-    &:nth-child(1) {
-      animation-delay: -1.2s;
-    }
-    &:nth-child(2) {
-      animation-delay: -1.1s;
-    }
-    &:nth-child(3) {
-      animation-delay: -1s;
-    }
-    &:nth-child(4) {
-      animation-delay: -0.9s;
-    }
-    &:nth-child(5) {
-      animation-delay: -0.8s;
-    }
-  }
-}
-
+// Wave Animation
 @keyframes wave {
   0%,
   40%,
@@ -391,6 +309,7 @@
   }
 }
 
+// Pulse Animation
 @keyframes pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
@@ -403,25 +322,26 @@
   }
 }
 
-// Save Button
+//----------------------------------------
+// Submit Button
+//----------------------------------------
+
 .save-button {
   width: 100%;
-  padding: 12px 24px;
+  padding: 16px;
   background: @primary-color;
   color: @white;
   border: none;
-  border-radius: 6px;
+  border-radius: @radius-md;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   position: relative;
-  transition: all 0.2s;
-  margin-top: 32px;
+  transition: background 0.2s, transform 0.2s;
 
   &:hover:not(:disabled) {
     background: darken(@primary-color, 10%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
   }
 
   &:active:not(:disabled) {
@@ -437,14 +357,13 @@
     color: transparent;
 
     &::after {
-      content: "";
+      content: '';
       position: absolute;
       width: 20px;
       height: 20px;
       top: 50%;
       left: 50%;
-      margin-left: -10px;
-      margin-top: -10px;
+      margin: -10px 0 0 -10px;
       border: 2px solid rgba(255, 255, 255, 0.3);
       border-top-color: @white;
       border-radius: 50%;
@@ -459,7 +378,10 @@
   }
 }
 
-// FAB Scan Button
+//----------------------------------------
+// Floating Scan Button
+//----------------------------------------
+
 .fab-scan {
   position: fixed;
   bottom: 24px;
@@ -471,17 +393,16 @@
   border: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  transition: all 0.3s;
-  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 100;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   }
-
   &:active {
     transform: translateY(0);
   }
@@ -491,48 +412,365 @@
     height: 48px;
   }
 }
+//----------------------------------------
+// Profile Photo Section
+//----------------------------------------
 
-// Responsive
-@media (max-width: 768px) {
-  .container {
-    padding: 16px;
+.profile-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .profile-photo {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid @border-color;
+    background: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s, transform 0.2s;
+
+    &:hover {
+      border-color: @primary-color;
+      transform: scale(1.02);
+    }
+
+    .profile-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: @text-hint;
+
+      .placeholder-icon {
+        font-size: 32px;
+        margin-bottom: 4px;
+        opacity: 0.7;
+      }
+
+      span {
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+
+    #profileImage {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    // Estado cuando tiene imagen
+    &.has-image {
+      border-color: @success-color;
+      box-shadow: 0 0 0 2px fade(@success-color, 20%);
+    }
+  }
+}
+
+//----------------------------------------
+// Section Header with Actions
+//----------------------------------------
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid @border-color;
+
+  h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: @text-primary;
+    margin: 0;
   }
 
-  .form-section {
-    padding: 16px;
+  .section-actions {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+//----------------------------------------
+// Scan Button (Integrado)
+//----------------------------------------
+
+.scan-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: @primary-color;
+  color: @white;
+  border: none;
+  border-radius: @radius-md;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
+
+  &:hover {
+    background: darken(@primary-color, 8%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(14, 165, 233, 0.3);
   }
 
-  .header-nav h1 {
-    font-size: 18px;
+  &:active {
+    transform: translateY(0);
+  }
 
-    .logo {
-      width: 28px;
-      height: 28px;
+  #scanIcon {
+    width: 20px;
+    height: 20px;
+
+    // Fallback si no hay Lottie
+    &:empty::before {
+      content: '📷';
+      font-size: 16px;
     }
   }
 
-  .user-badge {
-    display: none;
+  span {
+    font-weight: 500;
+    letter-spacing: 0.3px;
   }
 }
 
-// Utilities
-.error-message {
-  background: #fef2f2;
-  color: @danger-color;
-  padding: 12px;
-  border-radius: 6px;
-  margin-top: 16px;
-  font-size: 14px;
-  text-align: center;
+//----------------------------------------
+// Profile Section Mejorada
+//----------------------------------------
+
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+
+  .profile-photo {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid @border-color;
+    background: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+
+    &:hover {
+      border-color: @primary-color;
+      transform: scale(1.02);
+    }
+
+    .profile-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: @text-hint;
+      padding: 16px;
+
+      .placeholder-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+        opacity: 0.7;
+      }
+
+      span {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+
+      small {
+        font-size: 10px;
+        opacity: 0.8;
+        text-align: center;
+        line-height: 1.2;
+      }
+    }
+
+    #profileImage {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    // Estado con imagen
+    &.has-image {
+      border-color: @success-color;
+      box-shadow: 0 0 0 2px fade(@success-color, 20%);
+    }
+  }
+
+  // Estado de confirmación
+  .scan-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: fade(@success-color, 10%);
+    color: @success-color;
+    border-radius: @radius-md;
+    font-size: 14px;
+    font-weight: 500;
+
+    .status-icon {
+      font-size: 16px;
+    }
+  }
 }
 
-.success-message {
-  background: #f0fdf4;
-  color: @success-color;
-  padding: 12px;
-  border-radius: 6px;
-  margin-top: 16px;
-  font-size: 14px;
-  text-align: center;
+//----------------------------------------
+// Responsive Design
+//----------------------------------------
+
+@media (max-width: 640px) {
+  .section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+
+    .section-actions {
+      justify-content: center;
+    }
+  }
+
+  .scan-button {
+    justify-content: center;
+    padding: 12px 20px;
+
+    span {
+      display: block;
+    }
+  }
+}
+// ============================================
+// SECCIÓN DE PREGUNTAS DINÁMICAS
+// ============================================
+@font-size-sm: 14px;
+@font-weight-normal: 400;
+@spacing-sm: 8px;
+@spacing-md: 16px;
+@spacing-lg: 24px;
+@bg-card: #ffffff;
+@shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+@shadow-base: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+#questionsSection {
+  // Animación de entrada suave
+  animation: fadeInUp 0.3s ease-out;
+
+  .section-helper {
+    font-size: @font-size-sm;
+    color: @text-secondary;
+    font-weight: @font-weight-normal;
+    margin-left: @spacing-sm;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Ajustes para mantener consistencia con el resto del formulario
+#dynamicQuestionsContainer {
+  margin-top: @spacing-lg;
+
+  // Sobrescribir algunos estilos del componente para que coincidan con el formulario
+  .questions-container {
+    margin-top: 0;
+  }
+
+  .question-item {
+    background-color: @bg-card;
+    box-shadow: @shadow-sm;
+
+    &:hover {
+      box-shadow: @shadow-base;
+    }
+  }
+}
+
+// ============================================
+// MEJORAS DE UX PARA FORMULARIO LARGO
+// ============================================
+@border-light: #f2f2f2;
+@radius-full: 9999px;
+@shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+@transition-base: 0.3s;
+@ease-base: ease-in-out;
+// Indicador de sección actual (opcional)
+.form-section {
+  position: relative;
+
+  &:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    bottom: -@spacing-lg;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 2px;
+    background-color: @border-light;
+  }
+}
+
+// Botón de "Volver arriba" flotante para formularios largos
+.back-to-top {
+  position: fixed;
+  bottom: calc(80px + var(--safe-area-bottom));
+  right: @spacing-md;
+  width: 40px;
+  height: 40px;
+  background-color: @bg-card;
+  border: 1px solid @border-color;
+  border-radius: @radius-full;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: @text-secondary;
+  box-shadow: @shadow-md;
+  opacity: 0;
+  visibility: hidden;
+  transition: all @transition-base @ease-base;
+  z-index: 100;
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  &:hover {
+    background-color: @primary-color;
+    color: white;
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 }

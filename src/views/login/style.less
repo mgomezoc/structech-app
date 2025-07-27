@@ -1,219 +1,994 @@
 // src/views/login/style.less
 
-// Variables
-@primary: #0ea5e9;
-@primary-dark: #0284c7;
-@bg-light: #f5faff;
+// ========== VARIABLES ==========
+@primary: #37a6a6;
+@primary-dark: #2d8a8a;
+@primary-light: #4db8b8;
+@secondary: #d96b2b;
+@accent: #f2a29b;
 @white: #ffffff;
 @text-dark: #1f2937;
-@text-gray: #ccd4e3;
-@shadow-card: 0 8px 24px rgba(0, 0, 0, 0.1);
-@border-radius: 16px;
+@text-light: rgba(255, 255, 255, 0.9);
+@text-muted: rgba(255, 255, 255, 0.6);
 
-// Spinner pequeño
-.spinner-small {
-  width: 16px;
-  height: 16px;
-  border: 2px solid fade(@white, 40%);
-  border-top-color: @white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin-right: 8px;
+// Sombras optimizadas
+@shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.1);
+@shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.15);
+@shadow-strong: 0 15px 50px rgba(0, 0, 0, 0.2);
+@shadow-glow: 0 0 20px rgba(55, 166, 166, 0.3);
+
+// Transiciones suaves
+@transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+@transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+@transition-bounce: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+// Borders y radius
+@border-radius: 16px;
+@border-radius-small: 12px;
+@border-radius-large: 24px;
+
+// ========== MIXINS ==========
+.glass-effect() {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-// Keyframes global
+.input-focus() {
+  outline: none;
+  border-color: @primary-light;
+  box-shadow: 0 0 0 3px rgba(55, 166, 166, 0.1);
+}
+
+// ========== LAYOUT PRINCIPAL ==========
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+// ========== FONDO ANIMADO OPTIMIZADO ==========
+.animated-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 25%, #475569 50%, #1e293b 100%);
+  overflow: hidden;
+
+  // Orbes de gradiente más visibles y prominentes
+  .gradient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.9;
+
+    &.orb-1 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(
+        circle,
+        @primary 0%,
+        rgba(55, 166, 166, 0.8) 30%,
+        transparent 70%
+      );
+      top: -100px;
+      right: -100px;
+      animation: floatOrb1 18s ease-in-out infinite;
+    }
+
+    &.orb-2 {
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(
+        circle,
+        @secondary 0%,
+        rgba(217, 107, 43, 0.8) 30%,
+        transparent 70%
+      );
+      bottom: -80px;
+      left: -80px;
+      animation: floatOrb2 22s ease-in-out infinite;
+    }
+
+    &.orb-3 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(
+        circle,
+        @accent 0%,
+        rgba(242, 162, 155, 0.8) 30%,
+        transparent 70%
+      );
+      top: 20%;
+      right: 20%;
+      animation: floatOrb3 25s ease-in-out infinite;
+    }
+  }
+
+  // Partículas flotantes pequeñas y ligeras
+  .floating-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+
+      &.particle-1 {
+        top: 20%;
+        left: 10%;
+        animation: floatParticle 15s linear infinite;
+      }
+
+      &.particle-2 {
+        top: 60%;
+        left: 80%;
+        animation: floatParticle 18s linear infinite 3s;
+      }
+
+      &.particle-3 {
+        top: 80%;
+        left: 20%;
+        animation: floatParticle 22s linear infinite 6s;
+      }
+
+      &.particle-4 {
+        top: 30%;
+        left: 70%;
+        animation: floatParticle 20s linear infinite 9s;
+      }
+
+      &.particle-5 {
+        top: 50%;
+        left: 30%;
+        animation: floatParticle 16s linear infinite 12s;
+      }
+
+      &.particle-6 {
+        top: 10%;
+        left: 60%;
+        animation: floatParticle 24s linear infinite 15s;
+      }
+    }
+  }
+
+  // Overlay sutil para contraste
+  .bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+  }
+}
+
+// ========== CONTENEDOR PRINCIPAL ==========
+.login-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 400px;
+  padding: 40px;
+  .glass-effect();
+  border-radius: @border-radius-large;
+  box-shadow: @shadow-strong;
+  animation: slideInUp 0.8s @transition-bounce;
+
+  // Logo con efecto glow
+  .logo-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 32px;
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(55, 166, 166, 0.3);
+      transition: @transition-smooth;
+      animation: logoGlow 3s ease-in-out infinite alternate;
+
+      &:hover {
+        transform: scale(1.05);
+        box-shadow: @shadow-glow;
+      }
+    }
+
+    .logo-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, rgba(55, 166, 166, 0.2) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: pulseGlow 4s ease-in-out infinite;
+      z-index: -1;
+    }
+  }
+
+  .welcome-text {
+    text-align: center;
+    margin-bottom: 32px;
+
+    h2 {
+      margin: 0 0 8px;
+      color: @white;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      animation: fadeInDown 0.8s @transition-smooth 0.2s both;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: @text-muted;
+      font-size: 16px;
+      font-weight: 400;
+      animation: fadeInDown 0.8s @transition-smooth 0.4s both;
+    }
+  }
+}
+
+// ========== FORMULARIO ==========
+.login-form {
+  .input-group {
+    position: relative;
+    margin-bottom: 24px;
+
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: @text-muted;
+      z-index: 2;
+      transition: @transition-fast;
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    input {
+      width: 100%;
+      padding: 18px 20px 18px 52px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: @border-radius;
+      color: @white;
+      font-size: 16px;
+      font-weight: 400;
+      transition: @transition-smooth;
+      position: relative;
+      z-index: 1;
+
+      &::placeholder {
+        color: @text-muted;
+      }
+
+      // Estados de validación
+      &.valid {
+        border-color: rgba(16, 185, 129, 0.5);
+
+        + .input-icon {
+          color: #10b981;
+        }
+      }
+
+      &.invalid {
+        border-color: rgba(239, 68, 68, 0.5);
+        background: rgba(239, 68, 68, 0.05);
+
+        + .input-icon {
+          color: #ef4444;
+        }
+      }
+
+      &:focus {
+        .input-focus();
+        background: rgba(255, 255, 255, 0.1);
+
+        + .input-icon {
+          color: @primary-light;
+          transform: translateY(-50%) scale(1.1);
+        }
+
+        ~ .input-border {
+          transform: scaleX(1);
+          opacity: 1;
+        }
+      }
+
+      &:hover:not(:focus) {
+        border-color: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+      }
+    }
+
+    // Mensaje de validación
+    .validation-message {
+      position: absolute;
+      bottom: -20px;
+      left: 0;
+      font-size: 12px;
+      color: #ef4444;
+      opacity: 0;
+      transform: translateY(-5px);
+      transition: @transition-fast;
+      pointer-events: none;
+
+      &.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      &.success {
+        color: #10b981;
+      }
+    }
+
+    .input-border {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, @primary 0%, @primary-light 100%);
+      border-radius: 1px;
+      transform: scaleX(0);
+      opacity: 0;
+      transition: @transition-smooth;
+      z-index: 2;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: @text-muted;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: @transition-fast;
+      z-index: 2;
+      outline: none;
+
+      &:hover {
+        color: @white;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      &:active {
+        transform: translateY(-50%) scale(0.95);
+      }
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+
+  .form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 24px 0 32px;
+    font-size: 14px;
+
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      color: @text-light;
+      transition: @transition-fast;
+
+      &:hover {
+        color: @white;
+      }
+
+      input {
+        display: none;
+      }
+
+      .checkmark {
+        position: relative;
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+        margin-right: 10px;
+        transition: @transition-smooth;
+
+        &::after {
+          content: '';
+          position: absolute;
+          left: 2px;
+          top: -1px;
+          width: 6px;
+          height: 10px;
+          border: solid @white;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg) scale(0);
+          transition: @transition-smooth;
+        }
+      }
+
+      input:checked + .checkmark {
+        background: @primary;
+        border-color: @primary;
+
+        &::after {
+          transform: rotate(45deg) scale(1);
+        }
+      }
+    }
+
+    .forgot-link {
+      color: @primary-light;
+      text-decoration: none;
+      font-weight: 500;
+      transition: @transition-fast;
+
+      &:hover {
+        color: @white;
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+// ========== BOTONES ==========
+.btn-primary {
+  position: relative;
+  width: 100%;
+  padding: 18px 24px;
+  background: linear-gradient(135deg, @primary 0%, @primary-dark 100%);
+  color: @white;
+  border: none;
+  border-radius: @border-radius;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: @transition-smooth;
+  overflow: hidden;
+  margin-bottom: 24px;
+
+  #btnText {
+    position: relative;
+    z-index: 2;
+    transition: @transition-fast;
+  }
+
+  .btn-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    align-items: center;
+    gap: 10px;
+    z-index: 2;
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: @white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    span {
+      font-size: 14px;
+    }
+  }
+
+  .btn-ripple {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: @shadow-medium, @shadow-glow;
+
+    .btn-ripple {
+      transform: translateX(100%);
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  &.loading {
+    pointer-events: none; // deshabilitar clicks
+    overflow: hidden;
+
+    // Ocultamos totalmente el ripple
+    .btn-ripple {
+      display: none !important;
+    }
+
+    // Escondemos el texto principal
+    #btnText {
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    // Mostramos el loader con fade-in
+    .btn-loader {
+      display: flex;
+      opacity: 0;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    // Ajustes extra al spinner para que quede perfectamente centrado
+    .btn-loader .spinner {
+      margin-right: 8px; // un pequeño espaciado
+      width: 18px; // un poco más grande
+      height: 18px;
+      border-width: 3px; // bordes un poco más gruesos
+    }
+  }
+}
+
+.btn-secondary {
+  position: relative;
+  width: 100%;
+  padding: 16px 24px;
+  background: rgba(55, 166, 166, 0.1);
+  border: 2px solid rgba(55, 166, 166, 0.3);
+  color: @white;
+  border-radius: @border-radius;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: @transition-smooth;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  overflow: hidden;
+
+  .btn-glow {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(55, 166, 166, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  &:hover {
+    border-color: rgba(55, 166, 166, 0.6);
+    background: rgba(55, 166, 166, 0.2);
+    transform: translateY(-2px);
+    box-shadow: @shadow-medium;
+
+    .btn-glow {
+      left: 100%;
+    }
+  }
+
+  &.show {
+    display: flex;
+    animation: slideInUp 0.5s @transition-bounce;
+  }
+}
+
+// ========== COMPONENTES ADICIONALES ==========
+.login-divider {
+  display: none; // Oculto por defecto
+  align-items: center;
+  margin: 32px 0 24px;
+  opacity: 0.8;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
+  }
+
+  span {
+    padding: 0 20px;
+    font-size: 14px;
+    color: @text-muted;
+    font-weight: 500;
+  }
+
+  &.show {
+    display: flex;
+    animation: slideInUp 0.3s @transition-smooth;
+  }
+}
+
+.error-message {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: @border-radius;
+  color: #fca5a5;
+  font-size: 14px;
+  margin-top: 16px;
+  backdrop-filter: blur(10px);
+  animation: slideInUp 0.3s @transition-smooth;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  &.show {
+    display: flex;
+  }
+}
+
+// ========== LOADER DE PÁGINA ==========
+.page-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+
+  &.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loader-content {
+    text-align: center;
+    color: @white;
+
+    .pulse-loader {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+
+      .pulse-dot {
+        width: 12px;
+        height: 12px;
+        background: @primary;
+        border-radius: 50%;
+        animation: pulse 1.4s ease-in-out infinite;
+
+        &.pulse-dot-2 {
+          animation-delay: 0.2s;
+        }
+
+        &.pulse-dot-3 {
+          animation-delay: 0.4s;
+        }
+      }
+    }
+
+    p {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+  }
+}
+
+// ========== ANIMACIONES OPTIMIZADAS ==========
+@keyframes floatOrb1 {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(-40px, -30px) rotate(90deg);
+  }
+  50% {
+    transform: translate(-20px, -60px) rotate(180deg);
+  }
+  75% {
+    transform: translate(30px, -30px) rotate(270deg);
+  }
+}
+
+@keyframes floatOrb2 {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(50px, -40px) rotate(120deg);
+  }
+  66% {
+    transform: translate(-30px, -70px) rotate(240deg);
+  }
+}
+
+@keyframes floatOrb3 {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  20% {
+    transform: translate(-30px, 20px) rotate(72deg);
+  }
+  40% {
+    transform: translate(20px, -40px) rotate(144deg);
+  }
+  60% {
+    transform: translate(-40px, -20px) rotate(216deg);
+  }
+  80% {
+    transform: translate(10px, 30px) rotate(288deg);
+  }
+}
+
+@keyframes floatParticle {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(50px);
+    opacity: 0;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes logoGlow {
+  from {
+    box-shadow: 0 0 20px rgba(55, 166, 166, 0.3);
+  }
+  to {
+    box-shadow: 0 0 30px rgba(55, 166, 166, 0.6);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.1;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-// Contenedor
-.login-page {
-  position: relative;
-  min-height: 100vh;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
+// ========== RESPONSIVE ==========
+@media (max-width: 480px) {
+  .login-page {
+    padding: 16px;
+  }
 
-  .video-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    overflow: hidden;
+  .login-container {
+    padding: 32px 24px;
+    max-width: 100%;
 
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .logo-container .logo {
+      width: 70px;
+      height: 70px;
     }
 
-    // Overlay de color de marca
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(14, 165, 233, 0.7);
-      mix-blend-mode: multiply;
-      pointer-events: none;
+    .welcome-text h2 {
+      font-size: 24px;
+    }
+  }
+
+  .login-form {
+    .input-group input {
+      padding: 16px 18px 16px 48px;
+      font-size: 16px; // Evita zoom en iOS
+    }
+
+    .form-options {
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-start;
+    }
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 16px 20px;
+    font-size: 15px;
+  }
+
+  // Simplificar animaciones en móvil
+  .animated-bg {
+    // Validación específica para dispositivos de gama baja
+    .gradient-orb {
+      filter: blur(25px);
+      opacity: 0.6;
+
+      &.orb-1 {
+        width: 250px;
+        height: 250px;
+        animation-duration: 25s;
+      }
+
+      &.orb-2 {
+        width: 200px;
+        height: 200px;
+        animation-duration: 30s;
+      }
+
+      &.orb-3 {
+        width: 150px;
+        height: 150px;
+        animation-duration: 35s;
+      }
+    }
+
+    .floating-particles .particle {
+      display: none; // Ocultar partículas en móvil para mejor rendimiento
+    }
+  }
+}
+
+@media (max-width: 380px) {
+  .login-container {
+    padding: 24px 20px;
+  }
+
+  .login-form .form-options {
+    text-align: center;
+  }
+}
+
+// ========== OPTIMIZACIONES DE RENDIMIENTO ==========
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .animated-bg .gradient-orb {
+    animation: none;
+  }
+
+  .floating-particles .particle {
+    display: none;
+  }
+}
+
+// Mejoras para dispositivos de baja gama
+@media (max-device-width: 768px) and (-webkit-max-device-pixel-ratio: 2) {
+  .animated-bg {
+    .gradient-orb {
+      filter: blur(30px);
+      opacity: 0.5;
+
+      &.orb-3 {
+        display: none; // Ocultar el orbe central en dispositivos básicos
+      }
+    }
+
+    .floating-particles {
+      display: none; // Sin partículas en dispositivos básicos
     }
   }
 
   .login-container {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 360px;
-    padding: 40px;
-    text-align: center;
-    border-radius: @border-radius;
-    box-shadow: @shadow-card;
-    background: rgba(2, 22, 41, 0.64);
-    backdrop-filter: saturate(180%) blur(1px);
+    backdrop-filter: blur(10px); // Reducir blur para mejor rendimiento
+  }
+}
 
-    .logo {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 24px;
-    }
-
-    h2 {
-      margin: 0 0 8px;
-      color: #fff;
-      font-size: 24px;
-    }
-
-    .subtitle {
-      margin: 0 0 24px;
-      color: @text-gray;
-      font-size: 14px;
-    }
-
-    .input-group {
-      position: relative;
-      margin-bottom: 20px;
-
-      .icon {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 18px;
-        color: @primary;
-      }
-
-      input {
-        width: 100%;
-        padding: 14px 16px 14px 44px;
-        border: 1px solid #ddd;
-        border-radius: 12px;
-        font-size: 14px;
-        outline: none;
-        transition: border-color 0.2s;
-
-        &:focus {
-          border-color: @primary;
-        }
-      }
-
-      .icon {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-      }
-
-      .toggle-password {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-size: 18px;
-        padding: 4px;
-        color: #666;
-      }
-    }
-
-    .btn-primary {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      padding: 14px;
-      margin-top: 10px;
-      background: @primary;
-      color: @white;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-
-      &:hover:not(:disabled) {
-        background: @primary-dark;
-        transform: translateY(-1px);
-      }
-
-      &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-    }
-
-    .options {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 18px 0;
-      font-size: 14px;
-
-      a {
-        color: @primary;
-        text-decoration: none;
-      }
-
-      .checkbox-wrapper {
-        display: flex;
-        align-items: center;
-        color: @text-gray;
-
-        input {
-          margin-right: 8px;
-        }
-      }
-    }
-
-    .error-message {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      display: none; // lo controlas con JS
-    }
-
-    .footer {
-      margin-top: 24px;
-      font-size: 14px;
-      color: @text-gray;
-
-      a {
-        color: @primary;
-        font-weight: 500;
-      }
-    }
+// Keyframes para un fade-in suave
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

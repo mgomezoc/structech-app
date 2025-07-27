@@ -1,0 +1,284 @@
+/* El canvas propiamente dicho */
+#signatureCanvas {
+  width: 100%;
+  height: 180px;
+  border-radius: 8px;
+  background: transparent;
+  touch-action: none;
+  z-index: 2;
+  cursor: crosshair;
+}
+
+/* Imagen de firma escaneada */
+#signatureImage {
+  position: absolute;
+  max-width: 90%;
+  max-height: 160px;
+  object-fit: contain;
+  display: none;
+  z-index: 3;
+}
+
+/* Placeholder animado */
+#signaturePlaceholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  color: #d1d5db;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+  z-index: 1;
+
+  /* Animación de pulso suave */
+  animation: pulse 2s ease-in-out infinite;
+
+  &.hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    color: #37a6a6;
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .signature-section {
+    .signature-box {
+      min-height: 160px;
+
+      #signatureCanvas {
+        height: 140px;
+      }
+
+      #signaturePlaceholder {
+        font-size: 36px;
+      }
+    }
+
+    .signature-controls {
+      button {
+        padding: 8px 12px;
+        font-size: 13px;
+
+        &::before {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+}
+
+/* Accesibilidad - Focus visible */
+.signature-controls button:focus-visible {
+  outline: 2px solid #37a6a6;
+  outline-offset: 2px;
+}
+
+#signatureCanvas:focus-visible {
+  outline: 2px solid #37a6a6;
+  outline-offset: -2px;
+}
+
+/* ---------------------- */
+/* Signature Section Enhanced */
+/* ---------------------- */
+
+.signature-section {
+  /* El área de dibujo de la firma */
+  .signature-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    background: #f9fafb;
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: crosshair;
+    overflow: hidden;
+
+    &:hover {
+      border-color: #37a6a6;
+      background-color: rgba(55, 166, 166, 0.05);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(55, 166, 166, 0.15);
+    }
+
+    /* Estado cuando se está firmando */
+    &.signing {
+      border-style: solid;
+      border-color: #37a6a6;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 4px rgba(55, 166, 166, 0.1);
+    }
+
+    /* Estado cuando tiene firma escaneada */
+    &.has-scan {
+      border-color: #10b981;
+      background-color: rgba(16, 185, 129, 0.05);
+
+      &::after {
+        content: 'Firma desde INE';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 11px;
+        color: #10b981;
+        background: rgba(16, 185, 129, 0.1);
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+    }
+
+    /* Indicador de presión (opcional) */
+    &::before {
+      content: '';
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d1d5db;
+      transition: all 0.2s;
+      opacity: 0;
+      z-index: 4;
+    }
+
+    &.signing::before {
+      background: #37a6a6;
+      opacity: 1;
+      animation: recording 1.5s ease-in-out infinite;
+    }
+  }
+
+  /* Botones mejorados */
+  .signature-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+
+    button {
+      flex: 1;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+
+      /* Efecto ripple */
+      &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.1);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+      }
+
+      &:active::after {
+        width: 300px;
+        height: 300px;
+      }
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+
+      /* Botón "Limpiar" */
+      &#clearSignature {
+        border-color: #ef4444;
+        color: #ef4444;
+
+        &::before {
+          content: '🗑️';
+          font-size: 16px;
+        }
+
+        &:hover {
+          background-color: #fef2f2;
+          border-color: #dc2626;
+        }
+
+        &::after {
+          background: rgba(239, 68, 68, 0.1);
+        }
+      }
+
+      /* Botón "Deshacer" */
+      &#undoSignature {
+        border-color: #0ea5e9;
+        color: #0ea5e9;
+
+        &::before {
+          content: '↶';
+          font-size: 18px;
+        }
+
+        &:hover {
+          background-color: #eff6ff;
+          border-color: #0284c7;
+        }
+
+        &::after {
+          background: rgba(14, 165, 233, 0.1);
+        }
+      }
+
+      /* Estado deshabilitado */
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+
+        &:hover {
+          transform: none !important;
+          box-shadow: none !important;
+        }
+      }
+    }
+  }
+
+  /* Texto de ayuda */
+  .signature-help {
+    font-size: 12px;
+    color: #6b7280;
+    text-align: center;
+    margin-top: 8px;
+    opacity: 0.8;
+    font-style: italic;
+  }
+}
+
+/* Animaciones */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}

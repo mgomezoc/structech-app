@@ -1,0 +1,462 @@
+//==============================================
+// 1. VARIABLES TEMÁTICAS & GLOBALS
+//==============================================
+
+// Colores semánticos
+@primary-color: #007aff;
+@secondary-color: #34c759;
+@success-color: #10dc60;
+@warning-color: #ffcc00;
+@danger-color: #ff3b30;
+@light-color: #f2f2f7;
+@medium-color: #8e8e93;
+@dark-color: #1c1c1e;
+@background-color: #ffffff;
+
+// Tipografía
+@font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+  'Open Sans', 'Helvetica Neue', sans-serif;
+@font-size-base: 16px;
+@line-height-base: 1.5;
+
+// Espaciado & radios
+@spacing-unit: 8px;
+@border-radius-base: 12px;
+@border-radius-sm: 8px;
+
+// Breakpoints
+@bp-sm: 576px;
+@bp-md: 768px;
+@bp-lg: 992px;
+@bp-xl: 1200px;
+
+// Z-Index
+@z-header: 500;
+@z-footer: 500;
+@z-modal: 1000;
+
+// Transiciones
+@ease-fast: 0.15s ease-out;
+@ease-base: 0.3s ease-in-out;
+@anim-duration: 0.35s;
+
+// Safe-area insets (iOS notch, Android statusbar)
+@safe-top: env(safe-area-inset-top, 0px);
+@safe-right: env(safe-area-inset-right, 0px);
+@safe-bottom: env(safe-area-inset-bottom, 0px);
+@safe-left: env(safe-area-inset-left, 0px);
+
+//==============================================
+// 2. MIXINS & UTILIDADES
+//==============================================
+
+// 2.1 Box-sizing y no-select
+.no-select() {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.box-border() {
+  box-sizing: border-box;
+}
+
+// 2.2 Flex helpers
+.flex-center(@dir: row) {
+  display: flex;
+  flex-direction: @dir;
+  justify-content: center;
+  align-items: center;
+}
+
+// 2.3 Hide scrollbar cross-browser
+.hide-scrollbar() {
+  -ms-overflow-style: none; // IE/Edge
+  scrollbar-width: none; // Firefox
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// 2.4 Aceleración hardware para animaciones
+.gpu-accel() {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+// 2.5 Área táctil ampliada
+.enlarge-tap(@size: 10px) {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    top: -@size;
+    right: -@size;
+    bottom: -@size;
+    left: -@size;
+  }
+}
+
+// 2.6 Scroll nativo con momentum
+.native-scroll() {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+// 2.7 Safe-area padding mixin
+.safe-area() {
+  padding-top: @safe-top;
+  padding-right: @safe-right;
+  padding-bottom: @safe-bottom;
+  padding-left: @safe-left;
+}
+
+//==============================================
+// 3. RESET & ESTILOS BASE
+//==============================================
+*,
+*::before,
+*::after {
+  .box-border();
+}
+
+html {
+  font-size: 100%; // 1rem = 16px
+  height: 100%;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: @font-family-base;
+  font-size: @font-size-base;
+  line-height: @line-height-base;
+  color: @dark-color;
+  background-color: @background-color;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%; // evita zoom en inputs
+  overflow: hidden; // scroll interno en contenedores
+  height: 100vh;
+  width: 100vw;
+  position: fixed;
+  -webkit-tap-highlight-color: transparent;
+  .no-select();
+}
+
+// Inputs legibles (≥16px para evitar zoom forzado)
+input,
+textarea,
+select {
+  font-size: @font-size-base;
+}
+
+//==============================================
+// 4. ESTRUCTURA DE LA APP & SAFE-AREA
+//==============================================
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  .safe-area();
+}
+
+// Header fijo
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(56px + @safe-top);
+  padding-top: @safe-top;
+  background: @background-color;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: @z-header;
+  .flex-center();
+}
+
+// Contenido
+.app-content {
+  flex: 1;
+  margin-top: calc(56px + @safe-top);
+  margin-bottom: calc(50px + @safe-bottom);
+  padding: @spacing-unit * 2;
+  .native-scroll();
+  .hide-scrollbar();
+}
+
+// Footer / Tabs fijo
+.app-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(50px + @safe-bottom);
+  padding-bottom: @safe-bottom;
+  background: fade(@background-color, 98%);
+  border-top: 1px solid fade(@dark-color, 90%);
+  z-index: @z-footer;
+  .flex-center();
+}
+
+//==============================================
+// 5. COMPONENTES UI BÁSICOS
+//==============================================
+
+// Botones
+.btn {
+  .flex-center();
+  .enlarge-tap(12px);
+  padding: (@spacing-unit * 1.5) (@spacing-unit * 3);
+  border: none;
+  border-radius: @border-radius-base;
+  font-size: @font-size-base;
+  cursor: pointer;
+  transition: transform @ease-fast, background-color @ease-base;
+  .gpu-accel();
+  .no-select();
+
+  &:active {
+    transform: scale(0.97);
+    filter: brightness(0.9);
+  }
+
+  &.btn-primary {
+    background: @primary-color;
+    color: #fff;
+  }
+  &.btn-secondary {
+    background: @secondary-color;
+    color: #fff;
+  }
+  &.btn-outline {
+    background: transparent;
+    border: 2px solid @primary-color;
+    color: @primary-color;
+  }
+}
+
+// Tarjetas
+.card {
+  background: @background-color;
+  border-radius: @border-radius-base;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: @spacing-unit * 2;
+  overflow: hidden;
+  .gpu-accel();
+  transition: transform @ease-fast, box-shadow @ease-fast;
+
+  &:active {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// Listas estilo “Ajustes”
+.list {
+  background: @background-color;
+  border-radius: @border-radius-sm;
+  overflow: hidden;
+  margin: @spacing-unit * 2 0;
+
+  .list-item {
+    display: flex;
+    align-items: center;
+    padding: (@spacing-unit * 1.5) (@spacing-unit * 2);
+    //border-bottom: 1px solid @border-color;
+    transition: background-color @ease-fast;
+
+    &:last-child {
+      border-bottom: none;
+    }
+    &:active {
+      background: fade(@dark-color, 95%);
+    }
+  }
+}
+
+// Inputs con grupo
+.input-group {
+  margin-bottom: @spacing-unit * 2;
+
+  label {
+    display: block;
+    margin-bottom: @spacing-unit;
+    font-weight: 600;
+  }
+  input,
+  textarea,
+  select {
+    width: 100%;
+    padding: @spacing-unit * 1.5;
+    //border: 1px solid @border-color;
+    border-radius: @border-radius-sm;
+    font-size: @font-size-base;
+    transition: border-color @ease-base;
+    &:focus {
+      border-color: @primary-color;
+      outline: none;
+    }
+  }
+}
+
+// Spinner puro CSS
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 4px solid fade(@primary-color, 40%);
+  border-top-color: @primary-color;
+  border-radius: 50%;
+  animation: spin @anim-duration infinite linear;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+//==============================================
+// 6. RESPONSIVE & UTILIDADES
+//==============================================
+
+// Padding extra en tablet/desktop
+@media (min-width: @bp-sm) {
+  .app-content {
+    padding: @spacing-unit * 3;
+  }
+}
+
+// Center container en desktop
+@media (min-width: @bp-md) {
+  .app {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+}
+
+// Retina assets
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .logo {
+    background-image: url('../img/logo@2x.png');
+    background-size: contain;
+  }
+}
+
+// Grid helper
+.grid {
+  display: grid;
+  gap: @spacing-unit * 2;
+  &-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  &-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+// Truncate text
+.truncate() {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+//==============================================
+// 8. CAPACITOR-ESPECÍFICO
+//==============================================
+
+// Body classes inyectadas por Capacitor:
+.platform-ios & {
+  /* iOS tweaks si hace falta */
+}
+.platform-android & {
+  /* Android tweaks */
+}
+
+// StatusBar transparente
+.has-status-bar-padding {
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
+}
+
+// Teclado abierto
+body.keyboard-visible {
+  overflow: hidden;
+}
+.keyboard-open .app-footer {
+  position: static;
+  transform: none;
+}
+
+//==============================================
+// 9. MICRO-INTERACCIONES
+//==============================================
+.fade-in {
+  animation: fadeIn @ease-base both;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.slide-in-right {
+  animation: slideIn 0.3s ease-out both;
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.tap-feedback {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%) scale(0);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+  }
+  &:active::after {
+    animation: tapFeedback 0.4s ease-out both;
+  }
+}
+@keyframes tapFeedback {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+//==============================================
+// 10. TIPS FINALES
+//==============================================
+// • Usa transforms/opacities para animaciones suaves.
+// • Evita position:fixed en contenedores scrollables en iOS.
+// • Define font-size ≥16px en inputs para no forzar zoom.
+// • Desactiva overscroll no deseado con overscroll-behavior.
+// • Aplica hardware-acceleration (.gpu-accel) en elementos animados.
+// • Añade clases .platform-ios / .platform-android desde Capacitor.
+// • Testing: comprueba notch y teclado en dispositivos reales.

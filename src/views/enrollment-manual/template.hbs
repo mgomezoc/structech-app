@@ -1,0 +1,374 @@
+{{!-- src/views/enrollment-manual/template.hbs --}}
+
+<div class="form-view-container">
+    <!-- Header -->
+    <header id="altaHeader" class="alta-header">
+        <button id="backBtn" class="back-button" aria-label="Regresar">
+            ←
+        </button>
+        <h1 class="view-title">Enrolamiento Manual</h1>
+    </header>
+
+    <!-- Progress Indicator -->
+    <div class="progress-indicator">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <span class="progress-text" id="progressText">Completa todos los campos</span>
+    </div>
+
+    <!-- Form Container -->
+    <div class="form-container">
+        <form id="enrollForm" class="alta-form" novalidate>
+            <!-- Selección de estructura -->
+            <section id="estructuraSection" class="form-section loading-hidden">
+                <div class="section-header">
+                    <h2>Selección de estructura</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="estructura" class="required">
+                            Estructura
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="estructura" name="estructura" class="form-control" required>
+                                <option value="">Sin selección</option>
+                            </select>
+                            {{{chevronIcon}}}
+                            <div class="field-loader hidden" id="estructuraLoader">
+                                <div class="mini-spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="subestructura" class="required">
+                            Subestructura
+
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="subestructura" name="subestructura" class="form-control" required disabled>
+                                <option value="">Sin selección</option>
+                            </select>
+                            {{{chevronIcon}}}
+                            <div class="field-loader hidden" id="subestructuraLoader">
+                                <div class="mini-spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Datos personales -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Datos personales</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label for="nombre" class="required">
+                            Nombre
+
+                        </label>
+                        <input type="text" id="nombre" name="nombre" class="form-control" required
+                            autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="next"
+                            placeholder="Nombre(s)" />
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="apellidoPaterno" class="required">
+                            Apellido Paterno
+
+                        </label>
+                        <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control" required
+                            autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="next"
+                            placeholder="Apellido paterno" />
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="apellidoMaterno">Apellido Materno</label>
+                        <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control"
+                            autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="next"
+                            placeholder="Apellido materno" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label for="fechaNacimiento" class="required">
+                            Fecha de Nacimiento
+
+                        </label>
+                        <input type="date" id="fechaNacimiento" name="fechaNacimiento" class="form-control" required
+                            max="2010-12-31" min="1920-01-01" />
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="estadoNacimiento" class="required">
+                            Lugar de Nacimiento
+
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="estadoNacimiento" name="estadoNacimiento" class="form-control" required>
+                                <option value="">— Selecciona tu estado —</option>
+                                {{#each estados}}
+                                <option value="{{this.clave}}">{{this.nombre}}</option>
+                                {{/each}}
+                            </select>
+                            {{{chevronIcon}}}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="required">
+                        Género
+
+                    </label>
+                    <div class="gender-group">
+                        <div class="gender-option">
+                            <input type="radio" id="hombre" name="genero" value="M" required />
+                            <label for="hombre">👨 Hombre</label>
+                        </div>
+                        <div class="gender-option">
+                            <input type="radio" id="mujer" name="genero" value="F" />
+                            <label for="mujer">👩 Mujer</label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CURP -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>CURP</h2>
+                </div>
+                <div class="form-group curp-group">
+                    <label for="curp" class="required">
+                        CURP
+
+                    </label>
+                    <div class="input-with-button">
+                        <input type="text" id="curp" name="curp" class="form-control" readonly
+                            placeholder="Se generará automáticamente" maxlength="18" required
+                            autocapitalize="characters" autocorrect="off" spellcheck="false" />
+                    </div>
+                </div>
+            </section>
+
+            <!-- Localización -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Localización</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label for="codigoPostal" class="required">
+                            Código Postal
+
+                        </label>
+                        <input type="number" id="codigoPostal" name="codigoPostal" class="form-control" required
+                            inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" placeholder="12345" />
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="colonia" class="required">
+                            Colonia
+
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="colonia" name="colonia" class="form-control" required disabled>
+                                <option value="">— Selecciona tu colonia —</option>
+                            </select>
+                            {{{chevronIcon}}}
+                            <div class="field-loader hidden" id="coloniaLoader">
+                                <div class="mini-spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="calleNumero" class="required">
+                        Dirección (calle y número)
+
+                    </label>
+                    <input type="text" id="calleNumero" name="calleNumero" class="form-control"
+                        placeholder="Ej: Morelos 426" required autocapitalize="sentences" autocorrect="off"
+                        enterkeyhint="next" />
+                </div>
+            </section>
+
+            <!-- Observación -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Observación</h2>
+                </div>
+                <div class="form-group">
+                    <textarea id="observacion" name="observacion" class="form-control" rows="3"
+                        placeholder="Agregar observaciones..." autocapitalize="sentences" autocorrect="on"
+                        spellcheck="true" enterkeyhint="done"></textarea>
+                </div>
+            </section>
+
+            <!-- Contacto -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Contacto</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label for="telefono" class="required">
+                            Teléfono
+
+                        </label>
+                        <input type="tel" id="telefono" name="telefono" class="form-control" required inputmode="tel"
+                            pattern="[0-9]*" placeholder="10 dígitos" enterkeyhint="next" />
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" class="form-control" inputmode="email"
+                            autocapitalize="off" autocorrect="off" placeholder="correo@ejemplo.com"
+                            enterkeyhint="next" />
+                    </div>
+                </div>
+            </section>
+
+            <!-- Preguntas Adicionales Section -->
+            <section class="form-section" id="questionsSection" style="display: none;">
+                <div class="section-header">
+                    <h2>Información adicional</h2>
+                    <span class="section-helper">Responde las siguientes preguntas</span>
+                </div>
+                <div id="dynamicQuestionsContainer"></div>
+            </section>
+
+            <!-- Imagen de Documento -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Documento de identificación</h2>
+                    <div class="section-subtitle">
+                        <span>Sube una imagen clara del documento</span>
+                    </div>
+                </div>
+            
+                <div class="document-upload-section">
+                    <div class="document-upload-area" id="documentUploadArea">
+                        {{!-- input original para subir archivo --}}
+                        <input type="file" id="otherFile" accept="image/*,application/pdf" class="file-input"
+                            style="display:none" />
+            
+                        {{!-- nuevo input para cámara --}}
+                        <input type="file" id="cameraInput" accept="image/*" capture="environment" class="file-input"
+                            style="display:none" />
+            
+                        <!-- Placeholder inicial -->
+                        <div class="upload-placeholder" id="uploadPlaceholder">
+                            <div class="upload-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M14 2H6C4.89 2 4 2.89 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2Z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M16 17H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                            <div class="upload-content">
+                                <h3>Subir documento</h3>
+                                <p>Selecciona tu archivo o toma una foto</p>
+                                <div class="upload-formats">
+                                    <span>Formatos soportados: JPG, PNG, PDF</span>
+                                </div>
+                            </div>
+                            <div class="upload-actions">
+                                <button type="button" class="upload-button" id="selectFileBtn">
+                                    <span>Seleccionar archivo</span>
+                                </button>
+                                <button type="button" class="upload-button" id="takePhotoBtn">
+                                    <span>Tomar foto</span>
+                                </button>
+                            </div>
+                        </div>
+            
+                        <!-- Preview cuando ya hay archivo/foto -->
+                        <div class="document-preview" id="documentPreview" style="display: none;">
+                            <div class="preview-header">
+                                <div class="file-info">
+                                    <div class="file-icon">📄</div>
+                                    <div class="file-details">
+                                        <span class="file-name" id="fileName"></span>
+                                        <span class="file-size" id="fileSize"></span>
+                                    </div>
+                                </div>
+                                <button type="button" class="remove-file" id="removeFileBtn">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="preview-content" id="previewContent">
+                                <!-- Aquí irá la img o mensaje PDF -->
+                            </div>
+                        </div>
+                    </div>
+            
+                    <!-- Campo oculto para base64 -->
+                    <input type="hidden" id="otherData" name="otherData" />
+                </div>
+            </section>
+
+            <!-- Firma -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Firma de autorización</h2>
+                </div>
+                <div class="signature-section">
+                    <div class="signature-box" id="signatureBox">
+                        <canvas id="signatureCanvas"></canvas>
+                        <div id="signaturePlaceholder">✏️</div>
+                    </div>
+                    <div class="signature-controls">
+                        <button type="button" id="clearSignature">Limpiar Firma</button>
+                        <button type="button" id="undoSignature">Deshacer</button>
+                    </div>
+                    <p class="signature-help">Mantén presionado para dibujar tu firma</p>
+                    <input type="hidden" id="signatureImageData" name="signatureData" />
+                </div>
+            </section>
+
+            <!-- Audio -->
+            <section class="form-section">
+                <div class="section-header">
+                    <h2>Notas de voz</h2>
+                </div>
+                <div class="audio-section">
+                    <div class="audio-controls">
+                        <button type="button" id="audioBtn" class="audio-button">🎤</button>
+                        <div class="audio-info">
+                            <div id="audioTimer">00:00:00</div>
+                            <span id="audioHint">Mantén presionado para grabar</span>
+                        </div>
+                        <button type="button" id="audioDelete" class="audio-delete">🗑️</button>
+                    </div>
+                    <div id="audioWave" class="audio-wave">
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                    <input type="hidden" id="audioData" name="audioData" />
+                    <input type="hidden" id="audioMimeType" name="audioMimeType" />
+                </div>
+            </section>
+
+            <!-- Submit -->
+            <section class="form-actions">
+                <button type="submit" class="btn-submit save-button" id="submitBtn">
+                    <span class="btn-text">Enviar</span>
+                    <div class="btn-loader hidden">
+                        <div class="mini-spinner white"></div>
+                    </div>
+                </button>
+            </section>
+        </form>
+        <div class="keyboard-toolbar" id="keyboardToolbar" style="display: none;">
+            <div class="toolbar-info">
+                <span id="currentFieldName">Campo actual</span>
+            </div>
+            <div class="toolbar-actions">
+                <button type="button" class="toolbar-btn" id="keyboardDone">Listo</button>
+            </div>
+        </div>
+    </div>
+</div>

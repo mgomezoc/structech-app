@@ -1,6 +1,6 @@
 {
   "appId": "com.structech.app",
-  "appName": "StructTech App",
+  "appName": "StrucTech",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
@@ -19,6 +19,11 @@
       "spinnerColor": "#999999",
       "splashFullScreen": true,
       "splashImmersive": true
+    },
+    "Keyboard": {
+      "resize": "body",
+      "style": "light",
+      "resizeOnFullScreen": true
     }
   }
 }

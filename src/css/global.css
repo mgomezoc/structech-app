@@ -1,0 +1,186 @@
+/* ===================================================================
+   Estilos Base Unificados - Aplicación Capacitor (Android / iOS)
+   =================================================================== */
+
+/* === Reset y estilos globales === */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  html {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px; /* Previene zoom en inputs (iOS) */
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%; /* Previene redimensionamiento en iOS */
+  }
+  
+  body {
+    background-color: #f4f4f8; /* Fondo claro neutro */
+    color: #1c1c1e;
+    overflow-x: hidden;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: contain; /* Evita pull-to-refresh */
+    touch-action: manipulation;
+  }
+  
+  /* === Variables CSS globales === */
+  :root {
+    /* Colores */
+    --color-primary: #007aff;
+    --color-primary-dark: #0062cc;
+    --color-background: #f4f4f8;
+    --color-surface: #ffffff;
+    --color-text: #1c1c1e;
+    --color-border: #c7c7cc;
+  
+    /* Espaciado estándar */
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+  
+    /* Radios */
+    --border-radius-md: 8px;
+  
+    /* Sombras sutiles */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+  }
+  
+  /* === Contenedor Principal === */
+  .app-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  /* === Área de Encabezado === */
+  .app-header {
+    padding-top: env(safe-area-inset-top, 20px);
+    padding-left: env(safe-area-inset-left, 16px);
+    padding-right: env(safe-area-inset-right, 16px);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .app-header h1 {
+    font-size: 1.2rem;
+    text-align: center;
+    padding: var(--spacing-md) 0;
+    font-weight: 600;
+  }
+  
+  /* === Área Principal del contenido === */
+  .app-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: var(--spacing-md);
+    padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+  }
+  
+  /* Ocultar scrollbars estéticamente */
+  .app-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+  .app-content {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Edge */
+  }
+  
+  /* === Área inferior segura === */
+  .app-footer {
+    padding-bottom: env(safe-area-inset-bottom, var(--spacing-sm));
+    padding-left: env(safe-area-inset-left, var(--spacing-md));
+    padding-right: env(safe-area-inset-right, var(--spacing-md));
+    background-color: var(--color-surface);
+    box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+  }
+  
+  /* === Componentes básicos generales === */
+  
+  /* Botones base */
+  .btn {
+    display: inline-block;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    font-weight: 500;
+    text-align: center;
+    border: none;
+    font-size: 1rem;
+    min-height: 44px; /* Tamaño mínimo táctil recomendado */
+    user-select: none;
+    transition: transform 0.1s, background-color 0.2s;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  .btn:active {
+    transform: scale(0.98);
+  }
+  
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: #fff;
+  }
+  
+  .btn-primary:active {
+    background-color: var(--color-primary-dark);
+  }
+  
+  /* Inputs y textareas base */
+  input, textarea, select {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 16px; /* Previene zoom (iOS) */
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    background-color: var(--color-surface);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(0,122,255,0.2);
+  }
+  
+  /* Imágenes responsivas */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  /* Utilidades Generales */
+  .no-text-select {
+    user-select: none;
+  }
+  
+  /* Evita problemas con teclado virtual en móvil */
+  .keyboard-is-open .app-footer {
+    display: none; /* Oculta footer al abrir teclado */
+  }
+  
+  /* Prevenir zoom en inputs específicamente para Safari iOS */
+  @media screen and (-webkit-min-device-pixel-ratio:0) {
+    select:focus, textarea:focus, input:focus {
+      font-size: 16px !important;
+    }
+  }
+  
+  /* Compatibilidad con Safe Areas para dispositivos con notch */
+  @supports (padding: max(0px)) {
+    body {
+      padding-left: max(env(safe-area-inset-left), 0px);
+      padding-right: max(env(safe-area-inset-right), 0px);
+    }
+  }
+  

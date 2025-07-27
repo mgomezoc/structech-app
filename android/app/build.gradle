@@ -1,8 +1,32 @@
+// android/app/build.gradle
+
+import java.util.Properties
+
 apply plugin: 'com.android.application'
+
+// Cargar propiedades del Keystore
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
 
 android {
     namespace "com.structech.app"
     compileSdk rootProject.ext.compileSdkVersion
+
+    // ----------------------------------------
+    // Configuración de firma para release
+    // ----------------------------------------
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+
     defaultConfig {
         applicationId "com.structech.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -11,13 +35,17 @@ android {
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
-             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
-             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            // Omitir estos patrones de los assets
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
     buildTypes {
         release {
+            // Usar la configuración de firma anterior
+            signingConfig signingConfigs.release
+
+            // Opciones de ProGuard / R8
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -25,7 +53,7 @@ android {
 }
 
 repositories {
-    flatDir{
+    flatDir {
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
 }
@@ -42,13 +70,15 @@ dependencies {
     implementation project(':capacitor-cordova-android-plugins')
 }
 
+// Este apply es el de Capacitor
 apply from: 'capacitor.build.gradle'
 
+// Plugin de Google Services (opcional)
 try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    logger.info("google-services.json not found, plugin de Google Services no aplicado.")
 }

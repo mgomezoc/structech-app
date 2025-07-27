@@ -1,0 +1,264 @@
+// src/css/utilities/keyboard.less
+// ============================================
+// UTILIDADES PARA MANEJO DE TECLADO
+// ============================================
+
+// Contenedor principal que se ajusta con el teclado
+.keyboard-aware-container {
+  height: 100vh;
+  height: 100dvh; // Dynamic viewport height
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: padding-bottom 0.3s ease-out;
+}
+
+// Contenido scrolleable que se ajusta
+.keyboard-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-bottom: 20px; // Espacio extra al final
+
+  // Cuando el teclado está activo
+  &.keyboard-active {
+    // Se ajustará dinámicamente via JS
+  }
+}
+
+// ============================================
+// INPUTS OPTIMIZADOS PARA MÓVIL
+// ============================================
+
+// Prevenir zoom en iOS
+input[type='text'],
+input[type='email'],
+input[type='tel'],
+input[type='number'],
+input[type='password'],
+input[type='date'],
+textarea,
+select {
+  font-size: 16px !important; // Mínimo 16px previene zoom en iOS
+
+  @media (max-width: 768px) {
+    font-size: 16px !important;
+  }
+}
+
+// Input con focus mejorado
+.form-control {
+  // Transición suave al hacer focus
+  transition: all 0.2s ease-out;
+
+  // Estado de focus con el teclado
+  &.keyboard-focused {
+    background-color: #ffffff;
+    border-color: #37a6a6;
+    box-shadow: 0 0 0 3px rgba(55, 166, 166, 0.15);
+    transform: scale(1.02);
+  }
+}
+
+// ============================================
+// FORMULARIO OPTIMIZADO
+// ============================================
+
+.form-view-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  // Header fijo
+  .alta-header {
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #ffffff;
+  }
+
+  // Progress fijo
+  .progress-indicator {
+    flex-shrink: 0;
+    position: sticky;
+    top: 60px; // Altura del header
+    z-index: 99;
+    background: #ffffff;
+    padding-bottom: 10px;
+  }
+
+  // Contenedor del form scrolleable
+  .form-container {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+
+    // Padding extra para el teclado
+    padding-bottom: env(keyboard-inset-height, 50px);
+  }
+}
+
+// ============================================
+// SECCIONES DE FORMULARIO MEJORADAS
+// ============================================
+
+.form-section {
+  // Margen inferior generoso
+  margin-bottom: 24px;
+
+  // Último section con más espacio
+  &:last-child {
+    margin-bottom: 100px; // Espacio para el teclado
+  }
+}
+
+// ============================================
+// TOOLBAR SOBRE EL TECLADO (iOS style)
+// ============================================
+
+.keyboard-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  background: #f0f0f0;
+  border-top: 1px solid #d1d5db;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+  z-index: 1000;
+
+  &.visible {
+    display: flex;
+    transform: translateY(0);
+  }
+
+  .toolbar-nav {
+    display: flex;
+    gap: 20px;
+
+    button {
+      background: none;
+      border: none;
+      color: #37a6a6;
+      font-size: 14px;
+      padding: 8px;
+
+      &:disabled {
+        color: #d1d5db;
+      }
+    }
+  }
+
+  .toolbar-action {
+    button {
+      background: none;
+      border: none;
+      color: #37a6a6;
+      font-weight: 600;
+      font-size: 16px;
+      padding: 8px 12px;
+    }
+  }
+}
+
+// ============================================
+// AJUSTES ESPECÍFICOS POR PLATAFORMA
+// ============================================
+
+// iOS específico
+.platform-ios {
+  .form-container {
+    // Padding para safe areas
+    padding-bottom: calc(env(safe-area-inset-bottom) + 50px);
+  }
+
+  // Inputs más altos en iOS
+  .form-control {
+    min-height: 44px;
+  }
+}
+
+// Android específico
+.platform-android {
+  .form-container {
+    padding-bottom: 50px;
+  }
+
+  // Ajuste para el resize mode
+  &.keyboard-visible {
+    .form-view-container {
+      height: calc(100vh - var(--keyboard-height, 0px));
+    }
+  }
+}
+
+// ============================================
+// ANIMACIONES PARA TRANSICIONES SUAVES
+// ============================================
+
+@keyframes slideUpInput {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// Input que aparece cuando el teclado se muestra
+.slide-up-on-focus {
+  &:focus {
+    animation: slideUpInput 0.3s ease-out;
+  }
+}
+
+// ============================================
+// UTILIDADES PARA SCROLL
+// ============================================
+
+// Asegurar que el botón de guardar sea visible
+.form-actions {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, #ffffff 80%, transparent);
+  padding: 20px 0 calc(env(safe-area-inset-bottom) + 20px);
+  margin-top: 20px;
+
+  // Sombra sutil
+  &::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
+  }
+}
+
+// ============================================
+// FOCUS TRAP PARA MEJOR NAVEGACIÓN
+// ============================================
+
+.focus-trap {
+  &:focus-within {
+    .form-section {
+      opacity: 0.5;
+      transition: opacity 0.2s;
+
+      &:focus-within {
+        opacity: 1;
+      }
+    }
+  }
+}

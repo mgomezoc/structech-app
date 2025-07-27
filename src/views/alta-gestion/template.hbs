@@ -1,0 +1,218 @@
+{{!-- src/views/alta-gestion/template.hbs --}}
+
+<div class="alta-gestion-container">
+    <!-- Header -->
+    <header class="alta-header">
+        <button class="back-button" id="backBtn" aria-label="Regresar">
+            {{{backIcon}}}
+        </button>
+        <h1 class="view-title">{{title}}</h1>
+    </header>
+
+    <!-- Progress Indicator -->
+    <div class="progress-indicator">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <span class="progress-text">Completa todos los campos</span>
+    </div>
+
+    <!-- Form Container -->
+    <div class="form-container">
+        <form id="altaGestionForm" class="alta-form" novalidate>
+
+            <!-- Ciudadano Section -->
+            <section class="form-section">
+                <div class="section-header">
+                    <lord-icon src="https://cdn.lordicon.com/dxjqoygy.json" trigger="loop" delay="3000" colors="primary:#37a6a6"
+                        style="width:24px;height:24px">
+                    </lord-icon>
+                    <h2>Información del ciudadano</h2>
+                </div>
+            
+                <div class="form-group">
+                    <label for="citizen-selector-trigger" class="required">
+                        Ciudadano
+                    </label>
+            
+                    <div class="custom-selector-trigger" id="citizen-selector-trigger" tabindex="0">
+                        <div class="trigger-content">
+                            <img src="https://ui-avatars.com/api/?name=?&background=e0e0e0&color=a0a0a0" alt="Avatar del ciudadano"
+                                class="citizen-avatar" id="selected-citizen-avatar">
+                            <span class="trigger-text" id="selected-citizen-name">Selecciona un ciudadano...</span>
+                        </div>
+                        {{{chevronIcon}}}
+                        <div class="field-loader hidden" id="citizenLoader">
+                            <div class="mini-spinner"></div>
+                        </div>
+                    </div>
+                    <span class="field-hint">Toca para buscar y seleccionar al ciudadano</span>
+                </div>
+            </section>
+            
+            <div class="selector-modal-overlay hidden" id="citizen-selector-modal">
+                <div class="selector-modal-content">
+                    <div class="selector-modal-header">
+                        <h3>Buscar Ciudadano</h3>
+                        <button type="button" class="modal-close-btn" id="modal-close-btn" aria-label="Cerrar">
+                            &times;
+                        </button>
+                    </div>
+                    <div class="selector-modal-search">
+                        <input type="text" id="citizen-search-input" placeholder="Escribe un nombre o teléfono...">
+                    </div>
+                    <ul class="selector-modal-list" id="citizen-results-list">
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tipo y Clasificación Section -->
+            <section class="form-section">
+                <div class="section-header">
+                    <lord-icon src="https://cdn.lordicon.com/kulwmpzs.json" trigger="loop" delay="4000"
+                        colors="primary:#37a6a6" style="width:24px;height:24px">
+                    </lord-icon>
+                    <h2>Categorización</h2>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="typeSelect" class="required">
+                            Tipo de gestión
+
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="typeSelect" name="type" required>
+                                <option value="">Selecciona un tipo</option>
+                            </select>
+                            {{{chevronIcon}}}
+                            <div class="field-loader" id="typeLoader">
+                                <div class="mini-spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="classificationSelect" class="required">
+                            Clasificación
+
+                        </label>
+                        <div class="select-wrapper">
+                            <select id="classificationSelect" name="classification" required disabled>
+                                <option value="">Primero selecciona un tipo</option>
+                            </select>
+                            {{{chevronIcon}}}
+                            <div class="field-loader hidden" id="classificationLoader">
+                                <div class="mini-spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Descripción Section -->
+            <section class="form-section">
+                <div class="section-header">
+                    <lord-icon src="https://cdn.lordicon.com/nocovwne.json" trigger="loop" delay="5000"
+                        colors="primary:#37a6a6" style="width:24px;height:24px">
+                    </lord-icon>
+                    <h2>Detalles de la gestión</h2>
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="required">
+                        Descripción
+                    </label>
+                    <div class="textarea-wrapper">
+                        <textarea id="description" name="description" rows="4"
+                            placeholder="Describe detalladamente la gestión solicitada..." required
+                            maxlength="500"></textarea>
+                        <span class="char-counter" id="charCounter">0 / 500</span>
+                    </div>
+                    <span class="field-hint">Sé lo más específico posible para dar mejor seguimiento</span>
+                </div>
+            </section>
+
+            <!-- Archivo Section -->
+            <section class="form-section">
+                <div class="section-header">
+                    <lord-icon src="https://cdn.lordicon.com/nxooksci.json" trigger="loop" delay="6000" colors="primary:#37a6a6"
+                        style="width:24px;height:24px">
+                    </lord-icon>
+                    <h2>Documentación de apoyo</h2>
+                </div>
+            
+                <div class="form-group">
+                    <label>Archivo adjunto (opcional)</label>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf" class="hidden"
+                            aria-label="Seleccionar archivo" />
+            
+                        <!-- Upload Content -->
+                        <div class="file-upload-content" id="fileUploadContent">
+                            {{{uploadIcon}}}
+                            <p class="upload-text">Arrastra un archivo aquí o</p>
+                            <div class="upload-buttons">
+                                <button type="button" class="btn-add-file" id="selectFileBtn">
+                                    {{{plusIcon}}}
+                                    Añadir archivo
+                                </button>
+                                <button type="button" class="btn-take-photo" id="cameraBtn">
+                                    {{{cameraIcon}}}
+                                    Tomar foto
+                                </button>
+                            </div>
+                            <p class="file-types">JPG, PNG o PDF (máx. 5MB)</p>
+                        </div>
+            
+                        <!-- File Preview -->
+                        <div class="file-preview hidden" id="filePreview">
+                            <div class="file-info">
+                                {{{fileIcon}}}
+                                <div class="file-details">
+                                    <p class="file-name" id="fileName"></p>
+                                    <p class="file-size" id="fileSize"></p>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-remove-file" id="removeFileBtn" aria-label="Eliminar archivo">
+                                {{{removeIcon}}}
+                            </button>
+                        </div>
+                    </div>
+                    <span class="field-hint">Puedes adjuntar fotos o documentos relacionados con la gestión</span>
+                </div>
+            </section>
+
+            <!-- Submit Section -->
+            <section class="form-actions">
+                <div class="actions-info">
+                    <lord-icon src="https://cdn.lordicon.com/egiwmiit.json" trigger="hover" colors="primary:#6b7280"
+                        style="width:20px;height:20px">
+                    </lord-icon>
+                    <span class="info-text">Al enviar, se registrará tu ubicación actual</span>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn" disabled>
+                    <span class="btn-text" id="btnText">Crear Gestión</span>
+                    <div class="btn-loader hidden" id="btnLoader">
+                        <div class="mini-spinner white"></div>
+                    </div>
+                </button>
+            </section>
+
+        </form>
+    </div>
+
+    <!-- Success Animation Container (hidden by default) -->
+    <div class="success-overlay hidden" id="successOverlay">
+        <div class="success-content">
+            <lord-icon src="https://cdn.lordicon.com/lupuorrc.json" trigger="in" colors="primary:#10b981"
+                style="width:80px;height:80px">
+            </lord-icon>
+            <!-- Le damos un id al h3 para actualizarlo desde el JS -->
+            <h3 id="successMessage">¡Gestión creada exitosamente!</h3>
+            <p>Redirigiendo al panel principal...</p>
+        </div>
+    </div>
+
+</div>

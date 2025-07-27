@@ -1,0 +1,338 @@
+// Transiciones profesionales para StructTech App
+// src/css/transitions.less
+
+// ================================
+// 🎯 TRANSICIONES PRINCIPALES
+// ================================
+
+// Transición por defecto - Slide lateral (más nativa)
+::view-transition-group(*) {
+  animation-duration: 350ms;
+  animation-timing-function: cubic-bezier(
+    0.25,
+    0.46,
+    0.45,
+    0.94
+  ); // Ease-out-quad
+}
+
+::view-transition-old(root) {
+  animation: slideOutLeft 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+::view-transition-new(root) {
+  animation: slideInRight 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+// ================================
+// 🔙 TRANSICIONES DE REGRESO
+// ================================
+
+// Para navegación hacia atrás (back)
+.view-transition-back {
+  ::view-transition-old(root) {
+    animation: slideOutRight 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  ::view-transition-new(root) {
+    animation: slideInLeft 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+}
+
+// ================================
+// 📱 TRANSICIONES TIPO MODAL
+// ================================
+
+// Para formularios, scan, configuraciones
+.view-transition-modal {
+  ::view-transition-old(root) {
+    animation: scaleDownFade 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  ::view-transition-new(root) {
+    animation: slideUpModal 400ms cubic-bezier(0.34, 1.56, 0.64, 1); // Spring
+  }
+}
+
+// ================================
+// ⚡ TRANSICIONES RÁPIDAS
+// ================================
+
+// Para navegación dentro del mismo contexto
+.view-transition-fade {
+  ::view-transition-group(*) {
+    animation-duration: 200ms;
+  }
+
+  ::view-transition-old(root) {
+    animation: fadeOut 200ms ease-out;
+  }
+
+  ::view-transition-new(root) {
+    animation: fadeIn 200ms ease-out;
+  }
+}
+
+// ================================
+// 🎨 TRANSICIONES ESPECIALES
+// ================================
+
+// Para login/logout
+.view-transition-auth {
+  ::view-transition-old(root) {
+    animation: zoomOutFade 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  ::view-transition-new(root) {
+    animation: zoomInFade 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+// Para dashboard (entrada principal)
+.view-transition-dashboard {
+  ::view-transition-old(root) {
+    animation: slideOutDown 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  ::view-transition-new(root) {
+    animation: slideInUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+// Para scan view (acción importante)
+.view-transition-scan {
+  ::view-transition-old(root) {
+    animation: rotateScaleOut 450ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  ::view-transition-new(root) {
+    animation: rotateScaleIn 450ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}
+
+// ================================
+// 📐 KEYFRAMES
+// ================================
+
+// Slides horizontales
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+// Slides verticales
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideUpModal {
+  from {
+    transform: translateY(100%) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+// Fades
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+// Zooms
+@keyframes zoomInFade {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes zoomOutFade {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+
+// Escalas con fade
+@keyframes scaleDownFade {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95);
+    opacity: 0.3;
+  }
+}
+
+// Rotaciones especiales
+@keyframes rotateScaleIn {
+  from {
+    transform: rotate(-10deg) scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes rotateScaleOut {
+  from {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: rotate(10deg) scale(0.8);
+    opacity: 0;
+  }
+}
+
+// ================================
+// 📱 RESPONSIVE
+// ================================
+
+@media (max-width: 768px) {
+  // Transiciones más rápidas en móvil
+  ::view-transition-group(*) {
+    animation-duration: 250ms;
+  }
+
+  .view-transition-modal {
+    ::view-transition-group(*) {
+      animation-duration: 300ms;
+    }
+  }
+}
+
+// ================================
+// 🎯 UTILIDADES PARA JAVASCRIPT
+// ================================
+
+// Clases para aplicar diferentes transiciones
+.transition-forward {
+  // Usa la transición por defecto (slide right)
+}
+
+.transition-back {
+  // Se aplica automáticamente con .view-transition-back
+}
+
+.transition-modal {
+  // Se aplica automáticamente con .view-transition-modal
+}
+
+.transition-fade {
+  // Se aplica automáticamente con .view-transition-fade
+}
+
+// ================================
+// 🔧 TRANSICIONES POR RUTA
+// ================================
+
+// Específicas para cada vista
+.route-login {
+  ::view-transition-new(root) {
+    animation: zoomInFade 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+.route-dashboard {
+  ::view-transition-new(root) {
+    animation: slideInUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+.route-form {
+  ::view-transition-new(root) {
+    animation: slideUpModal 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+.route-scan {
+  ::view-transition-new(root) {
+    animation: rotateScaleIn 450ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}

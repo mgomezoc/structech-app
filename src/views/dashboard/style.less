@@ -1,414 +1,564 @@
-// Variables
-@primary-color: #0ea5e9;
-@secondary-color: #10b981;
-@tertiary-color: #8b5cf6;
-@danger-color: #ef4444;
-@text-primary: #1f2937;
-@text-secondary: #6b7280;
-@text-muted: #9ca3af;
-@bg-gray: #f3f4f6;
-@white: #ffffff;
+// src/views/dashboard/style.less
+// Optimizado para iOS/Android con animaciones nativas
 
+// Variables mejoradas
+@primary-color: #37a6a6;
+@secondary-color: #d96b2b;
+@accent-color: #f2a29b;
+
+// Sistema de colores más consistente
+@white: #ffffff;
+@gray-50: #f9fafb;
+@gray-100: #f3f4f6;
+@gray-200: #e5e7eb;
+@gray-300: #d1d5db;
+@gray-400: #9ca3af;
+@gray-500: #6b7280;
+@gray-900: #111827;
+
+// Sombras optimizadas para dispositivos móviles
+@shadow-mobile: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+@shadow-card: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.06);
+@shadow-elevated: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+
+// Timing functions nativos de iOS/Android
+@ease-ios: cubic-bezier(0.25, 0.1, 0.25, 1);
+@ease-material: cubic-bezier(0.4, 0, 0.2, 1);
+@ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+// Container Principal - Corregido para iOS
 .dashboard-container {
   min-height: 100vh;
-  background: @bg-gray;
-}
-
-// Header
-.dashboard-header {
-  background: @white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 16px 20px;
+  min-height: 100dvh; // Soporte para viewport dinámico
+  background: linear-gradient(135deg, @primary-color 0%, darken(@primary-color, 15%) 100%);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-
-  .header-logo {
-    width: 40px;
-    height: 40px;
-  }
-
-  h1 {
-    font-size: 20px;
-    color: @text-primary;
-    margin: 0;
-    font-weight: 600;
-  }
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  .user-name {
-    color: @text-secondary;
-    font-size: 14px;
-    font-weight: 500;
-  }
-
-  .btn-logout {
-    background: @danger-color;
-    color: @white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    &:hover {
-      background: darken(@danger-color, 10%);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
-    }
-  }
-}
-
-// Main Content
-.dashboard-main {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 32px 20px;
-}
-
-.welcome-section {
-  margin-bottom: 40px;
-  text-align: center;
-
-  h2 {
-    color: @text-primary;
-    margin-bottom: 8px;
-    font-size: 28px;
-    font-weight: 700;
-  }
-
-  p {
-    color: @text-secondary;
-    font-size: 16px;
-  }
-}
-
-// Grid de tarjetas
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-  margin-bottom: 48px;
-}
-
-.dashboard-card {
-  background: @white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
+  flex-direction: column;
+  width: 100%;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, @primary-color, @secondary-color);
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-  }
+  // Safe area para iOS - Aplicado correctamente
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
 
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-
-    &::before {
-      transform: translateX(0);
-    }
-
-    .card-icon lord-icon {
-      transform: scale(1.1);
-    }
-  }
-
-  &.primary-card {
-    border: 2px solid fade(@primary-color, 20%);
-
-    &::before {
-      background: @primary-color;
-    }
-  }
-
-  .card-icon {
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 80px;
-    height: 80px;
-    background: fade(@primary-color, 10%);
-    border-radius: 16px;
-    transition: all 0.3s ease;
-
-    lord-icon {
-      transition: transform 0.3s ease;
-    }
-  }
-
-  h3 {
-    color: @text-primary;
-    margin-bottom: 12px;
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 1.3;
-  }
-
-  p {
-    color: @text-secondary;
-    margin-bottom: 20px;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  .card-features {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-
-    .feature-tag {
-      background: fade(@primary-color, 10%);
-      color: @primary-color;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-  }
-
-  .btn-card {
-    width: 100%;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &.primary {
-      background: @primary-color;
-      color: @white;
-
-      &:hover {
-        background: darken(@primary-color, 10%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px fade(@primary-color, 30%);
-      }
-    }
-
-    &.secondary {
-      background: @secondary-color;
-      color: @white;
-
-      &:hover {
-        background: darken(@secondary-color, 10%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px fade(@secondary-color, 30%);
-      }
-    }
-
-    &.tertiary {
-      background: @tertiary-color;
-      color: @white;
-
-      &:hover {
-        background: darken(@tertiary-color, 10%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px fade(@tertiary-color, 30%);
-      }
-    }
-  }
+  // Evitar problemas de superposición
+  isolation: isolate;
 }
 
-// Sección de estadísticas
-.stats-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 32px;
-}
+// Header simplificado y optimizado
+.dashboard-header {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px); // Safari
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px 20px;
+  position: relative;
+  z-index: 100;
 
-.stat-card {
-  background: @white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  transition: all 0.2s;
+  // Animación de entrada más rápida y natural
+  animation: slideDown 0.4s @ease-ios both;
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  lord-icon {
-    flex-shrink: 0;
-  }
-
-  .stat-content {
-    flex: 1;
-
-    h4 {
-      color: @text-secondary;
-      font-size: 12px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
-    }
-
-    .stat-number {
-      color: @text-primary;
-      font-size: 24px;
-      font-weight: 700;
-      margin: 0;
-    }
-
-    .stat-time {
-      color: @text-primary;
-      font-size: 16px;
-      font-weight: 600;
-      margin: 0;
-    }
-  }
-}
-
-// Actividad reciente
-.recent-activity {
-  background: @white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-
-  .activity-header {
+  .header-content {
+    max-width: 800px;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
 
-    h3 {
-      color: @text-primary;
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .btn-refresh {
-      background: none;
-      border: none;
-      padding: 8px;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: all 0.2s;
-
-      &:hover {
-        background: @bg-gray;
-      }
-    }
-  }
-
-  .activity-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-
-    .activity-item {
-      padding: 16px;
-      background: @bg-gray;
-      border-radius: 8px;
+    .header-left {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: all 0.2s;
+      flex-direction: column;
+      gap: 2px;
 
-      &:hover {
-        background: darken(@bg-gray, 3%);
-        transform: translateX(4px);
+      .header-greeting {
+        font-size: 24px;
+        color: @white;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: -0.5px;
+        // Animación más sutil
+        animation: fadeInLeft 0.5s @ease-ios 0.1s both;
       }
 
-      .activity-text {
-        color: @text-secondary;
+      .header-subtitle {
         font-size: 14px;
+        color: rgba(255, 255, 255, 0.75);
         font-weight: 500;
-      }
-
-      .activity-time {
-        color: @text-muted;
-        font-size: 12px;
-        white-space: nowrap;
+        animation: fadeInLeft 0.5s @ease-ios 0.2s both;
       }
     }
 
-    .loading-text {
-      color: @text-muted;
-      text-align: center;
-      padding: 40px 20px;
-      font-style: italic;
+    .header-right {
+      .btn-logout {
+        background: rgba(255, 255, 255, 0.12);
+        border: none;
+        color: @white;
+        padding: 10px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s @ease-material;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.2);
+          transform: scale(1.05);
+        }
+
+        &:active {
+          transform: scale(0.95);
+          background: rgba(255, 255, 255, 0.25);
+        }
+
+        svg {
+          display: block;
+        }
+      }
     }
   }
 }
 
-// Responsive
-@media (max-width: 768px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
+// Main content - Corregido para evitar superposición
+.dashboard-main {
+  flex: 1;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  // Asegurar que no se superponga con otros elementos
+  position: relative;
+  z-index: 1;
+
+  // Altura mínima para contenido
+  min-height: calc(100vh - 120px);
+  min-height: calc(100dvh - 120px);
+}
+
+// Actions section mejorada con animaciones nativas
+.actions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+
+  // Animación de entrada escalonada
+  animation: slideUp 0.5s @ease-ios 0.3s both;
+
+  .action-card {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: @shadow-card;
+
+    // Transición más rápida y natural
+    transition: all 0.2s @ease-material;
+
+    // Soporte para feedback táctil
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+
+    &.large {
+      height: 180px;
+      width: 100%;
+      margin-bottom: 4px;
+    }
+
+    .card-background {
+      position: absolute;
+      inset: 0;
+      opacity: 1;
+      transition: transform 0.3s @ease-material;
+      z-index: 1;
+    }
+
+    .card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0.2) 50%,
+        rgba(0, 0, 0, 0.1) 100%
+      );
+      z-index: 2;
+      transition: background 0.2s @ease-material;
+    }
+
+    .card-content {
+      position: relative;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: @white;
+      text-align: center;
+      z-index: 3;
+
+      .card-icon {
+        width: 44px;
+        height: 44px;
+        margin-bottom: 12px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+
+        // Transición más suave
+        transition: all 0.2s @ease-material;
+
+        svg {
+          width: 22px;
+          height: 22px;
+          stroke: @white;
+          stroke-width: 2.5;
+        }
+      }
+
+      h3 {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0 0 6px 0;
+        letter-spacing: -0.3px;
+        color: @white;
+        line-height: 1.2;
+      }
+
+      p {
+        font-size: 14px;
+        margin: 0;
+        opacity: 0.9;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.3;
+      }
+    }
+
+    // Efectos hover/touch optimizados para móvil
+    &:hover,
+    &:focus {
+      transform: translateY(-2px);
+      box-shadow: @shadow-elevated;
+
+      .card-background {
+        transform: scale(1.02);
+      }
+
+      .card-overlay {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 0, 0, 0.3) 0%,
+          rgba(0, 0, 0, 0.15) 50%,
+          rgba(0, 0, 0, 0.05) 100%
+        );
+      }
+
+      .card-icon {
+        transform: scale(1.1);
+        background: rgba(255, 255, 255, 0.3);
+      }
+    }
+
+    // Efecto active para feedback táctil
+    &:active {
+      transform: translateY(-1px) scale(0.98);
+      transition: all 0.1s @ease-material;
+    }
+
+    // Backgrounds específicos
+    &.scan-card .card-background {
+      background: url(../../img/dashboard-1.jpg) center center / cover no-repeat;
+    }
+
+    &.enroll-card .card-background {
+      background: url(../../img/dashboard-2.png) center center / cover no-repeat;
+    }
+
+    &.gestion-card .card-background {
+      background: url(../../img/dashboard-3.png) center center / cover no-repeat;
+    }
   }
 
-  .stats-section {
-    grid-template-columns: 1fr;
+  .actions-grid-secondary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+
+    .action-card {
+      height: 140px;
+    }
+  }
+}
+
+// Footer mejorado
+.dashboard-footer {
+  margin-top: auto;
+  padding: 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+
+  // Animación de entrada
+  animation: fadeInUp 0.5s @ease-ios 0.5s both;
+
+  .footer-logo {
+    width: 32px;
+    height: 32px;
+    opacity: 0.7;
+    transition: opacity 0.2s @ease-material;
+    filter: brightness(0) invert(1);
+
+    &:hover {
+      opacity: 1;
+    }
   }
 
-  .header-left h1 {
-    display: none;
+  .footer-text {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+  }
+}
+
+// Animaciones optimizadas para dispositivos móviles
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Focus states para accesibilidad
+.action-card:focus-visible,
+.btn-logout:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
+// Optimizaciones específicas para iOS
+@supports (-webkit-touch-callout: none) {
+  .dashboard-container {
+    // Evitar rebote en iOS
+    overscroll-behavior: none;
+  }
+
+  .action-card {
+    // Optimizar toques en iOS
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+}
+
+// Optimizaciones para Android
+@media (max-device-width: 768px) and (orientation: portrait) {
+  .dashboard-container {
+    // Mejorar rendimiento en Android
+    will-change: auto;
+  }
+
+  .action-card {
+    // Reducir complejidad visual en dispositivos menos potentes
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.98);
+  }
+}
+
+// Responsividad móvil optimizada
+@media (max-width: 640px) {
+  .dashboard-container {
+    padding-top: max(env(safe-area-inset-top), 0px);
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+
+  .dashboard-header {
+    padding: 12px 16px;
+
+    .header-content {
+      .header-left .header-greeting {
+        font-size: 20px;
+      }
+
+      .header-left .header-subtitle {
+        font-size: 13px;
+      }
+
+      .header-right .btn-logout {
+        padding: 8px;
+      }
+    }
   }
 
   .dashboard-main {
-    padding: 20px 16px;
+    padding: 16px 12px;
+    min-height: calc(100vh - 100px);
+    min-height: calc(100dvh - 100px);
   }
 
-  .dashboard-card {
-    padding: 24px;
-  }
+  .actions-section {
+    gap: 12px;
 
-  .welcome-section {
-    h2 {
-      font-size: 24px;
+    .action-card.large {
+      height: 160px;
+
+      .card-content {
+        padding: 20px;
+
+        .card-icon {
+          width: 40px;
+          height: 40px;
+
+          svg {
+            width: 20px;
+            height: 20px;
+          }
+        }
+
+        h3 {
+          font-size: 16px;
+        }
+
+        p {
+          font-size: 13px;
+        }
+      }
     }
+
+    .actions-grid-secondary {
+      gap: 10px;
+
+      .action-card {
+        height: 120px;
+
+        .card-content {
+          padding: 16px;
+
+          .card-icon {
+            width: 36px;
+            height: 36px;
+            margin-bottom: 10px;
+
+            svg {
+              width: 18px;
+              height: 18px;
+            }
+          }
+
+          h3 {
+            font-size: 14px;
+          }
+
+          p {
+            font-size: 12px;
+          }
+        }
+      }
+    }
+  }
+
+  .dashboard-footer {
+    padding: 16px 0;
+
+    .footer-logo {
+      width: 28px;
+      height: 28px;
+    }
+
+    .footer-text {
+      font-size: 12px;
+    }
+  }
+}
+
+// Mejoras para dispositivos con notch
+@media (max-width: 430px) {
+  .dashboard-header {
+    padding: 8px 16px;
+  }
+
+  .dashboard-main {
+    padding: 12px;
+  }
+}
+
+// Dark mode support (opcional)
+@media (prefers-color-scheme: dark) {
+  .action-card {
+    background: rgba(255, 255, 255, 0.1);
+
+    .card-overlay {
+      background: linear-gradient(
+        135deg,
+        rgba(0, 0, 0, 0.6) 0%,
+        rgba(0, 0, 0, 0.4) 50%,
+        rgba(0, 0, 0, 0.2) 100%
+      );
+    }
+  }
+}
+
+// Reduce motion para usuarios con preferencias de accesibilidad
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

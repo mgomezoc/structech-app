@@ -5,6 +5,7 @@ import './style.less';
 import tplSource from './template.hbs?raw';
 
 import { navigateTo } from '../../routes/index.js';
+import { addressService } from '../../services/address.service.js';
 import { authService } from '../../services/auth.service.js';
 import { datosService } from '../../services/datos.service.js';
 import { dialogService } from '../../services/dialog.service.js';
@@ -581,89 +582,284 @@ export default class FormView {
   /**
    * Poblar formulario con datos del escaneo
    */
-  poblarFormulario(scanResult) {
-    hapticsService.light();
-    const data = scanResult.result || scanResult;
-    const getVal = f => f?.description || f?.latin || '';
+  async poblarFormulario(scanResult) {
+    try {
+      hapticsService.light();
+      const data = scanResult.result || scanResult;
+      const getVal = f => f?.description || f?.latin || '';
 
-    // Poblar campos básicos
-    const fields = {
-      nombre: getVal(data.fullName),
-      apellidoPaterno: getVal(data.fathersName),
-      apellidoMaterno: getVal(data.mothersName),
-      curp: getVal(data.personalIdNumber),
-      claveElector: getVal(data.documentAdditionalNumber),
-    };
+      console.log('🔄 Iniciando poblado de formulario con datos:', data);
 
-    Object.entries(fields).forEach(([id, value]) => {
-      const el = $(`#${id}`);
-      if (el) el.value = value;
-    });
+      // 1. Poblar campos básicos (código existente)
+      const fields = {
+        nombre: getVal(data.fullName),
+        apellidoPaterno: getVal(data.fathersName),
+        apellidoMaterno: getVal(data.mothersName),
+        curp: getVal(data.personalIdNumber),
+        claveElector: getVal(data.documentAdditionalNumber),
+      };
 
-    // Fecha de nacimiento
-    if (data.dateOfBirth) {
-      const { day, month, year } = data.dateOfBirth;
-      const fecha = [year, String(month).padStart(2, '0'), String(day).padStart(2, '0')].join('-');
-
-      const fechaEl = $('#fechaNacimiento');
-      if (fechaEl) fechaEl.value = fecha;
-    }
-
-    // Género
-    const sex = getVal(data.sex).toUpperCase();
-    if (sex === 'H') {
-      const hombreEl = $('#hombre');
-      if (hombreEl) hombreEl.checked = true;
-    } else if (sex === 'M') {
-      const mujerEl = $('#mujer');
-      if (mujerEl) mujerEl.checked = true;
-    }
-
-    // Dirección
-    if (data.address) {
-      const domicilioEl = $('#domicilio');
-      if (domicilioEl) {
-        domicilioEl.value = data.address.latin.replace(/\n/g, ' ');
-      }
-    }
-
-    // Sección
-    const opt1 = data.mrzResult?.sanitizedOpt1?.slice(0, 4);
-    if (opt1) {
-      const seccionEl = $('#seccion');
-      if (seccionEl) seccionEl.value = opt1;
-    }
-
-    // Imagen de perfil
-    if (data.faceImage) {
-      this._showImage('profileImage', 'profilePlaceholder', data.faceImage);
-      const faceImageEl = $('#faceImageData');
-      if (faceImageEl) faceImageEl.value = data.faceImage;
-
-      // Agregar clase visual
-      const profilePhoto = $('#profilePhoto');
-      if (profilePhoto) {
-        dom(profilePhoto).addClass('has-image');
-      }
-    }
-
-    // Campos ocultos
-    const hiddenFields = {
-      signatureImageData: data.signatureImage,
-      fullDocumentFrontImage: data.fullDocumentFrontImage,
-      fullDocumentBackImage: data.fullDocumentBackImage,
-      idMex: data.documentNumber?.description,
-    };
-
-    Object.entries(hiddenFields).forEach(([id, value]) => {
-      if (value) {
+      Object.entries(fields).forEach(([id, value]) => {
         const el = $(`#${id}`);
         if (el) el.value = value;
+      });
+
+      // 2. Fecha de nacimiento (código existente)
+      if (data.dateOfBirth) {
+        const { day, month, year } = data.dateOfBirth;
+        const fecha = [year, String(month).padStart(2, '0'), String(day).padStart(2, '0')].join(
+          '-',
+        );
+        const fechaEl = $('#fechaNacimiento');
+        if (fechaEl) fechaEl.value = fecha;
       }
+
+      // 3. Género (código existente)
+      const sex = getVal(data.sex).toUpperCase();
+      if (sex === 'H') {
+        const hombreEl = $('#hombre');
+        if (hombreEl) hombreEl.checked = true;
+      } else if (sex === 'M') {
+        const mujerEl = $('#mujer');
+        if (mujerEl) mujerEl.checked = true;
+      }
+
+      // 4. 🆕 NUEVA FUNCIONALIDAD: Dirección + Consulta automática de colonias
+      if (data.address) {
+        const addressText = data.address.latin.replace(/\n/g, ' ');
+        const domicilioEl = $('#domicilio');
+        if (domicilioEl) {
+          domicilioEl.value = addressText;
+        }
+
+        console.log('🏠 Procesando dirección:', addressText);
+
+        // Extraer código postal de la dirección
+        const extractedCP = addressService.extractPostalCode(addressText);
+
+        if (extractedCP) {
+          console.log(`📮 Código postal extraído: ${extractedCP}`);
+
+          // Mostrar indicador de carga
+          this.showLocationLoadingIndicator(true);
+
+          try {
+            // Consultar colonias por código postal
+            const coloniesResult = await datosService.obtenerColoniasPorCP(extractedCP);
+
+            if (
+              coloniesResult.success &&
+              Array.isArray(coloniesResult.data) &&
+              coloniesResult.data.length > 0
+            ) {
+              console.log(
+                `🏘️ Se encontraron ${coloniesResult.data.length} colonias para CP ${extractedCP}`,
+              );
+
+              // Encontrar mejor coincidencia de colonia
+              const bestMatch = addressService.findBestNeighborhoodMatch(
+                addressText,
+                coloniesResult.data,
+              );
+
+              if (bestMatch) {
+                console.log(`🎯 Mejor coincidencia encontrada:`, bestMatch);
+
+                // Agregar campos hidden al formulario
+                this.addLocationHiddenFields(bestMatch, extractedCP);
+
+                // Mostrar feedback visual al usuario
+                this.showLocationMatchFeedback(bestMatch);
+
+                // Actualizar progreso del formulario
+                this._updateProgress();
+              }
+            } else {
+              console.warn('⚠️ No se encontraron colonias para CP:', extractedCP);
+              this.showLocationErrorFeedback(
+                `No se encontraron colonias para el código postal ${extractedCP}`,
+              );
+            }
+          } catch (error) {
+            console.error('❌ Error consultando colonias:', error);
+            this.showLocationErrorFeedback('Error al consultar información de ubicación');
+          } finally {
+            this.showLocationLoadingIndicator(false);
+          }
+        } else {
+          console.warn('⚠️ No se pudo extraer código postal de:', addressText);
+          this.showLocationErrorFeedback('No se pudo detectar el código postal en la dirección');
+        }
+      }
+
+      // 5. Sección (código existente)
+      const opt1 = data.mrzResult?.sanitizedOpt1?.slice(0, 4);
+      if (opt1) {
+        const seccionEl = $('#seccion');
+        if (seccionEl) seccionEl.value = opt1;
+      }
+
+      // 6. Imagen de perfil (código existente)
+      if (data.faceImage) {
+        this._showImage('profileImage', 'profilePlaceholder', data.faceImage);
+        const faceImageEl = $('#faceImageData');
+        if (faceImageEl) faceImageEl.value = data.faceImage;
+
+        const profilePhoto = $('#profilePhoto');
+        if (profilePhoto) {
+          dom(profilePhoto).addClass('has-image');
+        }
+      }
+
+      // 7. Campos ocultos (código existente)
+      const hiddenFields = {
+        signatureImageData: data.signatureImage,
+        fullDocumentFrontImage: data.fullDocumentFrontImage,
+        fullDocumentBackImage: data.fullDocumentBackImage,
+        idMex: data.documentNumber?.description,
+      };
+
+      Object.entries(hiddenFields).forEach(([id, value]) => {
+        if (value) {
+          const el = $(`#${id}`);
+          if (el) el.value = value;
+        }
+      });
+
+      // 8. Actualizar progreso final
+      this._updateProgress();
+
+      console.log('✅ Formulario poblado exitosamente');
+    } catch (error) {
+      console.error('❌ Error en poblarFormulario:', error);
+      window.mostrarMensajeEstado?.('⚠️ Error procesando datos del INE', 3000);
+    }
+  }
+
+  /**
+   * Agrega campos hidden para los datos de ubicación
+   */
+  addLocationHiddenFields(neighborhood, postalCode) {
+    // Remover campos previos si existen
+    this.removeLocationHiddenFields();
+
+    const hiddenFields = [
+      { name: 'iNeighborhoodId', value: neighborhood.iNeighborhoodId },
+      { name: 'vcNeighborhood', value: neighborhood.vcNeighborhood },
+      { name: 'iZipCode', value: postalCode },
+      { name: 'iMunicipalityId', value: neighborhood.iMunicipalityId },
+      { name: 'vcMunicipality', value: neighborhood.vcMunicipality },
+      { name: 'codigoPostal', value: postalCode }, // Para compatibilidad
+      { name: 'colonia', value: neighborhood.vcNeighborhood }, // Para compatibilidad
+    ];
+
+    hiddenFields.forEach(field => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = field.name;
+      input.value = field.value;
+      input.classList.add('auto-location-field'); // Para fácil identificación
+      this.form.appendChild(input);
     });
 
-    // Actualizar progreso
-    this._updateProgress();
+    console.log('✅ Campos de ubicación agregados:', hiddenFields);
+  }
+
+  /**
+   * Remueve campos hidden de ubicación previos
+   */
+  removeLocationHiddenFields() {
+    const existingFields = this.form.querySelectorAll('.auto-location-field');
+    existingFields.forEach(field => field.remove());
+  }
+
+  /**
+   * Muestra indicador de carga para consulta de ubicación
+   */
+  showLocationLoadingIndicator(show) {
+    const domicilioEl = $('#domicilio');
+    if (!domicilioEl) return;
+
+    if (show) {
+      // Agregar clase de loading
+      dom(domicilioEl).addClass('loading-location');
+
+      // Agregar spinner si no existe
+      if (!$('#locationSpinner')) {
+        const spinner = document.createElement('div');
+        spinner.id = 'locationSpinner';
+        spinner.className = 'field-spinner';
+        spinner.innerHTML = '<div class="mini-spinner"></div>';
+        domicilioEl.parentNode.appendChild(spinner);
+      }
+    } else {
+      dom(domicilioEl).removeClass('loading-location');
+      $('#locationSpinner')?.remove();
+    }
+  }
+
+  /**
+   * Muestra feedback visual de la coincidencia encontrada
+   */
+  showLocationMatchFeedback(neighborhood) {
+    // Remover feedback previo
+    $('#locationFeedback')?.remove();
+
+    const feedback = document.createElement('div');
+    feedback.id = 'locationFeedback';
+    feedback.className = 'location-feedback success';
+    feedback.innerHTML = `
+      <div class="feedback-icon">📍</div>
+      <div class="feedback-text">
+        <strong>Ubicación detectada:</strong><br>
+        ${neighborhood.vcNeighborhood}, ${neighborhood.vcMunicipality}
+      </div>
+    `;
+
+    const domicilioEl = $('#domicilio');
+    if (domicilioEl?.parentNode) {
+      domicilioEl.parentNode.appendChild(feedback);
+
+      // Auto-hide después de 4 segundos
+      setTimeout(() => {
+        if (feedback.parentNode) {
+          feedback.classList.add('fade-out');
+          setTimeout(() => feedback.remove(), 300);
+        }
+      }, 4000);
+    }
+  }
+
+  /**
+   * Muestra feedback de error en ubicación
+   */
+  showLocationErrorFeedback(message) {
+    // Remover feedback previo
+    $('#locationFeedback')?.remove();
+
+    const feedback = document.createElement('div');
+    feedback.id = 'locationFeedback';
+    feedback.className = 'location-feedback warning';
+    feedback.innerHTML = `
+      <div class="feedback-icon">⚠️</div>
+      <div class="feedback-text">
+        <strong>Atención:</strong><br>
+        ${message}
+      </div>
+    `;
+
+    const domicilioEl = $('#domicilio');
+    if (domicilioEl?.parentNode) {
+      domicilioEl.parentNode.appendChild(feedback);
+
+      // Auto-hide después de 3 segundos
+      setTimeout(() => {
+        if (feedback.parentNode) {
+          feedback.classList.add('fade-out');
+          setTimeout(() => feedback.remove(), 300);
+        }
+      }, 3000);
+    }
   }
 
   /**

@@ -774,3 +774,122 @@
     transform: translateY(0);
   }
 }
+
+/* Indicador de carga para campos de ubicación */
+.loading-location {
+  position: relative;
+  opacity: 0.7;
+}
+
+.field-spinner {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.mini-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e3e3e3;
+  border-top: 2px solid #37a6a6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Feedback de ubicación detectada */
+.location-feedback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  animation: slideInFeedback 0.3s ease-out;
+}
+
+.location-feedback.success {
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f9f0 100%);
+  border: 1px solid #4caf50;
+  color: #2e7d32;
+}
+
+.location-feedback.warning {
+  background: linear-gradient(135deg, #fff3cd 0%, #fef8e1 100%);
+  border: 1px solid #ffc107;
+  color: #856404;
+}
+
+.feedback-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.feedback-text {
+  flex: 1;
+}
+
+.feedback-text strong {
+  font-weight: 600;
+}
+
+/* Animación de entrada */
+@keyframes slideInFeedback {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animación de salida */
+.location-feedback.fade-out {
+  animation: fadeOutFeedback 0.3s ease-in forwards;
+}
+
+@keyframes fadeOutFeedback {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Estados de carga mejorados */
+.form-group.loading-location .form-control {
+  padding-right: 40px; /* Espacio para el spinner */
+}
+
+/* Mejoras visuales para mobile */
+@media (max-width: 768px) {
+  .location-feedback {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .feedback-icon {
+    font-size: 16px;
+  }
+
+  .field-spinner {
+    right: 8px;
+  }
+}

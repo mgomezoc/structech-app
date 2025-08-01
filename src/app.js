@@ -11,6 +11,7 @@ import { eventBus } from './services/api.service.js';
 import { authService } from './services/auth.service.js';
 import { dialogService } from './services/dialog.service.js';
 import { hapticsService } from './services/haptics.service.js';
+import { notificationService } from './services/notification.service.js';
 import { $, dom } from './utils/dom.helper.js';
 
 import './css/style.less';
@@ -51,6 +52,10 @@ async function initializeApp() {
     // 7. Esperar solo auth para continuar
     const isAuthenticated = await authPromise;
     console.log('🔐 Estado de autenticación:', isAuthenticated);
+
+    if (isAuthenticated) {
+      await notificationService.init();
+    }
 
     // 8. Esperar configs de plataforma si es necesario
     if (configPromises.length > 0) {

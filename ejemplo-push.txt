@@ -1,0 +1,26 @@
+curl --location 'https://fcm.googleapis.com/v1/projects/335010108835/messages:send' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer ya29.A0AS3H6NxdA3hul1m9IlqibSDRPd0ZXVPvx2D7K1EytwW-tCSlWh3BFFuQc1Ite28P62TZjL-BvlAsdL3k_KN3ad7C27-rTRdHWP_Z2MKPdS7W8lxm78NjhBV6xrSYpOAK07Ect4sKaa6uZRWEhwms8X9oi0zXDDq1jQ5S0QbAw2VBiIwf96ydEEAQCeRXyeVMGFKnU7UaCgYKAfgSARYSFQHGX2Mipifp0V4izYGmPfBsRFNsOw0206' \
+--data '{
+  "message": {
+    "token": "cMyqLmOpSRuitHCoxtFK-F:APA91bE0dG0_pxAp9RnD1ch0OLEeAqgNeFroiO95ucznBRMtoPKW5HenpDgaGDN_vDkJK4wJgUQqhxSsiCOkRUdEuoN1JYu-5hlsl-mfJQmm8HzeOtchkak",
+    "notification": {
+      "title": "✅ Gestión Aprobada",
+      "body": "Tu solicitud #12345 ha sido aprobada exitosamente"
+    },
+    "data": {
+      "type": "gestion_status",
+      "gestionId": "12345",
+      "status": "approved",
+      "action": "view_details"
+    },
+    "android": {
+      "notification": {
+        "channel_id": "structech_notifications",
+        "color": "#00FF00",
+        "icon": "ic_launcher",
+        "sound": "default"
+      }
+    }
+  }
+}'

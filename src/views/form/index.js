@@ -74,6 +74,10 @@ export default class FormView {
     this.progressFill = $('#progressFill');
     this.progressText = $('#progressText');
     this.saveButton = this.form?.querySelector('.save-button');
+
+    // 🆕 Referencias para ubicación
+    this.cpInput = $('#codigoPostal');
+    this.coloniaSelect = $('#colonia');
   }
 
   /**
@@ -114,6 +118,231 @@ export default class FormView {
 
     // Cambio de estructura
     dom('#estructura').on('change', e => this.handleEstructuraChange(e));
+
+    // 🆕 Event listeners para ubicación
+    this.setupLocationEventListeners();
+  }
+
+  /**
+   * 🆕 Configurar event listeners para ubicación
+   */
+  setupLocationEventListeners() {
+    // Evento para código postal (blur para cargar colonias)
+    if (this.cpInput) {
+      dom(this.cpInput).on('blur', async e => {
+        const cp = e.target.value.trim();
+        await this.handleCodigoPostalChange(cp);
+      });
+
+      // También detectar Enter
+      dom(this.cpInput).on('keypress', async e => {
+        if (e.key === 'Enter') {
+          const cp = e.target.value.trim();
+          await this.handleCodigoPostalChange(cp);
+        }
+      });
+    }
+
+    // Evento para colonia (actualizar campos ocultos)
+    if (this.coloniaSelect) {
+      dom(this.coloniaSelect).on('change', e => {
+        this.handleColoniaChange(e);
+        this._updateProgress();
+      });
+    }
+  }
+
+  /**
+   * 🆕 Manejar cambio de código postal
+   */
+  async handleCodigoPostalChange(cp) {
+    if (!cp || !this.coloniaSelect) {
+      this._updateProgress();
+      return;
+    }
+
+    console.log('🔍 Buscando colonias para CP:', cp);
+
+    try {
+      // Mostrar indicador de carga en el select de colonia
+      this.showColoniaLoading(true);
+
+      // Consultar colonias
+      const colRes = await datosService.obtenerColoniasPorCP(cp);
+
+      if (this.abortController.signal.aborted) return;
+
+      if (colRes.success && Array.isArray(colRes.data) && colRes.data.length > 0) {
+        await hapticsService.light();
+        console.log(`🏘️ Se encontraron ${colRes.data.length} colonias para CP ${cp}`);
+
+        // Poblar select de colonias
+        this.populateColoniasSelect(colRes.data);
+
+        // Habilitar el select
+        this.coloniaSelect.disabled = false;
+
+        // Mostrar feedback positivo
+        this.showCPFeedback('success', `${colRes.data.length} colonias encontradas`);
+      } else {
+        await hapticsService.error();
+        console.warn('⚠️ No se encontraron colonias para CP:', cp);
+
+        // Limpiar y deshabilitar select
+        this.clearColoniasSelect();
+        this.coloniaSelect.disabled = true;
+
+        // Mostrar feedback de error
+        this.showCPFeedback('error', 'No se encontraron colonias para este código postal');
+      }
+    } catch (error) {
+      console.error('❌ Error consultando colonias:', error);
+
+      // Limpiar select en caso de error
+      this.clearColoniasSelect();
+      this.coloniaSelect.disabled = true;
+
+      // Mostrar feedback de error
+      this.showCPFeedback('error', 'Error al consultar colonias');
+    } finally {
+      this.showColoniaLoading(false);
+      this._updateProgress();
+    }
+  }
+
+  /**
+   * 🆕 Poblar select de colonias
+   */
+  populateColoniasSelect(colonias) {
+    if (!this.coloniaSelect) return;
+
+    let optionsHtml = '<option value="">— Selecciona tu colonia —</option>';
+
+    colonias.forEach(colonia => {
+      optionsHtml += `
+        <option 
+          value="${colonia.vcNeighborhood}"
+          data-municipio="${colonia.vcMunicipality || ''}"
+          data-estado="${colonia.vcState || ''}"
+          data-cp="${colonia.iZipCode || ''}"
+          data-id="${colonia.iNeighborhoodId || ''}"
+          data-municipio-id="${colonia.iMunicipalityId || ''}"
+        >
+          ${colonia.vcNeighborhood}
+        </option>
+      `;
+    });
+
+    dom(this.coloniaSelect).html(optionsHtml);
+  }
+
+  /**
+   * 🆕 Limpiar select de colonias
+   */
+  clearColoniasSelect() {
+    if (!this.coloniaSelect) return;
+    dom(this.coloniaSelect).html('<option value="">— Selecciona tu colonia —</option>');
+  }
+
+  /**
+   * 🆕 Manejar cambio de colonia seleccionada
+   */
+  handleColoniaChange(e) {
+    const selectedOption = e.target.selectedOptions[0];
+
+    if (!selectedOption || !selectedOption.value) {
+      // Remover campos ocultos si no hay selección
+      this.removeLocationHiddenFields();
+      return;
+    }
+
+    // Construir objeto con datos de la colonia
+    const coloniaData = {
+      iNeighborhoodId: selectedOption.getAttribute('data-id') || '',
+      vcNeighborhood: selectedOption.value,
+      iZipCode: selectedOption.getAttribute('data-cp') || '',
+      iMunicipalityId: selectedOption.getAttribute('data-municipio-id') || '',
+      vcMunicipality: selectedOption.getAttribute('data-municipio') || '',
+      vcState: selectedOption.getAttribute('data-estado') || '',
+    };
+
+    console.log('🎯 Colonia seleccionada:', coloniaData);
+
+    // Agregar campos ocultos al formulario
+    this.addLocationHiddenFields(coloniaData, this.cpInput?.value || '');
+  }
+
+  /**
+   * 🆕 Actualizar dirección completa
+   */
+  updateFullAddress(coloniaData) {
+    const calleNumeroValue = this.calleNumero.value.trim();
+
+    if (calleNumeroValue && coloniaData.vcNeighborhood) {
+      // Construir dirección completa
+      const direccionCompleta = [
+        calleNumeroValue,
+        coloniaData.vcNeighborhood,
+        coloniaData.vcMunicipality,
+        coloniaData.vcState,
+        coloniaData.iZipCode,
+      ]
+        .filter(Boolean)
+        .join(', ');
+
+      // Actualizar campo de domicilio si existe
+      const domicilioEl = $('#domicilio');
+      if (domicilioEl) {
+        domicilioEl.value = direccionCompleta;
+      }
+
+      console.log('📍 Dirección completa actualizada:', direccionCompleta);
+    }
+  }
+
+  /**
+   * 🆕 Mostrar indicador de carga en select de colonia
+   */
+  showColoniaLoading(show) {
+    if (!this.coloniaSelect) return;
+
+    if (show) {
+      dom(this.coloniaSelect).addClass('loading');
+      dom(this.coloniaSelect).html('<option value="">Cargando colonias...</option>');
+    } else {
+      dom(this.coloniaSelect).removeClass('loading');
+    }
+  }
+
+  /**
+   * 🆕 Mostrar feedback para código postal
+   */
+  showCPFeedback(type, message) {
+    // Remover feedback previo
+    $('#cpFeedback')?.remove();
+
+    const feedback = document.createElement('div');
+    feedback.id = 'cpFeedback';
+    feedback.className = `cp-feedback ${type}`;
+
+    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+    feedback.innerHTML = `
+      <div class="feedback-icon">${icon}</div>
+      <div class="feedback-text">${message}</div>
+    `;
+
+    // Insertar después del input de código postal
+    if (this.cpInput?.parentNode) {
+      this.cpInput.parentNode.appendChild(feedback);
+
+      // Auto-hide después de 3 segundos
+      setTimeout(() => {
+        if (feedback.parentNode) {
+          feedback.classList.add('fade-out');
+          setTimeout(() => feedback.remove(), 300);
+        }
+      }, 3000);
+    }
   }
 
   /**
@@ -397,6 +626,20 @@ export default class FormView {
     dom(this.form).on('change', e => {
       if (e.target.matches('input, select, textarea')) {
         this._updateProgress();
+
+        // Si es el campo de calle y número, actualizar dirección completa
+        if (e.target.id === 'calleNumero' && this.coloniaSelect?.value) {
+          const selectedOption = this.coloniaSelect.selectedOptions[0];
+          if (selectedOption) {
+            const coloniaData = {
+              vcNeighborhood: selectedOption.value,
+              vcMunicipality: selectedOption.getAttribute('data-municipio') || '',
+              vcState: selectedOption.getAttribute('data-estado') || '',
+              iZipCode: selectedOption.getAttribute('data-cp') || '',
+            };
+            this.updateFullAddress(coloniaData);
+          }
+        }
       }
     });
 
@@ -411,6 +654,11 @@ export default class FormView {
     // Deshabilitar botón guardar inicialmente
     if (this.saveButton) {
       this.saveButton.disabled = true;
+    }
+
+    // 🆕 Deshabilitar select de colonia inicialmente
+    if (this.coloniaSelect) {
+      this.coloniaSelect.disabled = true;
     }
   }
 
@@ -449,16 +697,6 @@ export default class FormView {
         return;
       }
 
-      // Validar audio
-      if (!this.audioRecorder?.hasRecording()) {
-        await hapticsService.error();
-        await dialogService.alert(
-          'Audio Requerido',
-          'Por favor proporcione un audio antes de continuar.',
-        );
-        return;
-      }
-
       // Confirmar envío
       const shouldSubmit = await dialogService.confirm(
         'Confirmar Registro',
@@ -475,6 +713,22 @@ export default class FormView {
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData.entries());
 
+      // 🆕 Construir domicilio si hay datos de colonia
+      if (this.coloniaSelect?.value && this.calleNumero?.value) {
+        const selectedOption = this.coloniaSelect.selectedOptions[0];
+        if (selectedOption) {
+          data.domicilio = [
+            this.calleNumero.value.trim(),
+            selectedOption.value,
+            selectedOption.getAttribute('data-municipio'),
+            selectedOption.getAttribute('data-estado'),
+            selectedOption.getAttribute('data-cp'),
+          ]
+            .filter(Boolean)
+            .join(', ');
+        }
+      }
+
       // Agregar datos adicionales
       if (this.dynamicQuestions) {
         data.Questions = this.dynamicQuestions.getFormattedAnswers();
@@ -484,7 +738,8 @@ export default class FormView {
         data.signatureData = this.signatureManager.getSignatureAsBase64();
       }
 
-      if (this.audioRecorder) {
+      // Validar audio
+      if (this.audioRecorder?.hasRecording()) {
         const audio = this.audioRecorder.getAudioData();
         data.audioData = audio.data;
         data.audioMimeType = audio.mimeType;
@@ -508,10 +763,7 @@ export default class FormView {
       );
 
       // Limpiar formulario
-      e.target.reset();
-      this.signatureManager?.clear();
-      this.audioRecorder?.deleteRecording();
-      this._updateProgress();
+      this.resetForm();
 
       if (cont) {
         window.location.reload();
@@ -525,6 +777,30 @@ export default class FormView {
       btn.disabled = false;
       btn.classList.remove('loading');
     }
+  }
+
+  /**
+   * 🆕 Resetear formulario completamente
+   */
+  resetForm() {
+    // Reset del form HTML
+    this.form?.reset();
+
+    // Limpiar módulos
+    this.signatureManager?.clear();
+    this.audioRecorder?.deleteRecording();
+
+    // Limpiar selects de ubicación
+    this.clearColoniasSelect();
+    if (this.coloniaSelect) {
+      this.coloniaSelect.disabled = true;
+    }
+
+    // Remover campos ocultos de ubicación
+    this.removeLocationHiddenFields();
+
+    // Actualizar progreso
+    this._updateProgress();
   }
 
   /**
@@ -640,6 +916,11 @@ export default class FormView {
         if (extractedCP) {
           console.log(`📮 Código postal extraído: ${extractedCP}`);
 
+          // 🆕 Llenar el campo de código postal
+          if (this.cpInput) {
+            this.cpInput.value = extractedCP;
+          }
+
           // Mostrar indicador de carga
           this.showLocationLoadingIndicator(true);
 
@@ -656,6 +937,10 @@ export default class FormView {
                 `🏘️ Se encontraron ${coloniesResult.data.length} colonias para CP ${extractedCP}`,
               );
 
+              // 🆕 Poblar select de colonias
+              this.populateColoniasSelect(coloniesResult.data);
+              this.coloniaSelect.disabled = false;
+
               // Encontrar mejor coincidencia de colonia
               const bestMatch = addressService.findBestNeighborhoodMatch(
                 addressText,
@@ -663,16 +948,31 @@ export default class FormView {
               );
 
               if (bestMatch) {
-                console.log(`🎯 Mejor coincidencia encontrada:`, bestMatch);
+                console.log('🎯 Mejor coincidencia encontrada:', bestMatch);
 
-                // Agregar campos hidden al formulario
-                this.addLocationHiddenFields(bestMatch, extractedCP);
+                // 🆕 Seleccionar automáticamente la colonia
+                if (this.coloniaSelect) {
+                  // Buscar la opción que coincida
+                  const options = this.coloniaSelect.querySelectorAll('option');
+                  for (let option of options) {
+                    if (option.value === bestMatch.vcNeighborhood) {
+                      option.selected = true;
+                      break;
+                    }
+                  }
+
+                  // Disparar evento change para actualizar campos ocultos
+                  this.coloniaSelect.dispatchEvent(new Event('change'));
+                }
 
                 // Mostrar feedback visual al usuario
-                this.showLocationMatchFeedback(bestMatch);
+                this.showLocationMatchFeedback(bestMatch, extractedCP);
 
                 // Actualizar progreso del formulario
                 this._updateProgress();
+              } else {
+                // No se encontró coincidencia exacta, pero hay colonias disponibles
+                this.showLocationPartialFeedback(coloniesResult.data.length, extractedCP);
               }
             } else {
               console.warn('⚠️ No se encontraron colonias para CP:', extractedCP);
@@ -737,6 +1037,71 @@ export default class FormView {
   }
 
   /**
+   * 🆕 Mostrar feedback de coincidencia encontrada
+   */
+  showLocationMatchFeedback(neighborhood, postalCode) {
+    // Remover feedback previo
+    $('#locationFeedback')?.remove();
+
+    const feedback = document.createElement('div');
+    feedback.id = 'locationFeedback';
+    feedback.className = 'location-feedback success';
+    feedback.innerHTML = `
+      <div class="feedback-icon">🎯</div>
+      <div class="feedback-text">
+        <strong>¡Ubicación detectada automáticamente!</strong><br>
+        ${neighborhood.vcNeighborhood}, ${neighborhood.vcMunicipality}<br>
+        <small>CP: ${postalCode}</small>
+      </div>
+    `;
+
+    const domicilioEl = $('#domicilio');
+    if (domicilioEl?.parentNode) {
+      domicilioEl.parentNode.appendChild(feedback);
+
+      // Auto-hide después de 5 segundos
+      setTimeout(() => {
+        if (feedback.parentNode) {
+          feedback.classList.add('fade-out');
+          setTimeout(() => feedback.remove(), 300);
+        }
+      }, 5000);
+    }
+  }
+
+  /**
+   * 🆕 Mostrar feedback de coincidencia parcial
+   */
+  showLocationPartialFeedback(coloniaCount, postalCode) {
+    // Remover feedback previo
+    $('#locationFeedback')?.remove();
+
+    const feedback = document.createElement('div');
+    feedback.id = 'locationFeedback';
+    feedback.className = 'location-feedback info';
+    feedback.innerHTML = `
+      <div class="feedback-icon">📍</div>
+      <div class="feedback-text">
+        <strong>Código postal detectado: ${postalCode}</strong><br>
+        ${coloniaCount} colonias disponibles. Selecciona la tuya.
+      </div>
+    `;
+
+    const domicilioEl = $('#domicilio');
+    if (domicilioEl?.parentNode) {
+      domicilioEl.parentNode.appendChild(feedback);
+
+      // Auto-hide después de 4 segundos
+      setTimeout(() => {
+        if (feedback.parentNode) {
+          feedback.classList.add('fade-out');
+          setTimeout(() => feedback.remove(), 300);
+        }
+      }, 4000);
+    }
+  }
+
+  /**
    * Agrega campos hidden para los datos de ubicación
    */
   addLocationHiddenFields(neighborhood, postalCode) {
@@ -744,33 +1109,40 @@ export default class FormView {
     this.removeLocationHiddenFields();
 
     const hiddenFields = [
-      { name: 'iNeighborhoodId', value: neighborhood.iNeighborhoodId },
-      { name: 'vcNeighborhood', value: neighborhood.vcNeighborhood },
-      { name: 'iZipCode', value: postalCode },
-      { name: 'iMunicipalityId', value: neighborhood.iMunicipalityId },
-      { name: 'vcMunicipality', value: neighborhood.vcMunicipality },
-      { name: 'codigoPostal', value: postalCode }, // Para compatibilidad
-      { name: 'colonia', value: neighborhood.vcNeighborhood }, // Para compatibilidad
+      { name: 'iNeighborhoodId', value: neighborhood.iNeighborhoodId || '' },
+      { name: 'vcNeighborhood', value: neighborhood.vcNeighborhood || '' },
+      { name: 'iZipCode', value: postalCode || '' },
+      { name: 'iMunicipalityId', value: neighborhood.iMunicipalityId || '' },
+      { name: 'vcMunicipality', value: neighborhood.vcMunicipality || '' },
+      { name: 'vcState', value: neighborhood.vcState || '' },
+      { name: 'codigoPostal', value: postalCode || '' }, // Para compatibilidad
+      { name: 'colonia', value: neighborhood.vcNeighborhood || '' }, // Para compatibilidad
     ];
 
     hiddenFields.forEach(field => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = field.name;
-      input.value = field.value;
-      input.classList.add('auto-location-field'); // Para fácil identificación
-      this.form.appendChild(input);
+      if (field.value) {
+        // Solo agregar si tiene valor
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = field.name;
+        input.value = field.value;
+        input.classList.add('auto-location-field'); // Para fácil identificación
+        this.form.appendChild(input);
+      }
     });
 
-    console.log('✅ Campos de ubicación agregados:', hiddenFields);
+    console.log(
+      '✅ Campos de ubicación agregados:',
+      hiddenFields.filter(f => f.value),
+    );
   }
 
   /**
    * Remueve campos hidden de ubicación previos
    */
   removeLocationHiddenFields() {
-    const existingFields = this.form.querySelectorAll('.auto-location-field');
-    existingFields.forEach(field => field.remove());
+    const existingFields = this.form?.querySelectorAll('.auto-location-field');
+    existingFields?.forEach(field => field.remove());
   }
 
   /**
@@ -795,38 +1167,6 @@ export default class FormView {
     } else {
       dom(domicilioEl).removeClass('loading-location');
       $('#locationSpinner')?.remove();
-    }
-  }
-
-  /**
-   * Muestra feedback visual de la coincidencia encontrada
-   */
-  showLocationMatchFeedback(neighborhood) {
-    // Remover feedback previo
-    $('#locationFeedback')?.remove();
-
-    const feedback = document.createElement('div');
-    feedback.id = 'locationFeedback';
-    feedback.className = 'location-feedback success';
-    feedback.innerHTML = `
-      <div class="feedback-icon">📍</div>
-      <div class="feedback-text">
-        <strong>Ubicación detectada:</strong><br>
-        ${neighborhood.vcNeighborhood}, ${neighborhood.vcMunicipality}
-      </div>
-    `;
-
-    const domicilioEl = $('#domicilio');
-    if (domicilioEl?.parentNode) {
-      domicilioEl.parentNode.appendChild(feedback);
-
-      // Auto-hide después de 4 segundos
-      setTimeout(() => {
-        if (feedback.parentNode) {
-          feedback.classList.add('fade-out');
-          setTimeout(() => feedback.remove(), 300);
-        }
-      }, 4000);
     }
   }
 
@@ -949,5 +1289,9 @@ export default class FormView {
     // Limpiar módulos si están cargados
     this.signatureManager?.cleanup?.();
     this.audioRecorder?.cleanup?.();
+
+    // 🆕 Limpiar referencias de ubicación
+    this.cpInput = null;
+    this.coloniaSelect = null;
   }
 }

@@ -128,20 +128,51 @@
                     </div>
                     <div class="form-group">
                         <label for="claveElector" class="required">Clave de Elector</label>
-                        <input type="text" id="claveElector" name="claveElector" class="form-control" placeholder="Clave de Elector" required />
+                        <input type="text" id="claveElector" name="claveElector" class="form-control" placeholder="Clave de Elector"
+                            required />
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="domicilio" class="required">Domicilio</label>
-                        <input type="text" id="domicilio" name="domicilio" class="form-control" placeholder="Domicilio completo" required />
+            
+                <!-- 🆕 Sección de Ubicación Corregida -->
+                <div class="form-group">
+                    <label for="domicilio" class="form-label required">
+                        <span class="icon">🏠</span>
+                        Domicilio
+                    </label>
+                    <textarea id="domicilio" name="domicilio" class="form-control" placeholder="Dirección completa" rows="2"
+                        required></textarea>
+                </div>
+            
+                <!-- Código Postal y Colonia -->
+                <div class="location-section">
+                    <div class="form-row">
+                        <!-- Código Postal -->
+                        <div class="form-group form-group--half">
+                            <label for="codigoPostal" class="form-label required">
+                                <span class="icon">📮</span>
+                                Código Postal
+                            </label>
+                            <input type="text" id="codigoPostal" name="codigoPostal" class="form-control" placeholder="12345"
+                                maxlength="5" pattern="[0-9]{5}" inputmode="numeric" required>
+                        </div>
+            
+                        <!-- Colonia -->
+                        <div class="form-group form-group--half">
+                            <label for="colonia" class="form-label required">
+                                <span class="icon">🏘️</span>
+                                Colonia
+                            </label>
+                            <select id="colonia" name="colonia" class="form-control select-control" required disabled>
+                                <option value="">— Selecciona tu colonia —</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="seccion" class="required">Sección</label>
-                        <input type="text" inputmode="numeric" pattern="\d{4}" maxlength="4" id="seccion" name="seccion" class="form-control"
-                            placeholder="Sección electoral" required />
-
-                    </div>
+                </div>
+            
+                <div class="form-group">
+                    <label for="seccion" class="required">Sección</label>
+                    <input type="text" inputmode="numeric" pattern="\d{4}" maxlength="4" id="seccion" name="seccion"
+                        class="form-control" placeholder="Sección electoral" required />
                 </div>
             </section>
 

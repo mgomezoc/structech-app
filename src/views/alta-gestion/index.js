@@ -13,6 +13,22 @@ import tplSource from './template.hbs?raw';
 
 const template = Handlebars.compile(tplSource);
 
+// ========= Helpers para portal (montar modal en <body>) =========
+function ensureModalRoot() {
+  let root = document.getElementById('modal-root');
+  if (!root) {
+    root = document.createElement('div');
+    root.id = 'modal-root';
+    document.body.appendChild(root);
+  }
+  return root;
+}
+function mountToTopLayer(el) {
+  const root = ensureModalRoot();
+  if (el && el.parentElement !== root) root.appendChild(el);
+}
+// ================================================================
+
 export default class AltaGestionView {
   constructor(context = {}) {
     this.context = context;
@@ -73,6 +89,9 @@ export default class AltaGestionView {
       selectedAvatar: $('#selected-citizen-avatar'),
       selectedName: $('#selected-citizen-name'),
     };
+
+    // Monta la modal en <body> para evitar stacking con header sticky (iOS)
+    mountToTopLayer(this.citizenSelector.modal);
 
     if (!this.form || !this.citizenSelector.trigger || !this.typeSelect) {
       console.error('Error: elementos del formulario no encontrados');
@@ -238,11 +257,13 @@ export default class AltaGestionView {
   // --- MÉTODOS DEL NUEVO SELECTOR DE CIUDADANO ---
   _openCitizenModal() {
     dom(this.citizenSelector.modal).removeClass('hidden').addClass('visible');
+    document.body.classList.add('modal-open'); // bloquea scroll fondo en iOS
     this.citizenSelector.searchInput.focus();
   }
 
   _closeCitizenModal() {
     dom(this.citizenSelector.modal).removeClass('visible').addClass('hidden');
+    document.body.classList.remove('modal-open');
   }
 
   _renderCitizensList(citizens) {

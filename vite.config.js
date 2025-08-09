@@ -1,5 +1,5 @@
 // vite.config.js
-import { resolve } from 'path';
+import { resolve as r } from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import handlebars from 'vite-plugin-handlebars';
 
@@ -9,27 +9,34 @@ export default defineConfig(({ mode }) => {
 
   return {
     root: 'src',
-    base: '/',
+    // 👇 clave para iOS/WKWebView: rutas relativas en el build
+    base: './',
+
     build: {
       outDir: '../www',
       emptyOutDir: true,
-      target: 'es2017',
+      // 👇 objetivo más seguro para Safari/WKWebView
+      target: ['es2019', 'safari15'],
+      // 👇 garantiza polyfill de modulepreload en Safari
+      modulePreload: { polyfill: true },
       cssCodeSplit: true,
-      sourcemap: !isProd, // ✅ habilitar sólo en desarrollo
-      minify: isProd ? 'esbuild' : false, // ✅ solo minifica en producción
+      sourcemap: !isProd, // solo en dev
+      minify: isProd ? 'esbuild' : false, // minifica solo prod
       rollupOptions: {
         input: {
-          main: resolve(__dirname, 'src/index.html'),
+          main: r(__dirname, 'src/index.html'),
         },
-        treeshake: isProd, // ✅ eliminar código no usado en producción
+        treeshake: isProd,
       },
       chunkSizeWarningLimit: 1000,
     },
+
     server: {
       port: 3000,
       open: true,
       host: true,
     },
+
     css: {
       preprocessorOptions: {
         less: {
@@ -37,21 +44,26 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+
     assetsInclude: ['**/*.hbs'],
     plugins: [handlebars({})],
+
     optimizeDeps: {
       include: ['@lordicon/element', 'lottie-web'],
+      // 👇 target de esbuild también en el servidor de dev
+      esbuildOptions: { target: 'es2019' },
     },
+
     resolve: {
       alias: {
-        '@': '/src',
-        '@services': '/src/services',
-        '@views': '/src/views',
-        '@routes': '/src/routes',
-        '@utils': '/src/utils',
-        '@img': '/src/img',
-        '@css': '/src/css',
-        '@js': '/src/js',
+        '@': r(__dirname, 'src'),
+        '@services': r(__dirname, 'src/services'),
+        '@views': r(__dirname, 'src/views'),
+        '@routes': r(__dirname, 'src/routes'),
+        '@utils': r(__dirname, 'src/utils'),
+        '@img': r(__dirname, 'src/img'),
+        '@css': r(__dirname, 'src/css'),
+        '@js': r(__dirname, 'src/js'),
       },
     },
   };

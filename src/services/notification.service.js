@@ -48,7 +48,7 @@ class NotificationService {
       PushNotifications.addListener('registration', token => {
         console.log('🎯 TOKEN DISPOSITIVO:', token.value);
         this.deviceToken = token.value;
-        this.showTokenInUI(token.value);
+        //this.showTokenInUI(token.value);
       });
 
       // Notificación recibida en foreground

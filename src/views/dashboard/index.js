@@ -39,7 +39,7 @@ export default class DashboardView {
       }
     });
 
-    // Tarjeta de registro con INE (escaneo)
+    // Tarjeta de registro con Identificación (escaneo)
     document.getElementById('scanCard')?.addEventListener('click', () => {
       navigateTo(ROUTES.FORM);
     });

@@ -238,8 +238,8 @@ function createScanINE(BlinkID) {
       overlay.country = 'MX';
       overlay.showMicroblinkLogo = false;
       overlay.poweredByText = 'STRUCTECH';
-      overlay.firstSideInstructionsText = 'Coloca el FRENTE de tu INE dentro del marco';
-      overlay.flipInstructions = 'Ahora voltea tu INE y escanea el REVERSO';
+      overlay.firstSideInstructionsText = 'Coloca el FRENTE de tu Identificación dentro del marco';
+      overlay.flipInstructions = 'Ahora voltea tu Identificación y escanea el REVERSO';
 
       const keys = {
         android:

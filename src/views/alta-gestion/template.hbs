@@ -21,39 +21,39 @@
     <div class="form-container">
         <form id="altaGestionForm" class="alta-form" novalidate>
 
-            <!-- Ciudadano Section -->
+            <!-- Usuario Section -->
             <section class="form-section">
                 <div class="section-header">
                     <lord-icon src="https://cdn.lordicon.com/dxjqoygy.json" trigger="loop" delay="3000" colors="primary:#37a6a6"
                         style="width:24px;height:24px">
                     </lord-icon>
-                    <h2>Información del ciudadano</h2>
+                    <h2>Información del usuario</h2>
                 </div>
             
                 <div class="form-group">
                     <label for="citizen-selector-trigger" class="required">
-                        Ciudadano
+                        Usuario
                     </label>
             
                     <div class="custom-selector-trigger" id="citizen-selector-trigger" tabindex="0">
                         <div class="trigger-content">
-                            <img src="https://ui-avatars.com/api/?name=?&background=e0e0e0&color=a0a0a0" alt="Avatar del ciudadano"
+                            <img src="https://ui-avatars.com/api/?name=?&background=e0e0e0&color=a0a0a0" alt="Avatar del usuario"
                                 class="citizen-avatar" id="selected-citizen-avatar">
-                            <span class="trigger-text" id="selected-citizen-name">Selecciona un ciudadano...</span>
+                            <span class="trigger-text" id="selected-citizen-name">Selecciona un usuario...</span>
                         </div>
                         {{{chevronIcon}}}
                         <div class="field-loader hidden" id="citizenLoader">
                             <div class="mini-spinner"></div>
                         </div>
                     </div>
-                    <span class="field-hint">Toca para buscar y seleccionar al ciudadano</span>
+                    <span class="field-hint">Toca para buscar y seleccionar al usuario</span>
                 </div>
             </section>
             
             <div class="selector-modal-overlay hidden" id="citizen-selector-modal">
                 <div class="selector-modal-content">
                     <div class="selector-modal-header">
-                        <h3>Buscar Ciudadano</h3>
+                        <h3>Buscar Usuario</h3>
                         <button type="button" class="modal-close-btn" id="modal-close-btn" aria-label="Cerrar">
                             &times;
                         </button>

@@ -1032,7 +1032,7 @@ export default class FormView {
       console.log('✅ Formulario poblado exitosamente');
     } catch (error) {
       console.error('❌ Error en poblarFormulario:', error);
-      window.mostrarMensajeEstado?.('⚠️ Error procesando datos del INE', 3000);
+      window.mostrarMensajeEstado?.('⚠️ Error procesando datos de Identificación', 3000);
     }
   }
 

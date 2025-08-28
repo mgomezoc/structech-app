@@ -46,15 +46,37 @@ export default class SurveyDetailView {
   // EXTRAS BÁSICOS
   // ========================
 
+  /**
+   * Extraer Survey ID de forma robusta.
+   * Prioridad: params.data.id -> params.url -> data.id -> id -> url -> hash -> history.state -> sessionStorage
+   * @private
+   */
   _extractSurveyId(context) {
-    if (context.params && context.params.id) return parseInt(context.params.id);
-    if (context.id) return parseInt(context.id);
+    const tryParse = val => {
+      if (val === undefined || val === null) return null;
+      const s = typeof val === 'string' || typeof val === 'number' ? String(val) : '';
+      // soporta "4", "surveys/4", "#/surveys/4", "surveys/4?x=1", "surveys/4/"
+      const m = s.match(/(?:^|\/)(\d+)(?:[\/\?]|$)/);
+      if (!m) return null;
+      const n = parseInt(m[1], 10);
+      return Number.isFinite(n) ? n : null;
+    };
 
-    const currentHash = window.location.hash;
-    const match = currentHash.match(/\/surveys\/(\d+)/);
-    if (match) return parseInt(match[1]);
+    const candidates = [
+      context?.params?.data?.id, // <-- según tu captura (id: "4")
+      context?.params?.url, // "surveys/4"
+      context?.data?.id, // otros routers
+      context?.id,
+      context?.url,
+      window.location.hash, // "#/surveys/4"
+      history.state?.id,
+      sessionStorage.getItem('lastSurveyId'),
+    ];
 
-    console.error('❌ [SurveyDetailView] No se pudo extraer Survey ID');
+    for (const c of candidates) {
+      const n = tryParse(c);
+      if (n !== null) return n;
+    }
     return null;
   }
 

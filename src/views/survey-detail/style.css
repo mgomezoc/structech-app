@@ -421,16 +421,28 @@
   color: #64748b;
   font-weight: 500;
 }
+/* === NUMÉRICO (FIX POSICIONAMIENTO SLIDER) === */
 .numeric-input-container .slider-container {
-  margin-bottom: 20px;
+  position: relative;
+  /* <-- clave: referencia para absolutos */
+  height: 56px;
+  /* alto táctil cómodo */
   padding: 0 4px;
+  margin-bottom: 20px;
 }
 .numeric-input-container .slider-container .slider-track {
-  position: relative;
+  position: absolute;
+  /* centramos la pista custom */
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   height: 6px;
   background: #e2e8f0;
   border-radius: 3px;
-  margin: 40px 0 20px 0;
+  z-index: 1;
+  /* debajo del input */
+  /* SIN margin-top/bottom aquí */
 }
 .numeric-input-container .slider-container .slider-track .slider-fill {
   height: 100%;
@@ -442,6 +454,7 @@
 .numeric-input-container .slider-container .slider-track .slider-marks {
   position: absolute;
   top: -30px;
+  /* marcas arriba de la pista */
   left: 0;
   right: 0;
   height: 40px;
@@ -465,15 +478,33 @@
   white-space: nowrap;
 }
 .numeric-input-container .slider-container .numeric-slider {
+  position: absolute;
+  /* se superpone a la pista */
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   width: 100%;
-  height: 6px;
+  height: 32px;
+  /* área táctil amplia */
+  z-index: 2;
+  /* encima de la pista */
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
   cursor: pointer;
-  position: absolute;
-  top: 0;
-  left: 0;
+  /* Ocultar la pista nativa para que no desplace nada */
+  /* Pulgar */
+}
+.numeric-input-container .slider-container .numeric-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  background: transparent;
+  border: 0;
+}
+.numeric-input-container .slider-container .numeric-slider::-moz-range-track {
+  height: 6px;
+  background: transparent;
+  border: 0;
 }
 .numeric-input-container .slider-container .numeric-slider::-webkit-slider-thumb {
   -webkit-appearance: none;

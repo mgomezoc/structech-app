@@ -1,5 +1,5 @@
 // src/views/survey-detail/index.js
-// Vista detallada de encuesta individual - VERSIÓN COMPLETA (con soporte tipo 2 checkbox)
+// Vista detallada de encuesta individual - CON VALIDACIÓN OBLIGATORIA + JSON SIMPLE
 
 import Handlebars from 'handlebars';
 import { navigateTo } from '../../routes/index.js';
@@ -25,10 +25,9 @@ export default class SurveyDetailView {
 
     // Estado de la encuesta
     this.survey = null;
-    this.startedAt = null;
     this.questions = [];
     this.currentQuestionIndex = 0;
-    this.responses = new Map(); // questionId -> response
+    this.responses = new Map(); // questionId -> response (ver formatos abajo)
     this.isLoading = true;
     this.error = null;
     this.isSubmitting = false;
@@ -37,46 +36,30 @@ export default class SurveyDetailView {
     this.timer = null;
     this.timeRemaining = 0;
     this.isTimeUp = false;
+    this.startedAt = Date.now();
 
     // Abort controller
     this.abortController = new AbortController();
   }
 
-  /**
-   * Extraer Survey ID de múltiples fuentes posibles
-   * @private
-   */
+  // ========================
+  // EXTRAS BÁSICOS
+  // ========================
+
   _extractSurveyId(context) {
-    // Método 1: Desde context.params
-    if (context.params && context.params.id) {
-      console.log('📍 ID desde context.params:', context.params.id);
-      return parseInt(context.params.id);
-    }
+    if (context.params && context.params.id) return parseInt(context.params.id);
+    if (context.id) return parseInt(context.id);
 
-    // Método 2: Desde context directamente
-    if (context.id) {
-      console.log('📍 ID desde context:', context.id);
-      return parseInt(context.id);
-    }
-
-    // Método 3: Desde la URL actual
     const currentHash = window.location.hash;
     const match = currentHash.match(/\/surveys\/(\d+)/);
-    if (match) {
-      console.log('📍 ID desde URL hash:', match[1]);
-      return parseInt(match[1]);
-    }
+    if (match) return parseInt(match[1]);
 
     console.error('❌ [SurveyDetailView] No se pudo extraer Survey ID');
     return null;
   }
 
-  /**
-   * Render inicial
-   */
   render() {
     if (!this.surveyId || isNaN(this.surveyId)) {
-      console.error('❌ [SurveyDetailView] Survey ID inválido:', this.surveyId);
       return `
         <div class="survey-detail-container">
           <div class="survey-error" style="display: flex;">
@@ -96,9 +79,7 @@ export default class SurveyDetailView {
     }
 
     return template({
-      user: {
-        name: this.user?.name || 'Usuario',
-      },
+      user: { name: this.user?.name || 'Usuario' },
       surveyId: this.surveyId,
       loading: this.isLoading,
       backIcon: this._getBackIcon(),
@@ -108,27 +89,20 @@ export default class SurveyDetailView {
     });
   }
 
-  /**
-   * After render - Carga y configuración
-   */
   async afterRender() {
     console.log(`📝 [SurveyDetailView] Inicializando encuesta ${this.surveyId}`);
 
     if (!this.surveyId || isNaN(this.surveyId)) {
-      console.error('❌ [SurveyDetailView] Survey ID inválido en afterRender:', this.surveyId);
       this._showError('ID de encuesta no válido');
       return;
     }
 
     try {
-      // 1. Setup básico
       this._setupDOMReferences();
       this._attachEventListeners();
 
-      // 2. Cargar datos de la encuesta
       await this._loadSurveyData();
 
-      // 3. Si se cargó correctamente, inicializar la encuesta
       if (this.survey && this.questions.length > 0) {
         await this._initializeSurvey();
       }
@@ -138,79 +112,46 @@ export default class SurveyDetailView {
     }
   }
 
-  /**
-   * Cleanup
-   */
   cleanup() {
     console.log('🧹 [SurveyDetailView] Limpiando vista');
-
-    // Limpiar timer
     this._clearTimer();
-
-    // Cancelar peticiones
-    if (this.abortController) {
-      this.abortController.abort();
-    }
-
-    // Cancelar peticiones del servicio
+    if (this.abortController) this.abortController.abort();
     surveysService.cancelAllRequests();
   }
 
   // ========================
-  // MÉTODOS PRINCIPALES
+  // CARGA DE DATOS
   // ========================
 
-  /**
-   * Cargar datos de la encuesta
-   * @private
-   */
   async _loadSurveyData() {
     console.log(`📡 [SurveyDetailView] Cargando datos de encuesta ${this.surveyId}`);
 
     try {
-      // Mostrar loading
       this._updateLoadingState(true, 'Cargando encuesta...');
 
-      // 1. Primero obtener headers para verificar que la encuesta existe
       const headersResult = await surveysService.getSurveyHeaders();
-      if (!headersResult.success) {
+      if (!headersResult.success)
         throw new Error(headersResult.error || 'Error cargando encuestas');
-      }
 
-      // Encontrar la encuesta específica
       this.survey = headersResult.data.find(s => s.iSurveyId === this.surveyId);
-      if (!this.survey) {
-        throw new Error(`Encuesta con ID ${this.surveyId} no encontrada`);
-      }
+      if (!this.survey) throw new Error(`Encuesta con ID ${this.surveyId} no encontrada`);
+      if (this.survey.isExpired) throw new Error('Esta encuesta ha expirado');
 
-      // Verificar si está expirada
-      if (this.survey.isExpired) {
-        throw new Error('Esta encuesta ha expirado');
-      }
+      console.log('✅ [SurveyDetailView] Encuesta:', this.survey.vcSurvey);
 
-      console.log('✅ [SurveyDetailView] Encuesta encontrada:', this.survey.vcSurvey);
-
-      // 2. Cargar preguntas
       this._updateLoadingState(true, 'Cargando preguntas...');
-
       const questionsResult = await surveysService.getSurveyQuestions(
         this.surveyId,
-        this.survey.iRandQuestions > 0, // randomize si tiene valor
-        this.survey.iRandQuestions || 0, // max questions
+        this.survey.iRandQuestions > 0,
+        this.survey.iRandQuestions || 0,
       );
-
-      if (!questionsResult.success) {
+      if (!questionsResult.success)
         throw new Error(questionsResult.error || 'Error cargando preguntas');
-      }
 
       this.questions = questionsResult.data || [];
-      console.log('✅ [SurveyDetailView] Preguntas cargadas:', this.questions.length);
-
-      if (this.questions.length === 0) {
+      if (this.questions.length === 0)
         throw new Error('Esta encuesta no tiene preguntas disponibles');
-      }
 
-      // 3. Cargar respuestas para preguntas tipo opción
       await this._loadQuestionAnswers();
     } catch (error) {
       console.error('❌ [SurveyDetailView] Error cargando datos:', error);
@@ -219,72 +160,33 @@ export default class SurveyDetailView {
     }
   }
 
-  /**
-   * Cargar respuestas predefinidas para preguntas tipo opción
-   * @private
-   */
   async _loadQuestionAnswers() {
     const optionQuestions = this.questions.filter(q => q.needsAnswers);
-
-    if (optionQuestions.length === 0) {
-      console.log('ℹ️ [SurveyDetailView] No hay preguntas que requieran respuestas predefinidas');
-      return;
-    }
+    if (optionQuestions.length === 0) return;
 
     this._updateLoadingState(true, 'Cargando opciones...');
 
-    // Cargar respuestas en paralelo
     const promises = optionQuestions.map(async question => {
       try {
         const result = await surveysService.getQuestionAnswers(question.iQuestionId);
-        if (result.success) {
-          question.answers = result.data;
-          console.log(
-            `✅ [SurveyDetailView] Respuestas cargadas para pregunta ${question.iQuestionId}:`,
-            result.data.length,
-          );
-        } else {
-          console.warn(
-            `⚠️ [SurveyDetailView] Error cargando respuestas para pregunta ${question.iQuestionId}:`,
-            result.error,
-          );
-          question.answers = [];
-        }
-      } catch (error) {
-        console.error(
-          `❌ [SurveyDetailView] Error cargando respuestas para pregunta ${question.iQuestionId}:`,
-          error,
-        );
+        question.answers = result.success ? result.data : [];
+      } catch {
         question.answers = [];
       }
     });
 
     await Promise.allSettled(promises);
-    console.log('✅ [SurveyDetailView] Carga de respuestas completada');
   }
 
-  /**
-   * Inicializar la encuesta
-   * @private
-   */
   async _initializeSurvey() {
-    console.log('🚀 [SurveyDetailView] Inicializando interfaz de encuesta');
-    this.startedAt = new Date().toISOString();
     try {
-      // Actualizar UI con datos de la encuesta
       this._renderSurveyHeader();
 
-      // Inicializar timer si es necesario
-      if (this.survey.iTimer > 0) {
-        this._initializeTimer();
-      }
+      if (this.survey.iTimer > 0) this._initializeTimer();
 
-      // Mostrar primera pregunta
       await this._renderCurrentQuestion();
 
-      // Ocultar loading
       this._updateLoadingState(false);
-
       await hapticsService.light();
     } catch (error) {
       console.error('❌ [SurveyDetailView] Error inicializando encuesta:', error);
@@ -292,10 +194,6 @@ export default class SurveyDetailView {
     }
   }
 
-  /**
-   * Renderizar header de la encuesta
-   * @private
-   */
   _renderSurveyHeader() {
     const headerContent = $('#surveyHeaderContent');
     if (!headerContent) return;
@@ -303,7 +201,7 @@ export default class SurveyDetailView {
     headerContent.innerHTML = `
       <div class="survey-info">
         <h1 class="survey-title">${this.survey.vcSurvey}</h1>
-        <p class="survey-program">${this.survey.vcProgram}</p>
+        <p class="survey-program">${this.survey.vcProgram || ''}</p>
         <div class="survey-meta">
           <span class="question-counter">
             Pregunta <span id="currentQuestionNum">1</span> de ${this.questions.length}
@@ -323,7 +221,6 @@ export default class SurveyDetailView {
           }
         </div>
       </div>
-      
       ${
         this.survey.vcInstructions
           ? `
@@ -338,53 +235,40 @@ export default class SurveyDetailView {
   }
 
   // =======================
-  // CAMBIOS PRINCIPALES
+  // RENDER DE PREGUNTAS (incluye tipo 2 checkbox)
   // =======================
 
-  /**
-   * Renderizar pregunta actual - CORREGIDO para tipo 2
-   * @private
-   */
   async _renderCurrentQuestion() {
     if (this.currentQuestionIndex >= this.questions.length) {
-      console.log('✅ [SurveyDetailView] Todas las preguntas completadas');
       await this._showSummary();
       return;
     }
 
     const question = this.questions[this.currentQuestionIndex];
     const questionContainer = $('#questionContainer');
-
-    if (!questionContainer) {
-      console.error('❌ [SurveyDetailView] Contenedor de preguntas no encontrado');
-      return;
-    }
+    if (!questionContainer) return;
 
     console.log(
       `📝 [SurveyDetailView] Renderizando pregunta ${this.currentQuestionIndex + 1}:`,
       question.vcQuestion,
     );
 
-    // Actualizar contador
     const questionNum = $('#currentQuestionNum');
-    if (questionNum) {
-      questionNum.textContent = this.currentQuestionIndex + 1;
-    }
+    if (questionNum) questionNum.textContent = this.currentQuestionIndex + 1;
 
-    // CORREGIDO: Renderizar según tipo incluyendo tipo 2
+    // Soporte: 1=Radio (opción única), 2=Checkbox (múltiple), 3=Texto, 4=Numérico
     let questionHTML = '';
-
     switch (question.iTypeId) {
-      case 1: // Opción única (radio)
+      case 1:
         questionHTML = this._renderRadioQuestion(question);
         break;
-      case 2: // Opción múltiple (checkbox) - NUEVO
+      case 2:
         questionHTML = this._renderCheckboxQuestion(question);
         break;
-      case 3: // Texto abierto
+      case 3:
         questionHTML = this._renderTextQuestion(question);
         break;
-      case 4: // Numérico con rango
+      case 4:
         questionHTML = this._renderNumericQuestion(question);
         break;
       default:
@@ -403,25 +287,13 @@ export default class SurveyDetailView {
       </div>
     `;
 
-    // Configurar eventos específicos del tipo de pregunta
     this._attachQuestionEvents(question);
-
-    // Restaurar respuesta previa si existe
     this._restoreQuestionResponse(question);
-
-    // Actualizar navegación
     this._updateNavigationButtons();
-
-    // Scroll to top suavemente
     questionContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
     await hapticsService.light();
   }
 
-  /**
-   * Renderizar pregunta tipo radio (opción única) - RENOMBRADO
-   * @private
-   */
   _renderRadioQuestion(question) {
     if (!question.answers || question.answers.length === 0) {
       return '<div class="error">No hay opciones disponibles para esta pregunta</div>';
@@ -466,10 +338,6 @@ export default class SurveyDetailView {
     return `<div class="options-container radio-container">${answersHTML}</div>`;
   }
 
-  /**
-   * Renderizar pregunta tipo checkbox (opción múltiple) - NUEVO
-   * @private
-   */
   _renderCheckboxQuestion(question) {
     if (!question.answers || question.answers.length === 0) {
       return '<div class="error">No hay opciones disponibles para esta pregunta</div>';
@@ -517,18 +385,12 @@ export default class SurveyDetailView {
 
     return `
       <div class="options-container checkbox-container">
-        <div class="checkbox-helper">
-          <small>Puedes seleccionar múltiples opciones</small>
-        </div>
+        <div class="checkbox-helper"><small>Puedes seleccionar múltiples opciones</small></div>
         ${answersHTML}
       </div>
     `;
   }
 
-  /**
-   * Renderizar pregunta de texto abierto
-   * @private
-   */
   _renderTextQuestion(question) {
     return `
       <div class="text-input-container">
@@ -546,35 +408,25 @@ export default class SurveyDetailView {
     `;
   }
 
-  /**
-   * Renderizar pregunta numérica con slider
-   * @private
-   */
   _renderNumericQuestion(question) {
     const min = question.iMin || 0;
     const max = question.iMax || 10;
     const range = max - min;
     const initialValue = Math.round((min + max) / 2);
 
-    // Generar marcas del slider
     let marks = [];
     if (range <= 10) {
-      // Mostrar todas las marcas
-      for (let i = min; i <= max; i++) {
-        marks.push(i);
-      }
+      for (let i = min; i <= max; i++) marks.push(i);
     } else {
-      // Mostrar solo min, medio y max
       marks = [min, Math.round((min + max) / 2), max];
     }
 
     const marksHTML = marks
       .map(
         mark => `
-      <div class="slider-mark" style="left: ${((mark - min) / range) * 100}%;">
-        <div class="mark-line"></div>
-        <div class="mark-label">${mark}</div>
-      </div>
+      <div class="slider-mark" style="left: ${
+        ((mark - min) / range) * 100
+      }%;"><div class="mark-line"></div><div class="mark-label">${mark}</div></div>
     `,
       )
       .join('');
@@ -603,31 +455,27 @@ export default class SurveyDetailView {
     `;
   }
 
-  /**
-   * Adjuntar eventos específicos de pregunta - CORREGIDO para tipo 2
-   * @private
-   */
+  // =======================
+  // EVENTOS POR TIPO
+  // =======================
+
   _attachQuestionEvents(question) {
     switch (question.iTypeId) {
-      case 1: // Radio (opción única)
+      case 1:
         this._attachRadioEvents(question);
         break;
-      case 2: // Checkbox (opción múltiple) - NUEVO
+      case 2:
         this._attachCheckboxEvents(question);
         break;
-      case 3: // Texto
+      case 3:
         this._attachTextEvents(question);
         break;
-      case 4: // Numérico
+      case 4:
         this._attachNumericEvents(question);
         break;
     }
   }
 
-  /**
-   * Eventos para preguntas tipo radio (opción única) - RENOMBRADO
-   * @private
-   */
   _attachRadioEvents(question) {
     const radioInputs = document.querySelectorAll(
       `input[name="question_${question.iQuestionId}"][type="radio"]`,
@@ -640,39 +488,40 @@ export default class SurveyDetailView {
         const needsText = input.dataset.needsText === 'true';
         const answerId = parseInt(input.value);
 
-        // Ocultar todos los campos de texto adicionales para esta pregunta
-        const allTextInputs = document.querySelectorAll('.option-text-input');
+        // Ocultar todos los campos de texto de esta pregunta
+        const allTextInputs = document.querySelectorAll(
+          `.question-wrapper[data-question-id="${question.iQuestionId}"] .option-text-input`,
+        );
         allTextInputs.forEach(container => {
           container.style.display = 'none';
           const textarea = container.querySelector('textarea');
           if (textarea) textarea.value = '';
         });
 
-        // Mostrar campo de texto si es necesario
+        // Mostrar campo de texto si se requiere
         if (needsText) {
           const textContainer = document.querySelector(
             `.option-text-input textarea[data-answer-id="${answerId}"]`,
           )?.parentElement;
           if (textContainer) {
             textContainer.style.display = 'block';
-            const textarea = textContainer.querySelector('textarea');
-            if (textarea) {
-              textarea.focus();
-            }
+            textContainer.querySelector('textarea')?.focus();
           }
         }
 
-        // Guardar respuesta
+        // Guardar respuesta (estructura interna)
         this._saveResponse(question.iQuestionId, {
           typeId: 1,
           questionId: question.iQuestionId,
-          answerId: answerId,
+          answerId,
           extraText: needsText ? '' : undefined,
         });
+
+        this._updateNavigationButtons();
       });
     });
 
-    // Eventos para campos de texto adicionales (radio)
+    // input de texto extra (radio)
     const textareas = document.querySelectorAll('.radio-container .additional-text');
     textareas.forEach(textarea => {
       textarea.addEventListener('input', () => {
@@ -680,23 +529,19 @@ export default class SurveyDetailView {
         const selectedRadio = document.querySelector(
           `input[name="question_${question.iQuestionId}"][type="radio"]:checked`,
         );
-
         if (selectedRadio && parseInt(selectedRadio.value) === answerId) {
           this._saveResponse(question.iQuestionId, {
             typeId: 1,
             questionId: question.iQuestionId,
-            answerId: answerId,
+            answerId,
             extraText: textarea.value,
           });
+          this._updateNavigationButtons();
         }
       });
     });
   }
 
-  /**
-   * Eventos para preguntas tipo checkbox (opción múltiple) - NUEVO
-   * @private
-   */
   _attachCheckboxEvents(question) {
     const checkboxInputs = document.querySelectorAll(
       `input[name="question_${question.iQuestionId}"][type="checkbox"]`,
@@ -709,41 +554,33 @@ export default class SurveyDetailView {
         const answerId = parseInt(input.value);
         const needsText = input.dataset.needsText === 'true';
 
-        // Manejar texto adicional
         const textContainer = document.querySelector(
           `.option-text-input textarea[data-answer-id="${answerId}"]`,
         )?.parentElement;
 
         if (input.checked && needsText && textContainer) {
           textContainer.style.display = 'block';
-          const textarea = textContainer.querySelector('textarea');
-          if (textarea) {
-            textarea.focus();
-          }
+          textContainer.querySelector('textarea')?.focus();
         } else if (!input.checked && textContainer) {
           textContainer.style.display = 'none';
           const textarea = textContainer.querySelector('textarea');
           if (textarea) textarea.value = '';
         }
 
-        // Recolectar todas las respuestas seleccionadas
         this._updateCheckboxResponse(question);
+        this._updateNavigationButtons();
       });
     });
 
-    // Eventos para campos de texto adicionales (checkbox)
     const textareas = document.querySelectorAll('.checkbox-container .additional-text');
     textareas.forEach(textarea => {
       textarea.addEventListener('input', () => {
         this._updateCheckboxResponse(question);
+        this._updateNavigationButtons();
       });
     });
   }
 
-  /**
-   * Actualizar respuesta de checkbox (múltiple selección) - NUEVO
-   * @private
-   */
   _updateCheckboxResponse(question) {
     const checkboxInputs = document.querySelectorAll(
       `input[name="question_${question.iQuestionId}"][type="checkbox"]`,
@@ -755,33 +592,24 @@ export default class SurveyDetailView {
         const answerId = parseInt(input.value);
         const needsText = input.dataset.needsText === 'true';
         let extraText = '';
-
         if (needsText) {
           const textarea = document.querySelector(`.additional-text[data-answer-id="${answerId}"]`);
-          if (textarea) {
-            extraText = textarea.value;
-          }
+          if (textarea) extraText = textarea.value;
         }
-
         selectedAnswers.push({
-          answerId: answerId,
+          answerId,
           extraText: needsText ? extraText : undefined,
         });
       }
     });
 
-    // Guardar respuesta (array de respuestas para tipo 2)
     this._saveResponse(question.iQuestionId, {
       typeId: 2,
       questionId: question.iQuestionId,
-      selectedAnswers: selectedAnswers,
+      selectedAnswers,
     });
   }
 
-  /**
-   * Eventos para preguntas de texto
-   * @private
-   */
   _attachTextEvents(question) {
     const textarea = $(`#textAnswer_${question.iQuestionId}`);
     const counter = document.querySelector('.text-counter .current');
@@ -789,26 +617,18 @@ export default class SurveyDetailView {
     if (textarea) {
       textarea.addEventListener('input', () => {
         const text = textarea.value;
+        if (counter) counter.textContent = text.length;
 
-        // Actualizar contador
-        if (counter) {
-          counter.textContent = text.length;
-        }
-
-        // Guardar respuesta
         this._saveResponse(question.iQuestionId, {
           typeId: 3,
           questionId: question.iQuestionId,
-          text: text,
+          text,
         });
+        this._updateNavigationButtons();
       });
     }
   }
 
-  /**
-   * Eventos para preguntas numéricas
-   * @private
-   */
   _attachNumericEvents(question) {
     const slider = $(`#numericSlider_${question.iQuestionId}`);
     const valueDisplay = $(`#valueDisplay_${question.iQuestionId}`);
@@ -823,33 +643,23 @@ export default class SurveyDetailView {
         const max = parseInt(slider.max);
         const percentage = ((value - min) / (max - min)) * 100;
 
-        // Actualizar visualización
-        if (valueDisplay) {
-          valueDisplay.textContent = value;
-        }
+        if (valueDisplay) valueDisplay.textContent = value;
+        if (sliderFill) sliderFill.style.width = `${percentage}%`;
 
-        if (sliderFill) {
-          sliderFill.style.width = `${percentage}%`;
-        }
-
-        // Guardar respuesta
         this._saveResponse(question.iQuestionId, {
           typeId: 4,
           questionId: question.iQuestionId,
-          value: value,
+          value,
         });
+        this._updateNavigationButtons();
       });
     }
   }
 
-  // ========================
-  // NAVEGACIÓN
-  // ========================
+  // =======================
+  // NAVEGACIÓN + VALIDACIÓN
+  // =======================
 
-  /**
-   * Ir a pregunta anterior
-   * @private
-   */
   async _previousQuestion() {
     if (this.currentQuestionIndex > 0) {
       await hapticsService.light();
@@ -858,25 +668,22 @@ export default class SurveyDetailView {
     }
   }
 
-  /**
-   * Ir a siguiente pregunta
-   * @private
-   */
   async _nextQuestion() {
+    const current = this.questions[this.currentQuestionIndex];
+    if (!this._isQuestionAnswered(current)) {
+      await this._warnRequired(current);
+      return;
+    }
+
     if (this.currentQuestionIndex < this.questions.length - 1) {
       await hapticsService.light();
       this.currentQuestionIndex++;
       await this._renderCurrentQuestion();
     } else {
-      // Última pregunta - mostrar resumen
-      await this._showSummary();
+      await this._showSummary(); // por si hubiera edge case
     }
   }
 
-  /**
-   * Actualizar botones de navegación
-   * @private
-   */
   _updateNavigationButtons() {
     const prevBtn = $('#prevBtn');
     const nextBtn = $('#nextBtn');
@@ -887,165 +694,168 @@ export default class SurveyDetailView {
       prevBtn.style.display = this.currentQuestionIndex === 0 ? 'none' : 'flex';
     }
 
-    const isLastQuestion = this.currentQuestionIndex === this.questions.length - 1;
+    const isLast = this.currentQuestionIndex === this.questions.length - 1;
+    if (nextBtn) nextBtn.style.display = isLast ? 'none' : 'flex';
+    if (submitBtn) submitBtn.style.display = isLast ? 'flex' : 'none';
 
-    if (nextBtn) {
-      nextBtn.style.display = isLastQuestion ? 'none' : 'flex';
-    }
+    // Deshabilitar “siguiente / enviar” si la actual no está contestada
+    const current = this.questions[this.currentQuestionIndex];
+    const answered = this._isQuestionAnswered(current);
+    if (nextBtn && !isLast) nextBtn.disabled = !answered;
+    if (submitBtn && isLast) submitBtn.disabled = !answered;
+  }
 
-    if (submitBtn) {
-      submitBtn.style.display = isLastQuestion ? 'flex' : 'none';
+  _isQuestionAnswered(question) {
+    const resp = this.responses.get(question.iQuestionId);
+    if (!resp) return false;
+
+    switch (question.iTypeId) {
+      case 1: {
+        // radio (única) -> requiere answerId; si esa opción tenía bText=true, exigir extraText no vacío
+        const has = typeof resp.answerId === 'number';
+        if (!has) return false;
+        const ans = (question.answers || []).find(a => a.iAnswerId === resp.answerId);
+        if (ans?.bText) return !!resp.extraText && resp.extraText.trim().length > 0;
+        return true;
+      }
+      case 2: {
+        // checkbox (múltiple) -> al menos una seleccionada; si alguna requiere texto, validar
+        if (!resp.selectedAnswers || resp.selectedAnswers.length === 0) return false;
+        for (const sel of resp.selectedAnswers) {
+          const ans = (question.answers || []).find(a => a.iAnswerId === sel.answerId);
+          if (ans?.bText) {
+            if (!sel.extraText || !sel.extraText.trim()) return false;
+          }
+        }
+        return true;
+      }
+      case 3:
+        return !!resp.text && resp.text.trim().length > 0;
+      case 4:
+        return typeof resp.value === 'number' && !Number.isNaN(resp.value);
+      default:
+        return false;
     }
   }
 
-  // ========================
-  // GESTIÓN DE RESPUESTAS
-  // ========================
+  async _warnRequired(question) {
+    await hapticsService.error();
+    const msg =
+      'Esta pregunta es obligatoria.' +
+      (question.iTypeId === 2
+        ? '\nSelecciona al menos una opción (y llena los campos de texto requeridos).'
+        : question.iTypeId === 1
+        ? '\nSelecciona una opción (y llena el texto si es requerido).'
+        : '');
+    await dialogService.alert('Pregunta obligatoria', msg);
+  }
 
-  /**
-   * Guardar respuesta
-   * @private
-   */
+  // =======================
+  // RESPUESTAS (restore/save)
+  // =======================
+
   _saveResponse(questionId, response) {
     this.responses.set(questionId, response);
-    console.log(`💾 [SurveyDetailView] Respuesta guardada para pregunta ${questionId}:`, response);
+    // console.log(`💾 Respuesta guardada [${questionId}] ->`, response);
   }
 
-  /**
-   * Restaurar respuesta previa - CORREGIDO para tipo 2
-   * @private
-   */
   _restoreQuestionResponse(question) {
     const response = this.responses.get(question.iQuestionId);
     if (!response) return;
 
     switch (question.iTypeId) {
-      case 1: // Radio (opción única)
+      case 1: {
         const radio = document.querySelector(
           `input[name="question_${question.iQuestionId}"][value="${response.answerId}"]`,
         );
         if (radio) {
           radio.checked = true;
           radio.dispatchEvent(new Event('change'));
-
           if (response.extraText) {
             setTimeout(() => {
               const textarea = document.querySelector(
                 `.additional-text[data-answer-id="${response.answerId}"]`,
               );
-              if (textarea) {
-                textarea.value = response.extraText;
-              }
+              if (textarea) textarea.value = response.extraText;
             }, 100);
           }
         }
         break;
-
-      case 2: // Checkbox (opción múltiple) - NUEVO
+      }
+      case 2: {
         if (response.selectedAnswers && Array.isArray(response.selectedAnswers)) {
-          response.selectedAnswers.forEach(selectedAnswer => {
+          response.selectedAnswers.forEach(selected => {
             const checkbox = document.querySelector(
-              `input[name="question_${question.iQuestionId}"][value="${selectedAnswer.answerId}"]`,
+              `input[name="question_${question.iQuestionId}"][value="${selected.answerId}"]`,
             );
             if (checkbox) {
               checkbox.checked = true;
               checkbox.dispatchEvent(new Event('change'));
-
-              if (selectedAnswer.extraText) {
+              if (selected.extraText) {
                 setTimeout(() => {
                   const textarea = document.querySelector(
-                    `.additional-text[data-answer-id="${selectedAnswer.answerId}"]`,
+                    `.additional-text[data-answer-id="${selected.answerId}"]`,
                   );
-                  if (textarea) {
-                    textarea.value = selectedAnswer.extraText;
-                  }
+                  if (textarea) textarea.value = selected.extraText;
                 }, 100);
               }
             }
           });
         }
         break;
-
-      case 3: // Texto
+      }
+      case 3: {
         const textarea = $(`#textAnswer_${question.iQuestionId}`);
         if (textarea && response.text) {
           textarea.value = response.text;
           textarea.dispatchEvent(new Event('input'));
         }
         break;
-
-      case 4: // Numérico
+      }
+      case 4: {
         const slider = $(`#numericSlider_${question.iQuestionId}`);
         if (slider && response.value !== undefined) {
           slider.value = response.value;
           slider.dispatchEvent(new Event('input'));
         }
         break;
+      }
     }
   }
 
-  // ========================
+  // =======================
   // TIMER
-  // ========================
+  // =======================
 
-  /**
-   * Inicializar timer
-   * @private
-   */
   _initializeTimer() {
-    this.timeRemaining = this.survey.iTimer * 60; // Convertir a segundos
-    console.log(`⏰ [SurveyDetailView] Iniciando timer: ${this.survey.iTimer} minutos`);
-
+    this.timeRemaining = this.survey.iTimer * 60;
     this.timer = setInterval(() => {
       this.timeRemaining--;
       this._updateTimerDisplay();
-
-      if (this.timeRemaining <= 0) {
-        this._handleTimeUp();
-      }
+      if (this.timeRemaining <= 0) this._handleTimeUp();
     }, 1000);
   }
 
-  /**
-   * Actualizar display del timer
-   * @private
-   */
   _updateTimerDisplay() {
     const timerText = $('#timerText');
     if (timerText) {
       timerText.textContent = this._formatTime(this.timeRemaining);
-
-      // Cambiar color cuando quede poco tiempo
       const timerDisplay = $('#timerDisplay');
       if (timerDisplay) {
-        if (this.timeRemaining <= 60) {
-          timerDisplay.classList.add('warning');
-        } else if (this.timeRemaining <= 300) {
-          timerDisplay.classList.add('caution');
-        }
+        if (this.timeRemaining <= 60) timerDisplay.classList.add('warning');
+        else if (this.timeRemaining <= 300) timerDisplay.classList.add('caution');
       }
     }
   }
 
-  /**
-   * Manejar fin del tiempo
-   * @private
-   */
   async _handleTimeUp() {
-    console.log('⏰ [SurveyDetailView] Tiempo agotado');
-
     this._clearTimer();
     this.isTimeUp = true;
-
     await hapticsService.error();
 
-    // Deshabilitar todos los inputs
     const inputs = document.querySelectorAll('input, textarea, button:not(#backBtn)');
-    inputs.forEach(input => {
-      input.disabled = true;
-    });
+    inputs.forEach(input => (input.disabled = true));
 
-    // Mostrar mensaje
     const overlay = document.createElement('div');
     overlay.className = 'time-up-overlay';
     overlay.innerHTML = `
@@ -1053,19 +863,12 @@ export default class SurveyDetailView {
         <div class="time-up-icon">⏰</div>
         <h3>Tiempo Finalizado</h3>
         <p>El tiempo para completar esta encuesta ha terminado.</p>
-        <button class="finish-btn" onclick="this.parentElement.parentElement.remove()">
-          Entendido
-        </button>
+        <button class="finish-btn" onclick="this.parentElement.parentElement.remove()">Entendido</button>
       </div>
     `;
-
     document.body.appendChild(overlay);
   }
 
-  /**
-   * Limpiar timer
-   * @private
-   */
   _clearTimer() {
     if (this.timer) {
       clearInterval(this.timer);
@@ -1073,131 +876,36 @@ export default class SurveyDetailView {
     }
   }
 
-  /**
-   * Formatear tiempo
-   * @private
-   */
   _formatTime(seconds) {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
-  /**
-   * Construir el payload para envío/registro
-   * Incluye encuesta, usuario, progreso, métricas y respuestas por tipo.
-   * @private
-   */
-  _buildSubmissionPayload() {
-    const totalQuestions = this.questions.length;
-    const answeredQuestions = this.responses.size;
-    const completionPercentage = Math.round((answeredQuestions / totalQuestions) * 100);
+  // =======================
+  // RESUMEN / ENVÍO
+  // =======================
 
-    const answers = this.questions.map((q, idx) => {
-      const res = this.responses.get(q.iQuestionId);
-
-      // Estructura por tipo
-      let response = null;
-      if (res) {
-        switch (res.typeId) {
-          case 1: {
-            // Radio
-            const ans = (q.answers || []).find(a => a.iAnswerId === res.answerId);
-            response = {
-              typeId: 1,
-              answerId: res.answerId,
-              answerText: ans?.vcAnswer ?? null,
-              extraText: res.extraText ?? undefined,
-            };
-            break;
-          }
-          case 2: {
-            // Checkbox múltiple
-            const arr = (res.selectedAnswers || []).map(sa => {
-              const ans = (q.answers || []).find(a => a.iAnswerId === sa.answerId);
-              return {
-                answerId: sa.answerId,
-                answerText: ans?.vcAnswer ?? null,
-                extraText: sa.extraText ?? undefined,
-              };
-            });
-            response = { typeId: 2, answers: arr };
-            break;
-          }
-          case 3: {
-            // Texto
-            response = { typeId: 3, text: res.text ?? '' };
-            break;
-          }
-          case 4: {
-            // Numérico
-            response = { typeId: 4, value: res.value };
-            break;
-          }
-        }
-      }
-
-      return {
-        questionId: q.iQuestionId,
-        index: idx + 1,
-        typeId: q.iTypeId,
-        type: q.vcType ?? null,
-        questionText: q.vcQuestion ?? null,
-        // Solo marca unanswered si no hay respuesta
-        unanswered: !res,
-        response,
-      };
-    });
-
-    // Info de dispositivo simple (puedes enriquecerla si usas Capacitor Device)
-    const device = {
-      userAgent: navigator.userAgent,
-      platform: navigator.platform,
-    };
-
-    // Métricas de tiempo
-    const timeLimitSec = (this.survey?.iTimer || 0) * 60;
-    const timeRemainingSec = this.timer ? this.timeRemaining : timeLimitSec;
-
-    return {
-      surveyId: this.surveyId,
-      surveyTitle: this.survey?.vcSurvey ?? null,
-      program: this.survey?.vcProgram ?? null,
-      respondent: {
-        id: this.user?.id ?? null,
-        name: this.user?.name ?? null,
-      },
-      meta: {
-        startedAt: this.startedAt,
-        finishedAt: null, // se puede llenar en el envío final
-        timeLimitSec,
-        timeRemainingSec,
-        device,
-      },
-      progress: {
-        totalQuestions,
-        answeredQuestions,
-        completionPercentage,
-      },
-      answers,
-    };
-  }
-
-  // ========================
-  // RESUMEN Y ENVÍO (PLACEHOLDER)
-  // ========================
-
-  /**
-   * Mostrar resumen de respuestas (placeholder)
-   * @private
-   */
   async _showSummary() {
-    console.log('📊 [SurveyDetailView] Mostrando resumen');
+    // Validación final: todo contestado
+    if (this.responses.size < this.questions.length) {
+      const firstMissingIdx = this.questions.findIndex(q => !this._isQuestionAnswered(q));
+      if (firstMissingIdx !== -1) {
+        this.currentQuestionIndex = firstMissingIdx;
+        await this._renderCurrentQuestion();
+        await this._warnRequired(this.questions[firstMissingIdx]);
+        return;
+      }
+    }
+
+    // 🔎 Mostrar JSON en consola al presionar #submitBtn
+    const payload = this._buildSubmissionPayload();
+    console.log('📦 Payload para envío (preview):', payload);
+    console.log('📦 Payload JSON string:', JSON.stringify(payload));
 
     const questionContainer = $('#questionContainer');
     if (!questionContainer) return;
 
-    // Contar respuestas completadas
     const totalQuestions = this.questions.length;
     const answeredQuestions = this.responses.size;
     const completionPercentage = Math.round((answeredQuestions / totalQuestions) * 100);
@@ -1209,62 +917,34 @@ export default class SurveyDetailView {
           <h2>Resumen de Respuestas</h2>
           <p>Revisa tus respuestas antes de enviar</p>
         </div>
-        
         <div class="completion-stats">
-          <div class="completion-bar">
-            <div class="completion-fill" style="width: ${completionPercentage}%"></div>
-          </div>
-          <div class="completion-text">
-            ${answeredQuestions} de ${totalQuestions} preguntas respondidas (${completionPercentage}%)
-          </div>
+          <div class="completion-bar"><div class="completion-fill" style="width: ${completionPercentage}%"></div></div>
+          <div class="completion-text">${answeredQuestions} de ${totalQuestions} preguntas respondidas (${completionPercentage}%)</div>
         </div>
-        
-        <div class="responses-list">
-          ${this._generateResponsesSummary()}
-        </div>
-        
+        <div class="responses-list">${this._generateResponsesSummary()}</div>
         <div class="summary-actions">
-          <button class="review-btn" id="reviewBtn">
-            📝 Revisar Respuestas
-          </button>
-          <button class="submit-btn" id="finalSubmitBtn" ${
-            completionPercentage < 100 ? 'disabled' : ''
-          }>
-            ${this._getSubmitIcon()}
-            <span>Enviar Encuesta</span>
-          </button>
+          <button class="review-btn" id="reviewBtn">📝 Revisar Respuestas</button>
+          <button class="submit-btn" id="finalSubmitBtn">${this._getSubmitIcon()}<span>Enviar Encuesta</span></button>
         </div>
       </div>
     `;
 
     questionContainer.innerHTML = summaryHTML;
 
-    // Eventos
-    const reviewBtn = $('#reviewBtn');
-    const finalSubmitBtn = $('#finalSubmitBtn');
+    $('#reviewBtn')?.addEventListener('click', () => {
+      this.currentQuestionIndex = 0;
+      this._renderCurrentQuestion();
+    });
 
-    if (reviewBtn) {
-      reviewBtn.addEventListener('click', () => {
-        this.currentQuestionIndex = 0;
-        this._renderCurrentQuestion();
-      });
-    }
+    $('#finalSubmitBtn')?.addEventListener('click', () => this._submitSurvey());
 
-    if (finalSubmitBtn && !finalSubmitBtn.disabled) {
-      finalSubmitBtn.addEventListener('click', () => this._submitSurvey());
-    }
-
-    // Ocultar botones de navegación
-    const navButtons = document.querySelectorAll('#prevBtn, #nextBtn, #submitBtn');
-    navButtons.forEach(btn => {
+    // Ocultar navegación
+    ['#prevBtn', '#nextBtn', '#submitBtn'].forEach(sel => {
+      const btn = document.querySelector(sel);
       if (btn) btn.style.display = 'none';
     });
   }
 
-  /**
-   * Generar HTML del resumen de respuestas - CORREGIDO para tipo 2
-   * @private
-   */
   _generateResponsesSummary() {
     return this.questions
       .map((question, index) => {
@@ -1272,39 +952,31 @@ export default class SurveyDetailView {
         let responseText = '<span class="no-response">Sin respuesta</span>';
 
         if (response) {
-          switch (response.typeId) {
-            case 1: // Radio (opción única)
-              {
-                const answer = question.answers?.find(a => a.iAnswerId === response.answerId);
-                responseText = answer ? answer.vcAnswer : 'Respuesta no válida';
-                if (response.extraText) {
-                  responseText += `<br><small class="extra-text">"${response.extraText}"</small>`;
-                }
+          switch (question.iTypeId) {
+            case 1: {
+              const ans = question.answers?.find(a => a.iAnswerId === response.answerId);
+              responseText = ans ? ans.vcAnswer : 'Respuesta no válida';
+              if (response.extraText) {
+                responseText += `<br><small class="extra-text">"${response.extraText}"</small>`;
               }
               break;
-
-            case 2: // Checkbox (opción múltiple) - NUEVO
-              if (response.selectedAnswers && response.selectedAnswers.length > 0) {
-                const selectedTexts = response.selectedAnswers.map(selectedAnswer => {
-                  const answer = question.answers?.find(
-                    a => a.iAnswerId === selectedAnswer.answerId,
-                  );
-                  let text = answer ? answer.vcAnswer : 'Opción no válida';
-                  if (selectedAnswer.extraText) {
-                    text += ` ("${selectedAnswer.extraText}")`;
-                  }
-                  return text;
+            }
+            case 2: {
+              if (response.selectedAnswers?.length > 0) {
+                const items = response.selectedAnswers.map(sel => {
+                  const ans = question.answers?.find(a => a.iAnswerId === sel.answerId);
+                  let txt = ans ? ans.vcAnswer : 'Opción no válida';
+                  if (sel.extraText) txt += ` ("${sel.extraText}")`;
+                  return txt;
                 });
-                responseText = selectedTexts.join('<br>• ');
-                responseText = '• ' + responseText; // Agregar viñeta inicial
+                responseText = '• ' + items.join('<br>• ');
               }
               break;
-
-            case 3: // Texto
+            }
+            case 3:
               responseText = response.text || '<span class="no-response">Sin respuesta</span>';
               break;
-
-            case 4: // Numérico
+            case 4:
               responseText =
                 response.value !== undefined
                   ? response.value.toString()
@@ -1314,87 +986,169 @@ export default class SurveyDetailView {
         }
 
         return `
-        <div class="response-item ${!response ? 'unanswered' : ''}">
-          <div class="response-header">
-            <span class="question-number">${index + 1}</span>
-            <span class="question-type">${question.vcType || 'Sin tipo'}</span>
+          <div class="response-item ${!response ? 'unanswered' : ''}">
+            <div class="response-header">
+              <span class="question-number">${index + 1}</span>
+              <span class="question-type">${question.vcType || 'Sin tipo'}</span>
+            </div>
+            <div class="response-content">
+              <h4 class="response-question">${question.vcQuestion || 'Pregunta sin texto'}</h4>
+              <div class="response-answer">${responseText}</div>
+            </div>
           </div>
-          <div class="response-content">
-            <h4 class="response-question">${question.vcQuestion || 'Pregunta sin texto'}</h4>
-            <div class="response-answer">${responseText}</div>
-          </div>
-        </div>
-      `;
+        `;
       })
       .join('');
   }
 
-  /**
-   * Enviar encuesta (placeholder - implementar cuando esté el endpoint)
-   * @private
-   */
+  _buildSubmissionPayload() {
+    // Formato SIMPLE: { surveyId, meta, answers[] }
+    const answers = this.questions.map((q, idx) => {
+      const r = this.responses.get(q.iQuestionId);
+      // Asumimos que ya pasó validación; si no, marcamos null
+      if (!r) {
+        return {
+          questionId: q.iQuestionId,
+          index: idx + 1,
+          unanswered: true,
+          response: null,
+        };
+      }
+
+      // Construir response según tipo
+      switch (q.iTypeId) {
+        case 1: {
+          const ans = (q.answers || []).find(a => a.iAnswerId === r.answerId);
+          return {
+            questionId: q.iQuestionId,
+            response: {
+              typeId: 1,
+              answers: ans
+                ? [
+                    {
+                      answerId: ans.iAnswerId,
+                      answerText: ans.vcAnswer,
+                      ...(r.extraText ? { extraText: r.extraText } : {}),
+                    },
+                  ]
+                : [],
+            },
+          };
+        }
+        case 2: {
+          const picked = (r.selectedAnswers || []).map(sel => {
+            const ans = (q.answers || []).find(a => a.iAnswerId === sel.answerId);
+            return {
+              answerId: sel.answerId,
+              answerText: ans?.vcAnswer || '',
+              ...(sel.extraText ? { extraText: sel.extraText } : {}),
+            };
+          });
+          return {
+            questionId: q.iQuestionId,
+            response: {
+              typeId: 2,
+              answers: picked,
+            },
+          };
+        }
+        case 3:
+          return {
+            questionId: q.iQuestionId,
+            response: {
+              typeId: 3,
+              text: r.text || '',
+            },
+          };
+        case 4:
+          return {
+            questionId: q.iQuestionId,
+            response: {
+              typeId: 4,
+              value: typeof r.value === 'number' ? r.value : null,
+            },
+          };
+        default:
+          return { questionId: q.iQuestionId, response: null };
+      }
+    });
+
+    const payload = {
+      surveyId: this.surveyId,
+      meta: {
+        submittedAt: new Date().toISOString(),
+        totalQuestions: this.questions.length,
+        answeredQuestions: this.responses.size,
+        timerSeconds: this.survey?.iTimer ? this.survey.iTimer * 60 : 0,
+        elapsedSeconds:
+          this.survey?.iTimer && this.timeRemaining
+            ? this.survey.iTimer * 60 - this.timeRemaining
+            : Math.round((Date.now() - this.startedAt) / 1000),
+      },
+      answers,
+    };
+
+    return payload;
+  }
+
   async _submitSurvey() {
     if (this.isSubmitting) return;
 
-    console.log('📤 [SurveyDetailView] Enviando encuesta');
-
     try {
-      this.isSubmitting = true;
-      const submitBtn = $('#finalSubmitBtn');
+      // Como todas son obligatorias, revalidamos por seguridad
+      const firstMissingIdx = this.questions.findIndex(q => !this._isQuestionAnswered(q));
+      if (firstMissingIdx !== -1) {
+        this.currentQuestionIndex = firstMissingIdx;
+        await this._renderCurrentQuestion();
+        await this._warnRequired(this.questions[firstMissingIdx]);
+        return;
+      }
 
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `
-          <div class="loading-spinner"></div>
-          <span>Enviando...</span>
-        `;
+      this.isSubmitting = true;
+      const btn = $('#finalSubmitBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<div class="loading-spinner"></div><span>Enviando...</span>`;
       }
 
       await hapticsService.medium();
 
-      // TODO: Implementar cuando esté disponible el endpoint de envío
-      // const result = await surveysService.submitSurvey(this.surveyId, Array.from(this.responses.values()));
+      // 🔎 JSON final a enviar
+      const payload = this._buildSubmissionPayload();
+      console.log('📤 JSON FINAL A ENVIAR:', payload);
+      console.log('📤 JSON STRING:', JSON.stringify(payload));
 
-      // Por ahora, simular envío exitoso
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // TODO: Llamar endpoint real
+      // const result = await surveysService.submitSurvey(this.surveyId, payload);
+      // if (!result.success) throw new Error(result.error || 'Error enviando encuesta');
 
+      // Simular éxito
+      await new Promise(r => setTimeout(r, 1200));
       await hapticsService.success();
 
-      // Mostrar confirmación
       await dialogService.alert(
         'Encuesta Enviada',
         '¡Gracias por tu participación! Tu encuesta ha sido enviada correctamente.',
       );
 
-      // Navegar de regreso
       navigateTo('/surveys');
     } catch (error) {
       console.error('❌ [SurveyDetailView] Error enviando encuesta:', error);
       await hapticsService.error();
-
-      this.isSubmitting = false;
-      const submitBtn = $('#finalSubmitBtn');
-
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `
-          ${this._getSubmitIcon()}
-          <span>Enviar Encuesta</span>
-        `;
+      const btn = $('#finalSubmitBtn');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `${this._getSubmitIcon()}<span>Enviar Encuesta</span>`;
       }
-
       window.mostrarMensajeEstado?.('Error enviando la encuesta. Intenta nuevamente.', 'error');
+      this.isSubmitting = false;
     }
   }
 
-  // ========================
-  // SETUP Y UTILIDADES
-  // ========================
+  // =======================
+  // SETUP DOM + LISTENERS
+  // =======================
 
-  /**
-   * Configurar referencias DOM
-   * @private
-   */
   _setupDOMReferences() {
     this.backBtn = $('#backBtn');
     this.prevBtn = $('#prevBtn');
@@ -1407,12 +1161,7 @@ export default class SurveyDetailView {
     this.timerDisplay = $('#timerDisplay');
   }
 
-  /**
-   * Adjuntar event listeners principales
-   * @private
-   */
   _attachEventListeners() {
-    // Botón regresar
     if (this.backBtn) {
       this.backBtn.addEventListener('click', async e => {
         e.preventDefault();
@@ -1422,7 +1171,6 @@ export default class SurveyDetailView {
             'Salir de la Encuesta',
             '¿Estás seguro de que deseas salir? Se perderán las respuestas no guardadas.',
           );
-
           if (!confirmed) return;
         }
 
@@ -1431,7 +1179,6 @@ export default class SurveyDetailView {
       });
     }
 
-    // Botones de navegación
     if (this.prevBtn) {
       this.prevBtn.addEventListener('click', e => {
         e.preventDefault();
@@ -1447,45 +1194,31 @@ export default class SurveyDetailView {
     }
 
     if (this.submitBtn) {
-      this.submitBtn.addEventListener('click', e => {
+      this.submitBtn.addEventListener('click', async e => {
         e.preventDefault();
-
-        // 👉 Construir y loguear el payload
-        const payload = this._buildSubmissionPayload();
-        console.log('🧾 [SurveyDetailView] Payload de encuesta (submitBtn):', payload);
-        console.log('🧾 [SurveyDetailView] Payload JSON:', JSON.stringify(payload, null, 2));
-
-        // continuar con el flujo actual (mostrar resumen)
-        this._showSummary();
+        // Solo está visible en la última pregunta
+        const current = this.questions[this.currentQuestionIndex];
+        if (!this._isQuestionAnswered(current)) {
+          await this._warnRequired(current);
+          return;
+        }
+        await this._showSummary();
       });
     }
   }
 
-  /**
-   * Actualizar estado de carga
-   * @private
-   */
   _updateLoadingState(isLoading, message = 'Cargando...') {
     if (this.loadingContainer) {
       this.loadingContainer.style.display = isLoading ? 'flex' : 'none';
       const loadingText = this.loadingContainer.querySelector('.loading-text');
-      if (loadingText) {
-        loadingText.textContent = message;
-      }
+      if (loadingText) loadingText.textContent = message;
     }
-
     if (this.contentContainer) {
       this.contentContainer.style.display = isLoading ? 'none' : 'block';
     }
   }
 
-  /**
-   * Mostrar error
-   * @private
-   */
   _showError(message) {
-    console.error('🚨 [SurveyDetailView] Mostrando error:', message);
-
     if (this.errorContainer) {
       this.errorContainer.innerHTML = `
         <div class="error-content">
@@ -1501,36 +1234,29 @@ export default class SurveyDetailView {
       `;
       this.errorContainer.style.display = 'flex';
     }
-
     this._updateLoadingState(false);
-
-    if (this.contentContainer) {
-      this.contentContainer.style.display = 'none';
-    }
+    if (this.contentContainer) this.contentContainer.style.display = 'none';
   }
 
-  // ================
-  // ICONOS SVG
-  // ================
+  // =======================
+  // ICONOS
+  // =======================
 
   _getBackIcon() {
     return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
       <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
   }
-
   _getPrevIcon() {
     return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
   }
-
   _getNextIcon() {
     return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
   }
-
   _getSubmitIcon() {
     return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

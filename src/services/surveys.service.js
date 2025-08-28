@@ -1,5 +1,5 @@
 // src/services/surveys.service.js
-// CORREGIDO: Agregar soporte para tipo 2 y validaciones mejoradas
+// CORREGIDO: Agregar soporte para tipo 2 y validaciones mejoradas + submitAnswers()
 
 import { apiService } from './api.service.js';
 import { hapticsService } from './haptics.service.js';
@@ -14,7 +14,7 @@ const ENDPOINTS = {
   HEADERS: '/api/survey/Headers',
   QUESTIONS: '/api/survey/Questions',
   QUESTION_ANSWERS: '/api/survey/QuestionAnswers',
-  // SUBMIT: '/api/survey/Submit' // Para implementar después
+  ANSWER: '/api/survey/Answer', // 👈 Nuevo
 };
 
 class SurveysService {
@@ -23,14 +23,40 @@ class SurveysService {
   }
 
   /**
+   * Enviar respuestas de la encuesta
+   * @param {object} payload - { surveyId: number, answers: [...] }
+   * @returns {Promise<{success: boolean, data?: any, error?: string}>}
+   */
+  async submitAnswers(payload) {
+    try {
+      console.log('📤 [SurveysService] Enviando respuestas:', payload);
+      await hapticsService.medium();
+
+      const body = { Data: JSON.stringify(payload) };
+      const response = await apiService.post(ENDPOINTS.ANSWER, body);
+
+      console.log('✅ [SurveysService] Respuestas enviadas OK');
+      await hapticsService.success();
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('❌ [SurveysService] Error enviando respuestas:', error);
+      await hapticsService.error();
+
+      return {
+        success: false,
+        error: this._getErrorMessage(error),
+      };
+    }
+  }
+
+  /**
    * Obtener lista de encuestas (headers)
-   * @returns {Promise<{success: boolean, data: Array, error?: string}>}
    */
   async getSurveyHeaders() {
     console.log('📋 [SurveysService] Obteniendo encuestas...');
 
     try {
-      // Verificar cache (válido por 5 minutos)
       const cached = surveysCache.get('headers');
       if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) {
         console.log('⚡ [SurveysService] Usando cache para headers');
@@ -42,32 +68,21 @@ class SurveysService {
       const response = await apiService.get(ENDPOINTS.HEADERS);
       const surveys = response.data || [];
 
-      // Procesar y enriquecer datos con validaciones mejoradas
       const processedSurveys = surveys.map(survey => ({
         ...survey,
-        // CORREGIDO: Validaciones para evitar null/undefined
         vcSurvey: survey.vcSurvey || 'Encuesta sin título',
         vcProgram: survey.vcProgram || 'Sin programa',
         vcNames: survey.vcNames || 'Sin autor',
         vcInstructions: survey.vcInstructions || '',
-
-        // Calcular estado de expiración
         expirationStatus: this._calculateExpirationStatus(survey.dtExpiration),
-        // Formatear fechas
         createdDate: this._formatDate(survey.dtCreated),
         expirationDate: survey.dtExpiration ? this._formatDate(survey.dtExpiration) : null,
-        // Metadatos útiles con validaciones
         isExpired: this._isExpired(survey.dtExpiration),
         questionsLabel: `${survey.iRandQuestions || 'Todas'} preguntas`,
         timeLabel: survey.iTimer > 0 ? `${survey.iTimer} min` : 'Sin límite',
       }));
 
-      // Guardar en cache
-      surveysCache.set('headers', {
-        data: processedSurveys,
-        timestamp: Date.now(),
-      });
-
+      surveysCache.set('headers', { data: processedSurveys, timestamp: Date.now() });
       console.log('✅ [SurveysService] Encuestas obtenidas:', processedSurveys.length);
       return { success: true, data: processedSurveys };
     } catch (error) {
@@ -84,26 +99,17 @@ class SurveysService {
 
   /**
    * Obtener preguntas de una encuesta específica
-   * @param {number} surveyId - ID de la encuesta
-   * @param {boolean} randomize - Si aplicar iRandQuestions
-   * @param {number} maxQuestions - Número máximo de preguntas (iRandQuestions)
-   * @returns {Promise<{success: boolean, data: Array, error?: string}>}
    */
   async getSurveyQuestions(surveyId, randomize = false, maxQuestions = 0) {
     console.log(`📝 [SurveysService] Obteniendo preguntas para encuesta ${surveyId}`);
 
     try {
-      // Cancelar request anterior si existe
       const prevController = this.abortControllers.get(`questions-${surveyId}`);
-      if (prevController) {
-        prevController.abort();
-      }
+      if (prevController) prevController.abort();
 
-      // Crear nuevo controller
       const controller = new AbortController();
       this.abortControllers.set(`questions-${surveyId}`, controller);
 
-      // Verificar cache
       const cacheKey = `questions-${surveyId}`;
       const cached = questionsCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < 10 * 60 * 1000) {
@@ -124,11 +130,7 @@ class SurveysService {
 
       const questions = response.data || [];
 
-      // Guardar en cache
-      questionsCache.set(cacheKey, {
-        data: questions,
-        timestamp: Date.now(),
-      });
+      questionsCache.set(cacheKey, { data: questions, timestamp: Date.now() });
 
       console.log('✅ [SurveysService] Preguntas obtenidas:', questions.length);
       return this._processQuestions(questions, randomize, maxQuestions);
@@ -136,7 +138,6 @@ class SurveysService {
       if (error.name === 'AbortError') {
         return { success: false, error: 'Cancelado', data: [] };
       }
-
       console.error('❌ [SurveysService] Error obteniendo preguntas:', error);
       await hapticsService.error();
 
@@ -152,14 +153,11 @@ class SurveysService {
 
   /**
    * Obtener respuestas predefinidas para una pregunta (tipos 1 y 2)
-   * @param {number} questionId - ID de la pregunta
-   * @returns {Promise<{success: boolean, data: Array, error?: string}>}
    */
   async getQuestionAnswers(questionId) {
     console.log(`🎯 [SurveysService] Obteniendo respuestas para pregunta ${questionId}`);
 
     try {
-      // Verificar cache
       const cacheKey = `answers-${questionId}`;
       const cached = answersCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < 15 * 60 * 1000) {
@@ -168,21 +166,15 @@ class SurveysService {
       }
 
       const response = await apiService.get(`${ENDPOINTS.QUESTION_ANSWERS}/${questionId}`);
-
       const answers = response.data || [];
 
-      // CORREGIDO: Validar y limpiar respuestas
       const cleanAnswers = answers.map(answer => ({
         ...answer,
         vcAnswer: answer.vcAnswer || 'Opción sin texto',
-        bText: Boolean(answer.bText), // Asegurar que sea boolean
+        bText: Boolean(answer.bText),
       }));
 
-      // Guardar en cache
-      answersCache.set(cacheKey, {
-        data: cleanAnswers,
-        timestamp: Date.now(),
-      });
+      answersCache.set(cacheKey, { data: cleanAnswers, timestamp: Date.now() });
 
       console.log('✅ [SurveysService] Respuestas obtenidas:', cleanAnswers.length);
       return { success: true, data: cleanAnswers };
@@ -204,7 +196,6 @@ class SurveysService {
   _processQuestions(questions, randomize, maxQuestions) {
     let processedQuestions = [...questions];
 
-    // Aplicar aleatorización si está configurada
     if (randomize && maxQuestions > 0 && maxQuestions < questions.length) {
       processedQuestions = this._shuffleArray([...questions]).slice(0, maxQuestions);
       console.log(
@@ -212,52 +203,38 @@ class SurveysService {
       );
     }
 
-    // CORREGIDO: Enriquecer preguntas con metadatos útiles y soporte para tipo 2
-    processedQuestions = processedQuestions.map(question => {
-      // Validaciones para evitar null/undefined
-      const cleanQuestion = {
-        ...question,
-        vcQuestion: question.vcQuestion || 'Pregunta sin texto',
-        vcType: question.vcType || this._getTypeLabel(question.iTypeId),
-        iMin: question.iMin || 0,
-        iMax: question.iMax || 0,
+    processedQuestions = processedQuestions.map(q => {
+      const clean = {
+        ...q,
+        vcQuestion: q.vcQuestion || 'Pregunta sin texto',
+        vcType: q.vcType || this._getTypeLabel(q.iTypeId),
+        iMin: q.iMin || 0,
+        iMax: q.iMax || 0,
       };
 
       return {
-        ...cleanQuestion,
-        // CORREGIDO: Agregar tipo 2 como opción también
-        isOption: cleanQuestion.iTypeId === 1 || cleanQuestion.iTypeId === 2,
-        isText: cleanQuestion.iTypeId === 3,
-        isNumeric: cleanQuestion.iTypeId === 4,
-        hasRange:
-          cleanQuestion.iTypeId === 4 &&
-          cleanQuestion.iMin !== undefined &&
-          cleanQuestion.iMax !== undefined,
-        // CORREGIDO: Tipos 1 y 2 necesitan respuestas predefinidas
-        needsAnswers: cleanQuestion.iTypeId === 1 || cleanQuestion.iTypeId === 2,
+        ...clean,
+        isOption: clean.iTypeId === 1 || clean.iTypeId === 2,
+        isText: clean.iTypeId === 3,
+        isNumeric: clean.iTypeId === 4,
+        hasRange: clean.iTypeId === 4 && clean.iMin !== undefined && clean.iMax !== undefined,
+        needsAnswers: clean.iTypeId === 1 || clean.iTypeId === 2,
       };
     });
 
     return { success: true, data: processedQuestions };
   }
 
-  /**
-   * Obtener etiqueta del tipo de pregunta
-   * @private
-   */
   _getTypeLabel(typeId) {
     const typeLabels = {
       1: 'Opción única',
-      2: 'Opción múltiple', // CORREGIDO: Agregar tipo 2
+      2: 'Opción múltiple',
       3: 'Texto libre',
       4: 'Numérico (rango)',
     };
     return typeLabels[typeId] || `Tipo ${typeId}`;
   }
 
-  /**
-   * Limpiar caches (útil al cerrar sesión)
-   */
   clearCache() {
     console.log('🧹 [SurveysService] Limpiando cache');
     surveysCache.clear();
@@ -265,53 +242,31 @@ class SurveysService {
     answersCache.clear();
   }
 
-  /**
-   * Cancelar todas las peticiones pendientes
-   */
   cancelAllRequests() {
     console.log('🚫 [SurveysService] Cancelando todas las peticiones');
-    this.abortControllers.forEach(controller => controller.abort());
+    this.abortControllers.forEach(c => c.abort());
     this.abortControllers.clear();
   }
 
-  // ===================
-  // MÉTODOS UTILITARIOS (sin cambios)
-  // ===================
-
-  /**
-   * Calcular estado de expiración
-   * @private
-   */
   _calculateExpirationStatus(expirationDate) {
     if (!expirationDate) return 'Sin límite';
-
     const now = new Date();
     const expiry = new Date(expirationDate);
     const diffTime = expiry - now;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
     if (diffTime < 0) return 'Expirada';
     if (diffDays <= 1) return 'Expira hoy';
     if (diffDays <= 7) return `Expira en ${diffDays} días`;
     return 'Activa';
   }
 
-  /**
-   * Verificar si una encuesta está expirada
-   * @private
-   */
   _isExpired(expirationDate) {
     if (!expirationDate) return false;
     return new Date(expirationDate) < new Date();
   }
 
-  /**
-   * Formatear fecha para mostrar
-   * @private
-   */
   _formatDate(isoString) {
     if (!isoString) return null;
-
     return new Date(isoString).toLocaleDateString('es-MX', {
       day: 'numeric',
       month: 'short',
@@ -319,22 +274,14 @@ class SurveysService {
     });
   }
 
-  /**
-   * Barajar array (Fisher-Yates shuffle)
-   * @private
-   */
   _shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
+    for (let i = array.length - 1; i > 0; i++) {
       const j = Math.floor(Math.random() * (i + 1));
       [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
   }
 
-  /**
-   * Obtener mensaje de error user-friendly
-   * @private
-   */
   _getErrorMessage(error) {
     if (error.response) {
       switch (error.response.status) {
@@ -350,11 +297,7 @@ class SurveysService {
           return error.response.data?.message || 'Error desconocido.';
       }
     }
-
-    if (error.code === 'NETWORK_ERROR') {
-      return 'Sin conexión a internet. Verifica tu conectividad.';
-    }
-
+    if (error.code === 'NETWORK_ERROR') return 'Sin conexión a internet. Verifica tu conectividad.';
     return 'Error inesperado. Intenta nuevamente.';
   }
 }

@@ -1,5 +1,5 @@
 // src/views/survey-detail/index.js
-// Vista detallada de encuesta individual - CON VALIDACIÓN OBLIGATORIA + JSON SIMPLE
+// Vista detallada de encuesta individual - CON VALIDACIÓN OBLIGATORIA + JSON SIMPLE + FIX NAVIGACIÓN
 
 import Handlebars from 'handlebars';
 import { navigateTo } from '../../routes/index.js';
@@ -63,7 +63,7 @@ export default class SurveyDetailView {
     };
 
     const candidates = [
-      context?.params?.data?.id, // <-- según tu captura (id: "4")
+      context?.params?.data?.id, // <-- segun tu captura (id: "4")
       context?.params?.url, // "surveys/4"
       context?.data?.id, // otros routers
       context?.id,
@@ -922,7 +922,7 @@ export default class SurveyDetailView {
 
     // 🔎 Mostrar JSON en consola al presionar #submitBtn
     const payload = this._buildSubmissionPayload();
-    console.log('📦 Payload para envío (preview):', payload);
+    console.log('📦 Payload para envío (Answer):', payload);
     console.log('📦 Payload JSON string:', JSON.stringify(payload));
 
     const questionContainer = $('#questionContainer');
@@ -1023,147 +1023,152 @@ export default class SurveyDetailView {
       .join('');
   }
 
-  _buildSubmissionPayload() {
-    // Formato SIMPLE: { surveyId, meta, answers[] }
-    const answers = this.questions.map((q, idx) => {
-      const r = this.responses.get(q.iQuestionId);
-      // Asumimos que ya pasó validación; si no, marcamos null
-      if (!r) {
-        return {
-          questionId: q.iQuestionId,
-          index: idx + 1,
-          unanswered: true,
-          response: null,
-        };
-      }
-
-      // Construir response según tipo
-      switch (q.iTypeId) {
-        case 1: {
-          const ans = (q.answers || []).find(a => a.iAnswerId === r.answerId);
-          return {
-            questionId: q.iQuestionId,
-            response: {
-              typeId: 1,
-              answers: ans
-                ? [
-                    {
-                      answerId: ans.iAnswerId,
-                      answerText: ans.vcAnswer,
-                      ...(r.extraText ? { extraText: r.extraText } : {}),
-                    },
-                  ]
-                : [],
-            },
-          };
-        }
-        case 2: {
-          const picked = (r.selectedAnswers || []).map(sel => {
-            const ans = (q.answers || []).find(a => a.iAnswerId === sel.answerId);
-            return {
-              answerId: sel.answerId,
-              answerText: ans?.vcAnswer || '',
-              ...(sel.extraText ? { extraText: sel.extraText } : {}),
-            };
-          });
-          return {
-            questionId: q.iQuestionId,
-            response: {
-              typeId: 2,
-              answers: picked,
-            },
-          };
-        }
-        case 3:
-          return {
-            questionId: q.iQuestionId,
-            response: {
-              typeId: 3,
-              text: r.text || '',
-            },
-          };
-        case 4:
-          return {
-            questionId: q.iQuestionId,
-            response: {
-              typeId: 4,
-              value: typeof r.value === 'number' ? r.value : null,
-            },
-          };
-        default:
-          return { questionId: q.iQuestionId, response: null };
-      }
-    });
-
-    const payload = {
-      surveyId: this.surveyId,
-      meta: {
-        submittedAt: new Date().toISOString(),
-        totalQuestions: this.questions.length,
-        answeredQuestions: this.responses.size,
-        timerSeconds: this.survey?.iTimer ? this.survey.iTimer * 60 : 0,
-        elapsedSeconds:
-          this.survey?.iTimer && this.timeRemaining
-            ? this.survey.iTimer * 60 - this.timeRemaining
-            : Math.round((Date.now() - this.startedAt) / 1000),
-      },
-      answers,
-    };
-
-    return payload;
-  }
-
+  /**
+   * Enviar encuesta (implementación real con /api/survey/Answer)
+   * @private
+   */
   async _submitSurvey() {
     if (this.isSubmitting) return;
 
     try {
-      // Como todas son obligatorias, revalidamos por seguridad
-      const firstMissingIdx = this.questions.findIndex(q => !this._isQuestionAnswered(q));
-      if (firstMissingIdx !== -1) {
-        this.currentQuestionIndex = firstMissingIdx;
-        await this._renderCurrentQuestion();
-        await this._warnRequired(this.questions[firstMissingIdx]);
+      // Validación final (todas las preguntas contestadas)
+      const unanswered = this.questions.filter(q => !this.responses.has(q.iQuestionId));
+      if (unanswered.length > 0) {
+        await dialogService.alert(
+          'Preguntas pendientes',
+          'Debes responder todas las preguntas antes de enviar.',
+        );
         return;
       }
 
       this.isSubmitting = true;
-      const btn = $('#finalSubmitBtn');
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = `<div class="loading-spinner"></div><span>Enviando...</span>`;
+      const finalBtn = document.getElementById('finalSubmitBtn') || this.submitBtn;
+      if (finalBtn) {
+        finalBtn.disabled = true;
+        finalBtn.innerHTML = `<div class="loading-spinner"></div><span>Enviando...</span>`;
       }
 
-      await hapticsService.medium();
-
-      // 🔎 JSON final a enviar
+      // Construir payload en el formato acordado
       const payload = this._buildSubmissionPayload();
-      console.log('📤 JSON FINAL A ENVIAR:', payload);
-      console.log('📤 JSON STRING:', JSON.stringify(payload));
 
-      // TODO: Llamar endpoint real
-      // const result = await surveysService.submitSurvey(this.surveyId, payload);
-      // if (!result.success) throw new Error(result.error || 'Error enviando encuesta');
+      // Log para depurar
+      console.log('📦 [SurveyDetailView] Payload a enviar (Answer):', payload);
 
-      // Simular éxito
-      await new Promise(r => setTimeout(r, 1200));
-      await hapticsService.success();
+      // Enviar
+      const result = await surveysService.submitAnswers(payload);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Error enviando encuesta');
+      }
 
       await dialogService.alert(
-        'Encuesta Enviada',
-        '¡Gracias por tu participación! Tu encuesta ha sido enviada correctamente.',
+        'Encuesta enviada',
+        '¡Gracias por tu participación! Tu encuesta fue registrada correctamente.',
       );
 
-      navigateTo('/surveys');
+      // Regresar al listado (hash-first para evitar warnings de Navigo)
+      this._goToSurveys();
     } catch (error) {
       console.error('❌ [SurveyDetailView] Error enviando encuesta:', error);
       await hapticsService.error();
-      const btn = $('#finalSubmitBtn');
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `${this._getSubmitIcon()}<span>Enviar Encuesta</span>`;
+
+      const finalBtn = document.getElementById('finalSubmitBtn') || this.submitBtn;
+      if (finalBtn) {
+        finalBtn.disabled = false;
+        finalBtn.innerHTML = `${this._getSubmitIcon()}<span>Enviar Encuesta</span>`;
       }
       window.mostrarMensajeEstado?.('Error enviando la encuesta. Intenta nuevamente.', 'error');
+    } finally {
       this.isSubmitting = false;
+    }
+  }
+
+  /**
+   * Construir payload para /api/survey/Answer
+   * @returns {{surveyId:number, answers:Array}}
+   * @private
+   */
+  _buildSubmissionPayload() {
+    const answers = this.questions.map((q, idx) => {
+      const resp = this.responses.get(q.iQuestionId) || null;
+      return this._mapAnswerForSubmit(q, resp, idx);
+    });
+
+    return {
+      surveyId: this.surveyId,
+      answers,
+    };
+  }
+
+  /**
+   * Normaliza una respuesta según iTypeId
+   * @private
+   */
+  _mapAnswerForSubmit(question, response, index) {
+    const base = {
+      questionId: question.iQuestionId,
+      index: index + 1,
+      typeId: question.iTypeId,
+      type: question.vcType || '',
+      questionText: question.vcQuestion || '',
+    };
+
+    if (!response) {
+      return { ...base, unanswered: true, response: null };
+    }
+
+    switch (question.iTypeId) {
+      case 1: // Opción única (radio)
+        return {
+          ...base,
+          unanswered: false,
+          response: {
+            typeId: 1,
+            answers: [
+              {
+                answerId: response.answerId,
+                // extraText opcional si la opción lo requiere
+                ...(response.extraText ? { extraText: response.extraText } : {}),
+              },
+            ],
+          },
+        };
+
+      case 2: // Opción múltiple (checkbox)
+        return {
+          ...base,
+          unanswered: false,
+          response: {
+            typeId: 2,
+            answers: (response.selectedAnswers || []).map(a => ({
+              answerId: a.answerId,
+              ...(a.extraText ? { extraText: a.extraText } : {}),
+            })),
+          },
+        };
+
+      case 3: // Texto
+        return {
+          ...base,
+          unanswered: !response.text || response.text.trim() === '',
+          response: {
+            typeId: 3,
+            text: response.text || '',
+          },
+        };
+
+      case 4: // Numérico
+        return {
+          ...base,
+          unanswered: typeof response.value !== 'number',
+          response: {
+            typeId: 4,
+            value: response.value,
+          },
+        };
+
+      default:
+        return { ...base, unanswered: true, response: null };
     }
   }
 
@@ -1183,6 +1188,29 @@ export default class SurveyDetailView {
     this.timerDisplay = $('#timerDisplay');
   }
 
+  /**
+   * Ir al listado de encuestas de forma tolerante (hash-first para evitar warnings de Navigo)
+   * @private
+   */
+  _goToSurveys() {
+    try {
+      if (window.location.hash !== '#/surveys') {
+        window.location.hash = '#/surveys';
+      } else {
+        // Si ya estás en el hash correcto, fuerza el refresh del router
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      }
+    } catch (e) {
+      // Fallbacks por si el router estuviera en modo history o similar
+      try {
+        navigateTo('/surveys');
+      } catch {}
+      try {
+        navigateTo('surveys');
+      } catch {}
+    }
+  }
+
   _attachEventListeners() {
     if (this.backBtn) {
       this.backBtn.addEventListener('click', async e => {
@@ -1197,7 +1225,7 @@ export default class SurveyDetailView {
         }
 
         await hapticsService.light();
-        navigateTo('/surveys');
+        this._goToSurveys();
       });
     }
 

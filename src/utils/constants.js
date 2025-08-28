@@ -2,6 +2,7 @@
 // Centraliza todas las constantes de la aplicación para fácil mantenimiento
 
 export const API_CONFIG = {
+  // ⚠️ Si vas a probar en local, cambia esta BASE_URL por: 'http://localhost:7221'
   BASE_URL: 'https://apiusuario-dxa0bxftewgxc8a7.mexicocentral-01.azurewebsites.net',
   ENDPOINTS: {
     LOGIN: '/api/auth/login',
@@ -20,6 +21,11 @@ export const API_CONFIG = {
     SURVEY_HEADERS: '/api/survey/Headers',
     SURVEY_QUESTIONS: '/api/survey/Questions',
     SURVEY_QUESTION_ANSWERS: '/api/survey/QuestionAnswers',
+
+    // 👇 Nuevo endpoint real para guardar respuestas
+    SURVEY_ANSWER: '/api/survey/Answer',
+
+    // (Dejamos el antiguo por compatibilidad si en algún lado se usa)
     SURVEY_SUBMIT: '/api/survey/Submit',
   },
   TIMEOUT: 30000, // 30 segundos

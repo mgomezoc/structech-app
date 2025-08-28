@@ -1,5 +1,5 @@
 // src/views/survey-detail/index.js
-// Vista detallada de encuesta individual - CON VALIDACIÓN OBLIGATORIA + JSON SIMPLE + FIX NAVIGACIÓN
+// Vista detallada de encuesta individual - CON VALIDACIÓN OBLIGATORIA + JSON SIMPLE + REFERENCIA
 
 import Handlebars from 'handlebars';
 import { navigateTo } from '../../routes/index.js';
@@ -32,6 +32,9 @@ export default class SurveyDetailView {
     this.error = null;
     this.isSubmitting = false;
 
+    // Referencia (opcional, enviada en el payload raíz)
+    this.reference = '';
+
     // Timer
     this.timer = null;
     this.timeRemaining = 0;
@@ -55,7 +58,6 @@ export default class SurveyDetailView {
     const tryParse = val => {
       if (val === undefined || val === null) return null;
       const s = typeof val === 'string' || typeof val === 'number' ? String(val) : '';
-      // soporta "4", "surveys/4", "#/surveys/4", "surveys/4?x=1", "surveys/4/"
       const m = s.match(/(?:^|\/)(\d+)(?:[\/\?]|$)/);
       if (!m) return null;
       const n = parseInt(m[1], 10);
@@ -63,12 +65,12 @@ export default class SurveyDetailView {
     };
 
     const candidates = [
-      context?.params?.data?.id, // <-- segun tu captura (id: "4")
-      context?.params?.url, // "surveys/4"
-      context?.data?.id, // otros routers
+      context?.params?.data?.id,
+      context?.params?.url,
+      context?.data?.id,
       context?.id,
       context?.url,
-      window.location.hash, // "#/surveys/4"
+      window.location.hash,
       history.state?.id,
       sessionStorage.getItem('lastSurveyId'),
     ];
@@ -202,7 +204,8 @@ export default class SurveyDetailView {
 
   async _initializeSurvey() {
     try {
-      this._renderSurveyHeader();
+      this._renderSurveyHeader(); // ← dibuja instrucciones + REFERENCIA
+      this._attachReferenceListeners(); // ← listeners del campo referencia
 
       if (this.survey.iTimer > 0) this._initializeTimer();
 
@@ -219,6 +222,8 @@ export default class SurveyDetailView {
   _renderSurveyHeader() {
     const headerContent = $('#surveyHeaderContent');
     if (!headerContent) return;
+
+    const refVal = this.reference || '';
 
     headerContent.innerHTML = `
       <div class="survey-info">
@@ -243,6 +248,7 @@ export default class SurveyDetailView {
           }
         </div>
       </div>
+
       ${
         this.survey.vcInstructions
           ? `
@@ -253,7 +259,42 @@ export default class SurveyDetailView {
       `
           : ''
       }
+
+      <!-- Campo Referencia (opcional) -->
+      <div class="reference-field" id="referenceField">
+        <label for="referenceInput" class="reference-label">Referencia (opcional)</label>
+        <input 
+          id="referenceInput"
+          class="reference-input"
+          type="text"
+          maxlength="80"
+          enterkeyhint="done"
+          aria-label="Referencia"
+          placeholder="Ej. nombre, folio o nota breve"
+          value="${refVal.replace(/"/g, '&quot;')}"
+        />
+        <div class="reference-hint"><small id="referenceCounter">${refVal.length}/80</small></div>
+      </div>
     `;
+  }
+
+  _attachReferenceListeners() {
+    const refInput = $('#referenceInput');
+    if (!refInput) return;
+
+    refInput.addEventListener('input', () => {
+      this.reference = refInput.value;
+      const cnt = $('#referenceCounter');
+      if (cnt) cnt.textContent = `${this.reference.length}/80`;
+
+      // Sincroniza con el input del resumen si existe
+      const sumInput = $('#referenceSummaryInput');
+      if (sumInput && sumInput.value !== this.reference) {
+        sumInput.value = this.reference;
+        const sumCnt = $('#referenceSummaryCounter');
+        if (sumCnt) sumCnt.textContent = `${this.reference.length}/80`;
+      }
+    });
   }
 
   // =======================
@@ -278,7 +319,6 @@ export default class SurveyDetailView {
     const questionNum = $('#currentQuestionNum');
     if (questionNum) questionNum.textContent = this.currentQuestionIndex + 1;
 
-    // Soporte: 1=Radio (opción única), 2=Checkbox (múltiple), 3=Texto, 4=Numérico
     let questionHTML = '';
     switch (question.iTypeId) {
       case 1:
@@ -531,7 +571,7 @@ export default class SurveyDetailView {
           }
         }
 
-        // Guardar respuesta (estructura interna)
+        // Guardar respuesta
         this._saveResponse(question.iQuestionId, {
           typeId: 1,
           questionId: question.iQuestionId,
@@ -702,7 +742,7 @@ export default class SurveyDetailView {
       this.currentQuestionIndex++;
       await this._renderCurrentQuestion();
     } else {
-      await this._showSummary(); // por si hubiera edge case
+      await this._showSummary();
     }
   }
 
@@ -720,7 +760,6 @@ export default class SurveyDetailView {
     if (nextBtn) nextBtn.style.display = isLast ? 'none' : 'flex';
     if (submitBtn) submitBtn.style.display = isLast ? 'flex' : 'none';
 
-    // Deshabilitar “siguiente / enviar” si la actual no está contestada
     const current = this.questions[this.currentQuestionIndex];
     const answered = this._isQuestionAnswered(current);
     if (nextBtn && !isLast) nextBtn.disabled = !answered;
@@ -733,7 +772,6 @@ export default class SurveyDetailView {
 
     switch (question.iTypeId) {
       case 1: {
-        // radio (única) -> requiere answerId; si esa opción tenía bText=true, exigir extraText no vacío
         const has = typeof resp.answerId === 'number';
         if (!has) return false;
         const ans = (question.answers || []).find(a => a.iAnswerId === resp.answerId);
@@ -741,7 +779,6 @@ export default class SurveyDetailView {
         return true;
       }
       case 2: {
-        // checkbox (múltiple) -> al menos una seleccionada; si alguna requiere texto, validar
         if (!resp.selectedAnswers || resp.selectedAnswers.length === 0) return false;
         for (const sel of resp.selectedAnswers) {
           const ans = (question.answers || []).find(a => a.iAnswerId === sel.answerId);
@@ -778,7 +815,6 @@ export default class SurveyDetailView {
 
   _saveResponse(questionId, response) {
     this.responses.set(questionId, response);
-    // console.log(`💾 Respuesta guardada [${questionId}] ->`, response);
   }
 
   _restoreQuestionResponse(question) {
@@ -909,7 +945,7 @@ export default class SurveyDetailView {
   // =======================
 
   async _showSummary() {
-    // Validación final: todo contestado
+    // Validación final
     if (this.responses.size < this.questions.length) {
       const firstMissingIdx = this.questions.findIndex(q => !this._isQuestionAnswered(q));
       if (firstMissingIdx !== -1) {
@@ -920,10 +956,9 @@ export default class SurveyDetailView {
       }
     }
 
-    // 🔎 Mostrar JSON en consola al presionar #submitBtn
-    const payload = this._buildSubmissionPayload();
-    console.log('📦 Payload para envío (Answer):', payload);
-    console.log('📦 Payload JSON string:', JSON.stringify(payload));
+    const payloadPreview = this._buildSubmissionPayload();
+    console.log('📦 Payload para envío (preview):', payloadPreview);
+    console.log('📦 Payload JSON string:', JSON.stringify(payloadPreview));
 
     const questionContainer = $('#questionContainer');
     if (!questionContainer) return;
@@ -932,6 +967,8 @@ export default class SurveyDetailView {
     const answeredQuestions = this.responses.size;
     const completionPercentage = Math.round((answeredQuestions / totalQuestions) * 100);
 
+    const refVal = this.reference || '';
+
     const summaryHTML = `
       <div class="survey-summary">
         <div class="summary-header">
@@ -939,6 +976,24 @@ export default class SurveyDetailView {
           <h2>Resumen de Respuestas</h2>
           <p>Revisa tus respuestas antes de enviar</p>
         </div>
+
+        <!-- Referencia editable en Resumen -->
+        <div class="reference-summary">
+          <label for="referenceSummaryInput" class="reference-label">Referencia (opcional)</label>
+          <input 
+            id="referenceSummaryInput"
+            class="reference-input"
+            type="text"
+            maxlength="80"
+            aria-label="Referencia"
+            placeholder="Ej. nombre, folio o nota breve"
+            value="${refVal.replace(/"/g, '&quot;')}"
+          />
+          <div class="reference-hint"><small id="referenceSummaryCounter">${
+            refVal.length
+          }/80</small></div>
+        </div>
+        
         <div class="completion-stats">
           <div class="completion-bar"><div class="completion-fill" style="width: ${completionPercentage}%"></div></div>
           <div class="completion-text">${answeredQuestions} de ${totalQuestions} preguntas respondidas (${completionPercentage}%)</div>
@@ -953,12 +1008,30 @@ export default class SurveyDetailView {
 
     questionContainer.innerHTML = summaryHTML;
 
+    // Listeners resumen
     $('#reviewBtn')?.addEventListener('click', () => {
       this.currentQuestionIndex = 0;
       this._renderCurrentQuestion();
     });
 
     $('#finalSubmitBtn')?.addEventListener('click', () => this._submitSurvey());
+
+    // Sync referencia (resumen -> header)
+    const refSum = $('#referenceSummaryInput');
+    if (refSum) {
+      refSum.addEventListener('input', () => {
+        this.reference = refSum.value;
+        const cnt = $('#referenceSummaryCounter');
+        if (cnt) cnt.textContent = `${this.reference.length}/80`;
+
+        const headerRef = $('#referenceInput');
+        if (headerRef && headerRef.value !== this.reference) {
+          headerRef.value = this.reference;
+          const headerCnt = $('#referenceCounter');
+          if (headerCnt) headerCnt.textContent = `${this.reference.length}/80`;
+        }
+      });
+    }
 
     // Ocultar navegación
     ['#prevBtn', '#nextBtn', '#submitBtn'].forEach(sel => {
@@ -1024,68 +1097,8 @@ export default class SurveyDetailView {
   }
 
   /**
-   * Enviar encuesta (implementación real con /api/survey/Answer)
-   * @private
-   */
-  async _submitSurvey() {
-    if (this.isSubmitting) return;
-
-    try {
-      // Validación final (todas las preguntas contestadas)
-      const unanswered = this.questions.filter(q => !this.responses.has(q.iQuestionId));
-      if (unanswered.length > 0) {
-        await dialogService.alert(
-          'Preguntas pendientes',
-          'Debes responder todas las preguntas antes de enviar.',
-        );
-        return;
-      }
-
-      this.isSubmitting = true;
-      const finalBtn = document.getElementById('finalSubmitBtn') || this.submitBtn;
-      if (finalBtn) {
-        finalBtn.disabled = true;
-        finalBtn.innerHTML = `<div class="loading-spinner"></div><span>Enviando...</span>`;
-      }
-
-      // Construir payload en el formato acordado
-      const payload = this._buildSubmissionPayload();
-
-      // Log para depurar
-      console.log('📦 [SurveyDetailView] Payload a enviar (Answer):', payload);
-
-      // Enviar
-      const result = await surveysService.submitAnswers(payload);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Error enviando encuesta');
-      }
-
-      await dialogService.alert(
-        'Encuesta enviada',
-        '¡Gracias por tu participación! Tu encuesta fue registrada correctamente.',
-      );
-
-      // Regresar al listado (hash-first para evitar warnings de Navigo)
-      this._goToSurveys();
-    } catch (error) {
-      console.error('❌ [SurveyDetailView] Error enviando encuesta:', error);
-      await hapticsService.error();
-
-      const finalBtn = document.getElementById('finalSubmitBtn') || this.submitBtn;
-      if (finalBtn) {
-        finalBtn.disabled = false;
-        finalBtn.innerHTML = `${this._getSubmitIcon()}<span>Enviar Encuesta</span>`;
-      }
-      window.mostrarMensajeEstado?.('Error enviando la encuesta. Intenta nuevamente.', 'error');
-    } finally {
-      this.isSubmitting = false;
-    }
-  }
-
-  /**
-   * Construir payload para /api/survey/Answer
-   * @returns {{surveyId:number, answers:Array}}
+   * Construir payload final para /api/survey/Answer
+   * @returns {{surveyId:number, reference: (string|null), answers:Array}}
    * @private
    */
   _buildSubmissionPayload() {
@@ -1096,6 +1109,7 @@ export default class SurveyDetailView {
 
     return {
       surveyId: this.surveyId,
+      reference: this.reference && this.reference.trim() ? this.reference.trim() : null,
       answers,
     };
   }
@@ -1118,7 +1132,7 @@ export default class SurveyDetailView {
     }
 
     switch (question.iTypeId) {
-      case 1: // Opción única (radio)
+      case 1: // Opción única
         return {
           ...base,
           unanswered: false,
@@ -1127,14 +1141,13 @@ export default class SurveyDetailView {
             answers: [
               {
                 answerId: response.answerId,
-                // extraText opcional si la opción lo requiere
                 ...(response.extraText ? { extraText: response.extraText } : {}),
               },
             ],
           },
         };
 
-      case 2: // Opción múltiple (checkbox)
+      case 2: // Opción múltiple
         return {
           ...base,
           unanswered: false,
@@ -1172,6 +1185,58 @@ export default class SurveyDetailView {
     }
   }
 
+  /**
+   * Enviar encuesta (usa surveysService.submitAnswers)
+   * @private
+   */
+  async _submitSurvey() {
+    if (this.isSubmitting) return;
+
+    try {
+      // Validación final
+      const unanswered = this.questions.filter(q => !this.responses.has(q.iQuestionId));
+      if (unanswered.length > 0) {
+        await dialogService.alert(
+          'Preguntas pendientes',
+          'Debes responder todas las preguntas antes de enviar.',
+        );
+        return;
+      }
+
+      this.isSubmitting = true;
+      const finalBtn = document.getElementById('finalSubmitBtn') || this.submitBtn;
+      if (finalBtn) {
+        finalBtn.disabled = true;
+        finalBtn.innerHTML = `<div class="loading-spinner"></div><span>Enviando...</span>`;
+      }
+
+      const payload = this._buildSubmissionPayload();
+      console.log('📦 [SurveyDetailView] Payload a enviar (Answer):', payload);
+
+      const result = await surveysService.submitAnswers(payload);
+      if (!result.success) throw new Error(result.error || 'Error enviando encuesta');
+
+      await dialogService.alert(
+        'Encuesta enviada',
+        '¡Gracias por tu participación! Tu encuesta fue registrada correctamente.',
+      );
+
+      navigateTo('/surveys');
+    } catch (error) {
+      console.error('❌ [SurveyDetailView] Error enviando encuesta:', error);
+      await hapticsService.error();
+
+      const finalBtn = document.getElementById('finalSubmitBtn') || this.submitBtn;
+      if (finalBtn) {
+        finalBtn.disabled = false;
+        finalBtn.innerHTML = `${this._getSubmitIcon()}<span>Enviar Encuesta</span>`;
+      }
+      window.mostrarMensajeEstado?.('Error enviando la encuesta. Intenta nuevamente.', 'error');
+    } finally {
+      this.isSubmitting = false;
+    }
+  }
+
   // =======================
   // SETUP DOM + LISTENERS
   // =======================
@@ -1188,29 +1253,6 @@ export default class SurveyDetailView {
     this.timerDisplay = $('#timerDisplay');
   }
 
-  /**
-   * Ir al listado de encuestas de forma tolerante (hash-first para evitar warnings de Navigo)
-   * @private
-   */
-  _goToSurveys() {
-    try {
-      if (window.location.hash !== '#/surveys') {
-        window.location.hash = '#/surveys';
-      } else {
-        // Si ya estás en el hash correcto, fuerza el refresh del router
-        window.dispatchEvent(new HashChangeEvent('hashchange'));
-      }
-    } catch (e) {
-      // Fallbacks por si el router estuviera en modo history o similar
-      try {
-        navigateTo('/surveys');
-      } catch {}
-      try {
-        navigateTo('surveys');
-      } catch {}
-    }
-  }
-
   _attachEventListeners() {
     if (this.backBtn) {
       this.backBtn.addEventListener('click', async e => {
@@ -1225,7 +1267,7 @@ export default class SurveyDetailView {
         }
 
         await hapticsService.light();
-        this._goToSurveys();
+        navigateTo('/surveys');
       });
     }
 
@@ -1246,7 +1288,6 @@ export default class SurveyDetailView {
     if (this.submitBtn) {
       this.submitBtn.addEventListener('click', async e => {
         e.preventDefault();
-        // Solo está visible en la última pregunta
         const current = this.questions[this.currentQuestionIndex];
         if (!this._isQuestionAnswered(current)) {
           await this._warnRequired(current);

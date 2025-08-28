@@ -1,0 +1,74 @@
+{{!-- src/views/survey-detail/template.hbs --}}
+
+<div class="survey-detail-container">
+    <!-- Header -->
+    <header class="survey-detail-header">
+        <button class="back-button" id="backBtn" aria-label="Regresar a encuestas">
+            {{{backIcon}}}
+        </button>
+        <div class="header-content" id="surveyHeaderContent">
+            {{#if loading}}
+            <div class="header-skeleton">
+                <div class="skeleton-title"></div>
+                <div class="skeleton-subtitle"></div>
+                <div class="skeleton-meta"></div>
+            </div>
+            {{else}}
+            <!-- Content will be injected via JavaScript -->
+            {{/if}}
+        </div>
+    </header>
+
+    <!-- Loading State -->
+    {{#if loading}}
+    <div class="survey-loading" id="surveyLoading">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h3 class="loading-title">Cargando encuesta</h3>
+            <p class="loading-text">Preparando las preguntas...</p>
+        </div>
+    </div>
+    {{/if}}
+
+    <!-- Error State -->
+    <div class="survey-error" id="surveyError" style="display: none;">
+        <!-- Error content will be injected via JavaScript -->
+    </div>
+
+    <!-- Survey Content -->
+    <div class="survey-content" id="surveyContent" {{#if loading}}style="display: none;" {{/if}}>
+        <!-- Question Container -->
+        <main class="question-section">
+            <div class="question-container" id="questionContainer">
+                <!-- Questions will be rendered here via JavaScript -->
+            </div>
+        </main>
+
+        <!-- Navigation -->
+        <nav class="survey-navigation">
+            <div class="nav-buttons">
+                <button class="nav-btn prev-btn" id="prevBtn" style="display: none;">
+                    {{{prevIcon}}}
+                    <span>Anterior</span>
+                </button>
+
+                <button class="nav-btn next-btn" id="nextBtn">
+                    <span>Siguiente</span>
+                    {{{nextIcon}}}
+                </button>
+
+                <button class="nav-btn submit-btn" id="submitBtn" style="display: none;">
+                    {{{submitIcon}}}
+                    <span>Finalizar</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="survey-progress" id="surveyProgress">
+        <div class="progress-track">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+    </div>
+</div>

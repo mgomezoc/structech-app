@@ -456,6 +456,29 @@ export function setupRoutes() {
     before: combineGuards(authGuard, roleGuard('admin')),
   });
 
+  // Rutas de Encuestas
+  router.on(
+    ROUTES.SURVEYS,
+    (params, query) => {
+      console.log('📋 Navegando a lista de encuestas');
+      loadView('surveys', { params, query });
+    },
+    {
+      before: authGuard,
+    },
+  );
+
+  router.on(
+    ROUTES.SURVEYS + '/:id',
+    (params, query) => {
+      console.log(`📝 Navegando a encuesta ${params.id}`);
+      loadView('survey-detail', { params, query });
+    },
+    {
+      before: authGuard,
+    },
+  );
+
   // 404 mejorado
   router.notFound(() => {
     console.log('❌ Ruta no encontrada');

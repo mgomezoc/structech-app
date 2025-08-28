@@ -17,6 +17,10 @@ export const API_CONFIG = {
     CLASSIFICATIONS: '/api/combos/Classifications', // + /{typeId}
     QUESTIONS: '/api/combos/Questions',
     CREATE_TICKET: '/api/ticket/ticket',
+    SURVEY_HEADERS: '/api/survey/Headers',
+    SURVEY_QUESTIONS: '/api/survey/Questions',
+    SURVEY_QUESTION_ANSWERS: '/api/survey/QuestionAnswers',
+    SURVEY_SUBMIT: '/api/survey/Submit',
   },
   TIMEOUT: 30000, // 30 segundos
 };
@@ -37,6 +41,8 @@ export const ROUTES = {
   ENROLLMENT_MANUAL: '/enrollment-manual',
   ADMIN: '/admin',
   ALTA_GESTION: '/alta-gestion',
+  SURVEYS: '/surveys',
+  SURVEY_DETAIL: '/surveys/:id',
 };
 
 export const ERROR_MESSAGES = {

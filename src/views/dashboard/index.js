@@ -54,6 +54,12 @@ export default class DashboardView {
       console.log('🎫 Navegando a Alta Gestión');
       navigateTo(ROUTES.ALTA_GESTION);
     });
+
+    // 🆕 Encuestas
+    document.getElementById('surveysCard')?.addEventListener('click', () => {
+      console.log('📝 Navegando a Encuestas');
+      navigateTo(ROUTES.SURVEYS);
+    });
   }
 
   // Cleanup opcional si agregas listeners globales

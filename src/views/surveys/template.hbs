@@ -1,7 +1,5 @@
 {{!-- src/views/surveys/template.hbs --}}
-
 <div class="surveys-view-container">
-    <!-- Header -->
     <header class="surveys-header">
         <button class="back-button" id="backBtn" aria-label="Regresar">
             {{{backIcon}}}
@@ -15,14 +13,11 @@
         </button>
     </header>
 
-    <!-- Main Content -->
     <main class="surveys-main">
-        <!-- Loading State -->
         {{#if loading}}
         <div class="surveys-loading" id="surveysLoading">
             <div class="loading-content">
                 <div class="loading-skeleton">
-                    <!-- Skeleton Cards -->
                     <div class="skeleton-card"></div>
                     <div class="skeleton-card"></div>
                     <div class="skeleton-card"></div>
@@ -32,19 +27,14 @@
         </div>
         {{/if}}
 
-        <!-- Error State -->
-        <div class="surveys-error" id="surveysError" style="display: none;">
-            <!-- Error content will be injected via JavaScript -->
-        </div>
+        <div class="surveys-error" id="surveysError" style="display: none;"></div>
 
-        <!-- Surveys Container -->
         <div class="surveys-container" id="surveysContainer">
-            <!-- Surveys will be rendered here via JavaScript -->
             {{#unless loading}}
             {{#if surveys}}
             <div class="surveys-grid">
                 {{#each surveys}}
-                <div class="survey-card {{#if isExpired}}expired{{else}}active{{/if}}" data-survey-id="{{iSurveyId}}">
+                <div class="survey-card {{statusClass}}" data-survey-id="{{iSurveyId}}">
                     <div class="survey-header">
                         <div class="survey-status">
                             <span class="status-icon">{{#if isExpired}}⏰{{else}}📋{{/if}}</span>
@@ -55,8 +45,7 @@
 
                     <div class="survey-content">
                         <h3 class="survey-title">{{vcSurvey}}</h3>
-                        <p class="survey-program">{{vcProgram}}</p>
-                        <p class="survey-creator">Por {{vcNames}}</p>
+                        {{!-- No program/author/createdDate --}}
                     </div>
 
                     <div class="survey-meta">
@@ -71,13 +60,16 @@
                     </div>
 
                     <div class="survey-dates">
-                        <small>Creada: {{createdDate}}</small>
                         {{#if expirationDate}}
                         <small>Expira: {{expirationDate}}</small>
                         {{/if}}
                     </div>
                 </div>
                 {{/each}}
+            </div>
+            {{else}}
+            <div class="surveys-empty">
+                <p>No hay encuestas disponibles por ahora.</p>
             </div>
             {{/if}}
             {{/unless}}

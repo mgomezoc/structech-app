@@ -473,3 +473,35 @@
     border-width: 3px;
   }
 }
+.survey-status.active {
+  background: #e6f6f6;
+  color: #0f766e;
+}
+.survey-status.warning {
+  background: #fff7e6;
+  color: #b45309;
+}
+.survey-status.expired {
+  background: #ffe4e6;
+  color: #be123c;
+}
+.surveys-empty {
+  text-align: center;
+  padding: 24px 16px;
+  color: #475569;
+}
+.surveys-empty .empty-illustration {
+  font-size: 42px;
+  margin-bottom: 8px;
+}
+.surveys-empty .ghost {
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid #94a3b8;
+  color: #0f172a;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}

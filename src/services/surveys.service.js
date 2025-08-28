@@ -1,5 +1,6 @@
 // src/services/surveys.service.js
 // CORREGIDO: Agregar soporte para tipo 2 y validaciones mejoradas + submitAnswers()
+// + Fix de fechas: parseo local de "YYYY-MM-DD" para evitar desfases por timezone
 
 import { apiService } from './api.service.js';
 import { hapticsService } from './haptics.service.js';
@@ -14,7 +15,7 @@ const ENDPOINTS = {
   HEADERS: '/api/survey/Headers',
   QUESTIONS: '/api/survey/Questions',
   QUESTION_ANSWERS: '/api/survey/QuestionAnswers',
-  ANSWER: '/api/survey/Answer', // 👈 Nuevo
+  ANSWER: '/api/survey/Answer',
 };
 
 class SurveysService {
@@ -22,11 +23,9 @@ class SurveysService {
     this.abortControllers = new Map();
   }
 
-  /**
-   * Enviar respuestas de la encuesta
-   * @param {object} payload - { surveyId: number, answers: [...] }
-   * @returns {Promise<{success: boolean, data?: any, error?: string}>}
-   */
+  // =========================
+  // Envío de respuestas
+  // =========================
   async submitAnswers(payload) {
     try {
       console.log('📤 [SurveysService] Enviando respuestas:', payload);
@@ -50,9 +49,9 @@ class SurveysService {
     }
   }
 
-  /**
-   * Obtener lista de encuestas (headers)
-   */
+  // =========================
+  // Headers (lista encuestas)
+  // =========================
   async getSurveyHeaders() {
     console.log('📋 [SurveysService] Obteniendo encuestas...');
 
@@ -68,19 +67,29 @@ class SurveysService {
       const response = await apiService.get(ENDPOINTS.HEADERS);
       const surveys = response.data || [];
 
-      const processedSurveys = surveys.map(survey => ({
-        ...survey,
-        vcSurvey: survey.vcSurvey || 'Encuesta sin título',
-        vcProgram: survey.vcProgram || 'Sin programa',
-        vcNames: survey.vcNames || 'Sin autor',
-        vcInstructions: survey.vcInstructions || '',
-        expirationStatus: this._calculateExpirationStatus(survey.dtExpiration),
-        createdDate: this._formatDate(survey.dtCreated),
-        expirationDate: survey.dtExpiration ? this._formatDate(survey.dtExpiration) : null,
-        isExpired: this._isExpired(survey.dtExpiration),
-        questionsLabel: `${survey.iRandQuestions || 'Todas'} preguntas`,
-        timeLabel: survey.iTimer > 0 ? `${survey.iTimer} min` : 'Sin límite',
-      }));
+      const processedSurveys = surveys.map(survey => {
+        // Parse seguro de fechas (local) y derivados
+        const expDateObj = this._parseISODateLocal(survey.dtExpiration);
+
+        return {
+          ...survey,
+          vcSurvey: survey.vcSurvey || 'Encuesta sin título',
+          vcInstructions: survey.vcInstructions || '',
+          // Derivados UI
+          expirationStatus: this._calculateExpirationStatus(expDateObj),
+          expirationDate: expDateObj
+            ? expDateObj.toLocaleDateString('es-MX', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })
+            : null,
+          isExpired: this._isExpired(expDateObj),
+          // Metas UI
+          questionsLabel: `${Number.isFinite(survey.iQuestions) ? survey.iQuestions : 0} preguntas`,
+          timeLabel: survey.iTimer > 0 ? `${survey.iTimer} min` : 'Sin límite',
+        };
+      });
 
       surveysCache.set('headers', { data: processedSurveys, timestamp: Date.now() });
       console.log('✅ [SurveysService] Encuestas obtenidas:', processedSurveys.length);
@@ -97,9 +106,9 @@ class SurveysService {
     }
   }
 
-  /**
-   * Obtener preguntas de una encuesta específica
-   */
+  // =========================
+  // Preguntas por encuesta
+  // =========================
   async getSurveyQuestions(surveyId, randomize = false, maxQuestions = 0) {
     console.log(`📝 [SurveysService] Obteniendo preguntas para encuesta ${surveyId}`);
 
@@ -151,9 +160,9 @@ class SurveysService {
     }
   }
 
-  /**
-   * Obtener respuestas predefinidas para una pregunta (tipos 1 y 2)
-   */
+  // =========================
+  // Respuestas de opción
+  // =========================
   async getQuestionAnswers(questionId) {
     console.log(`🎯 [SurveysService] Obteniendo respuestas para pregunta ${questionId}`);
 
@@ -189,10 +198,9 @@ class SurveysService {
     }
   }
 
-  /**
-   * Procesar preguntas aplicando aleatorización si es necesaria
-   * @private
-   */
+  // =========================
+  // Procesamiento de preguntas
+  // =========================
   _processQuestions(questions, randomize, maxQuestions) {
     let processedQuestions = [...questions];
 
@@ -248,31 +256,70 @@ class SurveysService {
     this.abortControllers.clear();
   }
 
-  _calculateExpirationStatus(expirationDate) {
-    if (!expirationDate) return 'Sin límite';
-    const now = new Date();
-    const expiry = new Date(expirationDate);
-    const diffTime = expiry - now;
+  // =========================
+  // Helpers de FECHAS (fix TZ)
+  // =========================
+
+  /**
+   * Parsea "YYYY-MM-DD" como fecha local sin shift de zona horaria.
+   * Si viene con hora (YYYY-MM-DDTHH:mm:ssZ), cae al parser nativo.
+   * @param {string|null|undefined} iso
+   * @returns {Date|null}
+   */
+  _parseISODateLocal(iso) {
+    if (!iso) return null;
+    const s = String(iso);
+    const datePart = s.split('T')[0]; // "YYYY-MM-DD"
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datePart);
+    if (m) {
+      const y = parseInt(m[1], 10);
+      const mo = parseInt(m[2], 10) - 1;
+      const d = parseInt(m[3], 10);
+      return new Date(y, mo, d); // local date, 00:00:00 local
+    }
+    // Fallback a parser nativo si no coincide el patrón
+    const dt = new Date(s);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  }
+
+  _startOfDay(d) {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  }
+
+  /**
+   * Estado de expiración respecto a HOY (local), sin desfases.
+   * @param {Date|null} expiryDate
+   */
+  _calculateExpirationStatus(expiryDate) {
+    if (!expiryDate) return 'Sin límite';
+    const today = this._startOfDay(new Date());
+    const exp = this._startOfDay(expiryDate);
+
+    const diffTime = exp - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
     if (diffTime < 0) return 'Expirada';
-    if (diffDays <= 1) return 'Expira hoy';
+    if (diffDays === 0) return 'Expira hoy';
     if (diffDays <= 7) return `Expira en ${diffDays} días`;
     return 'Activa';
   }
 
-  _isExpired(expirationDate) {
-    if (!expirationDate) return false;
-    return new Date(expirationDate) < new Date();
+  /**
+   * Expirada si la fecha (fin del día local) ya pasó.
+   * @param {Date|null} expiryDate
+   */
+  _isExpired(expiryDate) {
+    if (!expiryDate) return false;
+    const endOfDay = new Date(expiryDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    return endOfDay < new Date();
   }
 
-  _formatDate(isoString) {
-    if (!isoString) return null;
-    return new Date(isoString).toLocaleDateString('es-MX', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  }
+  // =========================
+  // Otros helpers
+  // =========================
 
   _shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i++) {

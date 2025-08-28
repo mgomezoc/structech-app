@@ -23,16 +23,12 @@ export default class SurveysView {
     this.abortController = new AbortController();
   }
 
-  /**
-   * Render inicial - Retorna HTML inmediatamente con skeleton
-   */
+  // Render inicial (skeleton)
   render() {
     return template({
-      user: {
-        name: this.user?.name || 'Usuario',
-      },
+      user: { name: this.user?.name || 'Usuario' },
       loading: this.isLoading,
-      surveys: [], // Inicialmente vacío
+      surveys: [],
       backIcon: this._getBackIcon(),
       refreshIcon: this._getRefreshIcon(),
       clockIcon: this._getClockIcon(),
@@ -41,18 +37,11 @@ export default class SurveysView {
     });
   }
 
-  /**
-   * After render - Configuración y carga de datos
-   */
   async afterRender() {
     console.log('📋 [SurveysView] Inicializando vista de encuestas');
-
     try {
-      // 1. Setup DOM y eventos básicos
       this._setupDOMReferences();
       this._attachEventListeners();
-
-      // 2. Cargar encuestas con feedback inmediato
       await this._loadSurveys();
     } catch (error) {
       console.error('❌ [SurveysView] Error en afterRender:', error);
@@ -60,59 +49,37 @@ export default class SurveysView {
     }
   }
 
-  /**
-   * Cleanup al salir de la vista
-   */
   cleanup() {
     console.log('🧹 [SurveysView] Limpiando vista');
-
-    // Cancelar peticiones pendientes
-    if (this.abortController) {
-      this.abortController.abort();
-    }
-
-    // Limpiar referencias DOM
+    if (this.abortController) this.abortController.abort();
     this._clearDOMReferences();
   }
 
   // =====================
-  // MÉTODOS PRINCIPALES
+  // Carga de encuestas
   // =====================
-
-  /**
-   * Cargar encuestas del servidor
-   * @private
-   */
   async _loadSurveys() {
     console.log('📡 [SurveysView] Cargando encuestas...');
-
     try {
       this.isLoading = true;
       this._updateLoadingState(true);
 
-      // Cargar encuestas
       const result = await surveysService.getSurveyHeaders();
-
       if (this.abortController.signal.aborted) return;
 
       if (result.success) {
         this.surveys = result.data || [];
         this.error = null;
-
         console.log('✅ [SurveysView] Encuestas cargadas:', this.surveys.length);
         await hapticsService.light();
-
-        // Actualizar UI
         this._renderSurveysList();
       } else {
         throw new Error(result.error || 'Error desconocido');
       }
     } catch (error) {
       console.error('❌ [SurveysView] Error cargando encuestas:', error);
-
       this.error = error.message || 'Error cargando encuestas';
       this.surveys = [];
-
       await hapticsService.error();
       this._showError(this.error);
     } finally {
@@ -121,44 +88,28 @@ export default class SurveysView {
     }
   }
 
-  /**
-   * Renderizar lista de encuestas
-   * @private
-   */
+  // =====================
+  // Render lista
+  // =====================
   _renderSurveysList() {
     const container = $('#surveysContainer');
     if (!container) return;
 
     if (this.surveys.length === 0) {
-      // Estado vacío
       container.innerHTML = this._getEmptyStateHTML();
       return;
     }
 
-    // Renderizar encuestas
-    const surveysHTML = this.surveys.map(survey => this._getSurveyCardHTML(survey)).join('');
-
-    container.innerHTML = `
-      <div class="surveys-grid">
-        ${surveysHTML}
-      </div>
-    `;
-
-    // Adjuntar eventos a las tarjetas
+    const surveysHTML = this.surveys.map(s => this._getSurveyCardHTML(s)).join('');
+    container.innerHTML = `<div class="surveys-grid">${surveysHTML}</div>`;
     this._attachSurveyCardEvents();
   }
 
-  /**
-   * Adjuntar eventos a las tarjetas de encuestas
-   * @private
-   */
   _attachSurveyCardEvents() {
     const surveyCards = document.querySelectorAll('.survey-card[data-survey-id]');
-
     surveyCards.forEach(card => {
       card.addEventListener('click', async e => {
         e.preventDefault();
-
         const surveyId = parseInt(card.dataset.surveyId);
         const isExpired = card.classList.contains('expired');
 
@@ -167,23 +118,15 @@ export default class SurveysView {
           window.mostrarMensajeEstado?.('Esta encuesta ha expirado', 'warning', 3000);
           return;
         }
-
         await this._handleSurveyClick(surveyId);
       });
     });
   }
 
-  /**
-   * Manejar click en encuesta
-   * @private
-   */
   async _handleSurveyClick(surveyId) {
     console.log('🎯 [SurveysView] Iniciando encuesta:', surveyId);
-
     try {
       await hapticsService.medium();
-
-      // Navegar a la vista de encuesta específica
       navigateTo(`/surveys/${surveyId}`);
     } catch (error) {
       console.error('❌ [SurveysView] Error al abrir encuesta:', error);
@@ -191,30 +134,16 @@ export default class SurveysView {
     }
   }
 
-  /**
-   * Refrescar encuestas
-   * @private
-   */
   async _handleRefresh() {
     console.log('🔄 [SurveysView] Refrescando encuestas');
-
     await hapticsService.light();
-
-    // Limpiar cache antes de recargar
     surveysService.clearCache();
-
-    // Recargar
     await this._loadSurveys();
   }
 
   // ==================
-  // MÉTODOS DE SETUP
+  // Setup / DOM
   // ==================
-
-  /**
-   * Configurar referencias DOM
-   * @private
-   */
   _setupDOMReferences() {
     this.backBtn = $('#backBtn');
     this.refreshBtn = $('#refreshBtn');
@@ -223,10 +152,6 @@ export default class SurveysView {
     this.errorContainer = $('#surveysError');
   }
 
-  /**
-   * Limpiar referencias DOM
-   * @private
-   */
   _clearDOMReferences() {
     this.backBtn = null;
     this.refreshBtn = null;
@@ -235,12 +160,7 @@ export default class SurveysView {
     this.errorContainer = null;
   }
 
-  /**
-   * Adjuntar event listeners
-   * @private
-   */
   _attachEventListeners() {
-    // Botón regresar
     if (this.backBtn) {
       this.backBtn.addEventListener('click', async e => {
         e.preventDefault();
@@ -248,8 +168,6 @@ export default class SurveysView {
         navigateTo(ROUTES.DASHBOARD);
       });
     }
-
-    // Botón refrescar
     if (this.refreshBtn) {
       this.refreshBtn.addEventListener('click', e => {
         e.preventDefault();
@@ -259,28 +177,18 @@ export default class SurveysView {
   }
 
   // =================
-  // MÉTODOS DE UI
+  // UI helpers
   // =================
-
-  /**
-   * Actualizar estado de carga
-   * @private
-   */
   _updateLoadingState(isLoading) {
     if (this.loadingIndicator) {
       this.loadingIndicator.style.display = isLoading ? 'block' : 'none';
     }
-
     if (this.refreshBtn) {
       this.refreshBtn.disabled = isLoading;
       dom(this.refreshBtn)[isLoading ? 'addClass' : 'removeClass']('loading');
     }
   }
 
-  /**
-   * Mostrar error
-   * @private
-   */
   _showError(message) {
     if (this.errorContainer) {
       this.errorContainer.innerHTML = `
@@ -289,12 +197,9 @@ export default class SurveysView {
           <div class="error-content">
             <h3>Error</h3>
             <p>${message}</p>
-            <button class="retry-btn" onclick="location.reload()">
-              Reintentar
-            </button>
+            <button class="retry-btn" onclick="location.reload()">Reintentar</button>
           </div>
-        </div>
-      `;
+        </div>`;
       this.errorContainer.style.display = 'block';
     } else {
       window.mostrarMensajeEstado?.(message, 'error');
@@ -302,13 +207,8 @@ export default class SurveysView {
   }
 
   // =================
-  // PLANTILLAS HTML
+  // Tarjeta de encuesta
   // =================
-
-  /**
-   * HTML para tarjeta de encuesta
-   * @private
-   */
   _getSurveyCardHTML(survey) {
     const statusClass = survey.isExpired ? 'expired' : 'active';
     const statusIcon = survey.isExpired ? '⏰' : '📋';
@@ -322,13 +222,12 @@ export default class SurveysView {
           </div>
           ${this._getRightArrowIcon()}
         </div>
-        
+
         <div class="survey-content">
           <h3 class="survey-title">${survey.vcSurvey}</h3>
-          <p class="survey-program">${survey.vcProgram}</p>
-          <p class="survey-creator">Por ${survey.vcNames}</p>
+          <!-- No mostramos program/author/created: el endpoint no los trae -->
         </div>
-        
+
         <div class="survey-meta">
           <div class="meta-item">
             ${this._getQuestionsIcon()}
@@ -339,28 +238,21 @@ export default class SurveysView {
             <span>${survey.timeLabel}</span>
           </div>
         </div>
-        
+
         <div class="survey-dates">
-          <small>Creada: ${survey.createdDate}</small>
           ${survey.expirationDate ? `<small>Expira: ${survey.expirationDate}</small>` : ''}
         </div>
       </div>
     `;
   }
 
-  /**
-   * HTML para estado vacío
-   * @private
-   */
   _getEmptyStateHTML() {
     return `
       <div class="empty-state">
         <div class="empty-icon">📋</div>
         <h3>No hay encuestas disponibles</h3>
         <p>No se encontraron encuestas activas en este momento.</p>
-        <button class="retry-btn" onclick="location.reload()">
-          Refrescar
-        </button>
+        <button class="retry-btn" onclick="location.reload()">Refrescar</button>
       </div>
     `;
   }
@@ -368,7 +260,6 @@ export default class SurveysView {
   // ===============
   // ICONOS SVG
   // ===============
-
   _getBackIcon() {
     return `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">

@@ -205,6 +205,9 @@
 .actions-section .action-card.gestion-card .card-background {
   background: url(../../img/dashboard-3.png) center center / cover no-repeat;
 }
+.actions-section .action-card.surveys-card .card-background {
+  background: url(../../img/dashboard-survey.png) center center / cover no-repeat;
+}
 .actions-section .actions-grid-secondary {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -303,8 +306,8 @@
 }
 @media (max-width: 640px) {
   .dashboard-container {
-    padding-top: 0px;
-    padding-bottom: 0px;
+    padding-top: max(env(safe-area-inset-top), 0px);
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
   }
   .dashboard-header {
     padding: 12px 16px;

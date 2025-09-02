@@ -1,29 +1,54 @@
 // src/css/utilities/keyboard.less
 // ============================================
-// UTILIDADES PARA MANEJO DE TECLADO
+// UTILIDADES PARA MANEJO DE TECLADO (global)
 // ============================================
 
-// Contenedor principal que se ajusta con el teclado
+// Variables CSS (el servicio puede actualizar --kb-height vía JS)
+:root {
+  --kb-height: 0px; // la actualizará keyboard.service si puede
+  --kb-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --kb-scroll-padding-top: 88px; // espacio para evitar que el focus quede bajo el header
+}
+
+// ============================================
+// CONTENEDORES AWARE
+// ============================================
+
+// Contenedor raíz del view que participa en el ajuste por teclado
 .keyboard-aware-container {
   height: 100vh;
-  height: 100dvh; // Dynamic viewport height
+  height: 100dvh; // Soporta barras dinámicas móviles
   overflow: hidden;
   display: flex;
   flex-direction: column;
   transition: padding-bottom 0.3s ease-out;
+
+  // Asegurar header visible siempre en vistas aware
+  .alta-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #fff;
+    transform: none !important; // ignora clases que lo oculten
+  }
+  .alta-header.scrolled {
+    transform: none !important; // si alguna vista agrega .scrolled, no ocultar
+  }
 }
 
-// Contenido scrolleable que se ajusta
+// Contenido scrolleable principal dentro del contenedor aware
 .keyboard-scrollable {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  padding-bottom: 20px; // Espacio extra al final
+  padding-bottom: 20px;
+  scroll-padding-top: var(--kb-scroll-padding-top); // que el focus no choque con el header
 
-  // Cuando el teclado está activo
+  // Cuando el teclado está activo (clase que setea el servicio)
   &.keyboard-active {
-    // Se ajustará dinámicamente via JS
+    // usa la altura calculada por JS, con fallback razonable
+    padding-bottom: calc(max(var(--kb-height, 0px), 260px) + var(--kb-safe-bottom));
   }
 }
 
@@ -31,7 +56,7 @@
 // INPUTS OPTIMIZADOS PARA MÓVIL
 // ============================================
 
-// Prevenir zoom en iOS
+// Tamaño mínimo 16px para evitar zoom en iOS
 input[type='text'],
 input[type='email'],
 input[type='tel'],
@@ -40,90 +65,36 @@ input[type='password'],
 input[type='date'],
 textarea,
 select {
-  font-size: 16px !important; // Mínimo 16px previene zoom en iOS
+  font-size: 16px !important;
 
   @media (max-width: 768px) {
     font-size: 16px !important;
   }
 }
 
-// Input con focus mejorado
+// Realce suave cuando el servicio marque un campo como "keyboard-focused"
 .form-control {
-  // Transición suave al hacer focus
   transition: all 0.2s ease-out;
 
-  // Estado de focus con el teclado
   &.keyboard-focused {
     background-color: #ffffff;
     border-color: #37a6a6;
     box-shadow: 0 0 0 3px rgba(55, 166, 166, 0.15);
     transform: scale(1.02);
+    position: relative; // eleva sobre sombras cercanas
+    z-index: 1;
   }
 }
 
 // ============================================
-// FORMULARIO OPTIMIZADO
-// ============================================
-
-.form-view-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-
-  // Header fijo
-  .alta-header {
-    flex-shrink: 0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: #ffffff;
-  }
-
-  // Progress fijo
-  .progress-indicator {
-    flex-shrink: 0;
-    position: sticky;
-    top: 60px; // Altura del header
-    z-index: 99;
-    background: #ffffff;
-    padding-bottom: 10px;
-  }
-
-  // Contenedor del form scrolleable
-  .form-container {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
-
-    // Padding extra para el teclado
-    padding-bottom: env(keyboard-inset-height, 50px);
-  }
-}
-
-// ============================================
-// SECCIONES DE FORMULARIO MEJORADAS
-// ============================================
-
-.form-section {
-  // Margen inferior generoso
-  margin-bottom: 24px;
-
-  // Último section con más espacio
-  &:last-child {
-    margin-bottom: 100px; // Espacio para el teclado
-  }
-}
-
-// ============================================
-// TOOLBAR SOBRE EL TECLADO (iOS style)
+// TOOLBAR SOBRE EL TECLADO (opcional)
 // ============================================
 
 .keyboard-toolbar {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
+  bottom: 0; // se mantiene sobre el teclado
   height: 44px;
   background: #f0f0f0;
   border-top: 1px solid #d1d5db;
@@ -170,71 +141,43 @@ select {
 }
 
 // ============================================
-// AJUSTES ESPECÍFICOS POR PLATAFORMA
+// AJUSTES POR PLATAFORMA
 // ============================================
 
-// iOS específico
-.platform-ios {
-  .form-container {
-    // Padding para safe areas
-    padding-bottom: calc(env(safe-area-inset-bottom) + 50px);
+// iOS: scroll fluido y respeto a safe areas
+@supports (-webkit-touch-callout: none) {
+  .keyboard-scrollable {
+    -webkit-overflow-scrolling: touch;
   }
-
-  // Inputs más altos en iOS
-  .form-control {
-    min-height: 44px;
+  .keyboard-scrollable.keyboard-active {
+    padding-bottom: calc(max(var(--kb-height, 0px), 260px) + env(safe-area-inset-bottom, 0px));
   }
 }
 
-// Android específico
-.platform-android {
-  .form-container {
-    padding-bottom: 50px;
-  }
-
-  // Ajuste para el resize mode
-  &.keyboard-visible {
-    .form-view-container {
-      height: calc(100vh - var(--keyboard-height, 0px));
-    }
+// Android (opcional): si el servicio marca el body con .platform-android.keyboard-visible
+.platform-android.keyboard-visible {
+  .keyboard-aware-container {
+    height: calc(100vh - var(--kb-height, 0px));
   }
 }
 
 // ============================================
-// ANIMACIONES PARA TRANSICIONES SUAVES
+// UTILIDADES ADICIONALES
 // ============================================
 
-@keyframes slideUpInput {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+// Último bloque con espacio extra cuando hay teclado (aplícalo donde lo necesites)
+.kb-bottom-gap {
+  margin-bottom: 100px;
 }
 
-// Input que aparece cuando el teclado se muestra
-.slide-up-on-focus {
-  &:focus {
-    animation: slideUpInput 0.3s ease-out;
-  }
-}
-
-// ============================================
-// UTILIDADES PARA SCROLL
-// ============================================
-
-// Asegurar que el botón de guardar sea visible
-.form-actions {
+// Acciones pegajosas (opt-in). Úsalo solo si quieres el bloque de acciones sticky.
+.kb-sticky-actions {
   position: sticky;
   bottom: 0;
   background: linear-gradient(to top, #ffffff 80%, transparent);
-  padding: 20px 0 calc(env(safe-area-inset-bottom) + 20px);
+  padding: 20px 0 calc(var(--kb-safe-bottom) + 20px);
   margin-top: 20px;
 
-  // Sombra sutil
   &::before {
     content: '';
     position: absolute;
@@ -247,18 +190,19 @@ select {
 }
 
 // ============================================
-// FOCUS TRAP PARA MEJOR NAVEGACIÓN
+// ANIMACIONES SUAVES
 // ============================================
 
-.focus-trap {
-  &:focus-within {
-    .form-section {
-      opacity: 0.5;
-      transition: opacity 0.2s;
-
-      &:focus-within {
-        opacity: 1;
-      }
-    }
+@keyframes slideUpInput {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
   }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.slide-up-on-focus:focus {
+  animation: slideUpInput 0.3s ease-out;
 }

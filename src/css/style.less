@@ -1,6 +1,7 @@
 @import '../css/core/boilerplate.less';
 @import './transitions.less';
 @import './progressive-loading.less';
+@import './utilities/keyboard.less';
 
 /*========================================
   1. PALETA CORPORATIVA
@@ -10,6 +11,7 @@
 @brand-orange: #d96b2b;
 @brand-burgundy: #8c2016;
 @brand-coral: #f2a29b;
+@danger-color: #ef4444; // ← usado por audio/estados
 
 /* System colors (sobreescribe bootstrap del boilerplate) */
 @primary-color: @brand-teal;
@@ -304,7 +306,7 @@ body {
       cursor: pointer;
 
       &:checked + label {
-        .gradient-primary(); // Asume un fondo degradado definido como mixin
+        .gradient-primary();
         color: #fff;
         border-color: @primary-color;
         box-shadow: 0 0 0 2px fade(@primary-color, 30%);
@@ -350,7 +352,6 @@ body {
 /* ---------------------- */
 
 .signature-section {
-  /* El área de dibujo de la firma */
   .signature-box {
     position: relative;
     display: flex;
@@ -371,7 +372,6 @@ body {
       box-shadow: 0 4px 12px rgba(55, 166, 166, 0.15);
     }
 
-    /* Estado cuando se está firmando */
     &.signing {
       border-style: solid;
       border-color: #37a6a6;
@@ -379,7 +379,6 @@ body {
       box-shadow: 0 0 0 4px rgba(55, 166, 166, 0.1);
     }
 
-    /* Estado cuando tiene firma escaneada */
     &.has-scan {
       border-color: #10b981;
       background-color: rgba(16, 185, 129, 0.05);
@@ -398,7 +397,6 @@ body {
       }
     }
 
-    /* El canvas propiamente dicho */
     #signatureCanvas {
       width: 100%;
       height: 180px;
@@ -409,7 +407,6 @@ body {
       cursor: crosshair;
     }
 
-    /* Imagen de firma escaneada */
     #signatureImage {
       position: absolute;
       max-width: 90%;
@@ -419,7 +416,6 @@ body {
       z-index: 3;
     }
 
-    /* Placeholder animado */
     #signaturePlaceholder {
       position: absolute;
       top: 50%;
@@ -431,8 +427,6 @@ body {
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       opacity: 1;
       z-index: 1;
-
-      /* Animación de pulso suave */
       animation: pulse 2s ease-in-out infinite;
 
       &.hover {
@@ -441,7 +435,6 @@ body {
       }
     }
 
-    /* Indicador de presión (opcional) */
     &::before {
       content: '';
       position: absolute;
@@ -463,7 +456,6 @@ body {
     }
   }
 
-  /* Botones mejorados */
   .signature-controls {
     display: flex;
     gap: 8px;
@@ -487,7 +479,6 @@ body {
       justify-content: center;
       gap: 6px;
 
-      /* Efecto ripple */
       &::after {
         content: '';
         position: absolute;
@@ -515,7 +506,6 @@ body {
         transform: translateY(0);
       }
 
-      /* Botón "Limpiar" */
       &#clearSignature {
         border-color: #ef4444;
         color: #ef4444;
@@ -535,7 +525,6 @@ body {
         }
       }
 
-      /* Botón "Deshacer" */
       &#undoSignature {
         border-color: #0ea5e9;
         color: #0ea5e9;
@@ -555,7 +544,6 @@ body {
         }
       }
 
-      /* Estado deshabilitado */
       &:disabled {
         opacity: 0.5;
         cursor: not-allowed;
@@ -569,7 +557,6 @@ body {
     }
   }
 
-  /* Texto de ayuda */
   .signature-help {
     font-size: 12px;
     color: #6b7280;
@@ -590,7 +577,6 @@ body {
     opacity: 0.4;
   }
 }
-
 @keyframes recording {
   0%,
   100% {
@@ -612,7 +598,6 @@ body {
       #signatureCanvas {
         height: 140px;
       }
-
       #signaturePlaceholder {
         font-size: 36px;
       }
@@ -636,7 +621,6 @@ body {
   outline: 2px solid #37a6a6;
   outline-offset: 2px;
 }
-
 #signatureCanvas:focus-visible {
   outline: 2px solid #37a6a6;
   outline-offset: -2px;
@@ -648,9 +632,9 @@ body {
   display: flex;
   align-items: center;
   gap: 15px;
-  padding: 15px;
   background: @bg-secondary;
   border-radius: @border-radius;
+  padding: 15px;
 }
 .audio-controls {
   display: flex;
@@ -839,9 +823,9 @@ body {
 /* oculta el elemento pero preserva el espacio para evitar reflow brusco */
 .loading-hidden {
   visibility: hidden;
-  height: 0; /* opcional, si quieres colapsar espacio */
-  overflow: hidden; /* opcional */
-  transition: none; /* evita animaciones indeseadas */
-  padding: 0 !important; /* evita padding extra */
-  margin: 0 !important; /* evita margen extra */
+  height: 0;
+  overflow: hidden;
+  transition: none;
+  padding: 0 !important;
+  margin: 0 !important;
 }

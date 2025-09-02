@@ -1,5 +1,6 @@
 // src/views/survey-detail/index.js
-// Vista detallada de encuesta individual - CON VALIDACIÓN OBLIGATORIA + JSON SIMPLE + REFERENCIA
+// Vista detallada de encuesta - SIMPLIFICADA
+// Ahora utiliza el keyboardService global para todo el manejo de teclado.
 
 import Handlebars from 'handlebars';
 import { navigateTo } from '../../routes/index.js';
@@ -16,23 +17,21 @@ const template = Handlebars.compile(tplSource);
 export default class SurveyDetailView {
   constructor(context = {}) {
     this.context = context;
-
-    // Extraer Survey ID
     this.surveyId = this._extractSurveyId(context);
     console.log('🎯 [SurveyDetailView] Survey ID extraído:', this.surveyId);
 
     this.user = authService.getCurrentUser();
 
-    // Estado de la encuesta
+    // Estado
     this.survey = null;
     this.questions = [];
     this.currentQuestionIndex = 0;
-    this.responses = new Map(); // questionId -> response (ver formatos abajo)
+    this.responses = new Map();
     this.isLoading = true;
     this.error = null;
     this.isSubmitting = false;
 
-    // Referencia (opcional, enviada en el payload raíz)
+    // Referencia opcional
     this.reference = '';
 
     // Timer
@@ -46,41 +45,8 @@ export default class SurveyDetailView {
   }
 
   // ========================
-  // EXTRAS BÁSICOS
+  // RENDER + CICLO DE VIDA
   // ========================
-
-  /**
-   * Extraer Survey ID de forma robusta.
-   * Prioridad: params.data.id -> params.url -> data.id -> id -> url -> hash -> history.state -> sessionStorage
-   * @private
-   */
-  _extractSurveyId(context) {
-    const tryParse = val => {
-      if (val === undefined || val === null) return null;
-      const s = typeof val === 'string' || typeof val === 'number' ? String(val) : '';
-      const m = s.match(/(?:^|\/)(\d+)(?:[\/\?]|$)/);
-      if (!m) return null;
-      const n = parseInt(m[1], 10);
-      return Number.isFinite(n) ? n : null;
-    };
-
-    const candidates = [
-      context?.params?.data?.id,
-      context?.params?.url,
-      context?.data?.id,
-      context?.id,
-      context?.url,
-      window.location.hash,
-      history.state?.id,
-      sessionStorage.getItem('lastSurveyId'),
-    ];
-
-    for (const c of candidates) {
-      const n = tryParse(c);
-      if (n !== null) return n;
-    }
-    return null;
-  }
 
   render() {
     if (!this.surveyId || isNaN(this.surveyId)) {
@@ -115,7 +81,6 @@ export default class SurveyDetailView {
 
   async afterRender() {
     console.log(`📝 [SurveyDetailView] Inicializando encuesta ${this.surveyId}`);
-
     if (!this.surveyId || isNaN(this.surveyId)) {
       this._showError('ID de encuesta no válido');
       return;
@@ -123,16 +88,24 @@ export default class SurveyDetailView {
 
     try {
       this._setupDOMReferences();
+      this._markScrollableContainer(); // Le decimos al servicio qué contenedor debe hacer scroll.
       this._attachEventListeners();
 
-      await this._loadSurveyData();
-
-      if (this.survey && this.questions.length > 0) {
-        await this._initializeSurvey();
-      }
+      await this._loadSurvey();
+      await this._initializeSurvey();
     } catch (error) {
       console.error('❌ [SurveyDetailView] Error en afterRender:', error);
-      this._showError('Error inicializando la encuesta');
+      this._updateLoadingState(false);
+      this._showError('Error al cargar la encuesta. Intenta de nuevo.');
+    }
+  }
+
+  _markScrollableContainer() {
+    const content = $('.survey-content');
+    if (content) {
+      console.log(
+        '✅ [SurveyDetailView] Contenedor de scroll marcado para el servicio de teclado.',
+      );
     }
   }
 
@@ -141,15 +114,29 @@ export default class SurveyDetailView {
     this._clearTimer();
     if (this.abortController) this.abortController.abort();
     surveysService.cancelAllRequests();
+
+    // Limpieza DOM
+    this.backBtn = null;
+    this.prevBtn = null;
+    this.nextBtn = null;
+    this.submitBtn = null;
+    this.loadingContainer = null;
+    this.errorContainer = null;
+    this.contentContainer = null;
+    this.questionContainer = null;
+    this.timerDisplay = null;
   }
 
   // ========================
   // CARGA DE DATOS
   // ========================
 
+  async _loadSurvey() {
+    return this._loadSurveyData();
+  }
+
   async _loadSurveyData() {
     console.log(`📡 [SurveyDetailView] Cargando datos de encuesta ${this.surveyId}`);
-
     try {
       this._updateLoadingState(true, 'Cargando encuesta...');
 
@@ -202,10 +189,14 @@ export default class SurveyDetailView {
     await Promise.allSettled(promises);
   }
 
+  // ========================
+  // INICIALIZACIÓN DE UI
+  // ========================
+
   async _initializeSurvey() {
     try {
-      this._renderSurveyHeader(); // ← dibuja instrucciones + REFERENCIA
-      this._attachReferenceListeners(); // ← listeners del campo referencia
+      this._renderSurveyHeader();
+      this._attachReferenceListeners();
 
       if (this.survey.iTimer > 0) this._initializeTimer();
 
@@ -222,7 +213,6 @@ export default class SurveyDetailView {
   _renderSurveyHeader() {
     const headerContent = $('#surveyHeaderContent');
     if (!headerContent) return;
-
     const refVal = this.reference || '';
 
     headerContent.innerHTML = `
@@ -237,30 +227,22 @@ export default class SurveyDetailView {
             this.survey.iTimer > 0
               ? `
             <div class="timer-display" id="timerDisplay">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
               <span id="timerText">${this._formatTime(this.survey.iTimer * 60)}</span>
-            </div>
-          `
+            </div>`
               : ''
           }
         </div>
       </div>
-
       ${
         this.survey.vcInstructions
           ? `
         <div class="survey-instructions">
           <h3>Instrucciones</h3>
           <div class="instructions-content">${this.survey.vcInstructions}</div>
-        </div>
-      `
+        </div>`
           : ''
       }
-
-      <!-- Campo Referencia (opcional) -->
       <div class="reference-field" id="referenceField">
         <label for="referenceInput" class="reference-label">Referencia (opcional)</label>
         <input 
@@ -287,7 +269,6 @@ export default class SurveyDetailView {
       const cnt = $('#referenceCounter');
       if (cnt) cnt.textContent = `${this.reference.length}/80`;
 
-      // Sincroniza con el input del resumen si existe
       const sumInput = $('#referenceSummaryInput');
       if (sumInput && sumInput.value !== this.reference) {
         sumInput.value = this.reference;
@@ -298,7 +279,7 @@ export default class SurveyDetailView {
   }
 
   // =======================
-  // RENDER DE PREGUNTAS (incluye tipo 2 checkbox)
+  // RENDER DE PREGUNTAS
   // =======================
 
   async _renderCurrentQuestion() {
@@ -343,9 +324,7 @@ export default class SurveyDetailView {
           <h2 class="question-title">${question.vcQuestion || 'Pregunta sin texto'}</h2>
           <span class="question-type-badge">${question.vcType || 'Sin tipo'}</span>
         </div>
-        <div class="question-content">
-          ${questionHTML}
-        </div>
+        <div class="question-content">${questionHTML}</div>
       </div>
     `;
 
@@ -360,19 +339,14 @@ export default class SurveyDetailView {
     if (!question.answers || question.answers.length === 0) {
       return '<div class="error">No hay opciones disponibles para esta pregunta</div>';
     }
-
-    const answersHTML = question.answers
+    return `<div class="options-container radio-container">${question.answers
       .map(
         answer => `
       <div class="option-item radio-option">
         <label class="option-label">
-          <input 
-            type="radio" 
-            name="question_${question.iQuestionId}" 
-            value="${answer.iAnswerId}"
-            class="option-input radio-input"
-            data-needs-text="${answer.bText}"
-          >
+          <input type="radio" name="question_${question.iQuestionId}" value="${
+          answer.iAnswerId
+        }" class="option-input radio-input" data-needs-text="${answer.bText}">
           <div class="option-content">
             <div class="radio-indicator"></div>
             <span class="option-text">${answer.vcAnswer || 'Opción sin texto'}</span>
@@ -382,92 +356,56 @@ export default class SurveyDetailView {
           answer.bText
             ? `
           <div class="option-text-input" style="display: none;">
-            <textarea 
-              placeholder="Proporciona detalles adicionales..."
-              maxlength="500"
-              class="additional-text"
-              data-answer-id="${answer.iAnswerId}"
-            ></textarea>
-          </div>
-        `
+            <textarea placeholder="Proporciona detalles adicionales..." maxlength="500" class="additional-text" data-answer-id="${answer.iAnswerId}"></textarea>
+          </div>`
             : ''
         }
-      </div>
-    `,
+      </div>`,
       )
-      .join('');
-
-    return `<div class="options-container radio-container">${answersHTML}</div>`;
+      .join('')}
+    </div>`;
   }
 
   _renderCheckboxQuestion(question) {
     if (!question.answers || question.answers.length === 0) {
       return '<div class="error">No hay opciones disponibles para esta pregunta</div>';
     }
-
-    const answersHTML = question.answers
-      .map(
-        answer => `
-      <div class="option-item checkbox-option">
-        <label class="option-label">
-          <input 
-            type="checkbox" 
-            name="question_${question.iQuestionId}" 
-            value="${answer.iAnswerId}"
-            class="option-input checkbox-input"
-            data-needs-text="${answer.bText}"
-          >
-          <div class="option-content">
-            <div class="checkbox-indicator">
-              <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <span class="option-text">${answer.vcAnswer || 'Opción sin texto'}</span>
-          </div>
-        </label>
-        ${
-          answer.bText
-            ? `
-          <div class="option-text-input" style="display: none;">
-            <textarea 
-              placeholder="Proporciona detalles adicionales..."
-              maxlength="500"
-              class="additional-text"
-              data-answer-id="${answer.iAnswerId}"
-            ></textarea>
-          </div>
-        `
-            : ''
-        }
-      </div>
-    `,
-      )
-      .join('');
-
     return `
       <div class="options-container checkbox-container">
         <div class="checkbox-helper"><small>Puedes seleccionar múltiples opciones</small></div>
-        ${answersHTML}
-      </div>
-    `;
+        ${question.answers
+          .map(
+            answer => `
+          <div class="option-item checkbox-option">
+            <label class="option-label">
+              <input type="checkbox" name="question_${question.iQuestionId}" value="${
+              answer.iAnswerId
+            }" class="option-input checkbox-input" data-needs-text="${answer.bText}">
+              <div class="option-content">
+                <div class="checkbox-indicator"><svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <span class="option-text">${answer.vcAnswer || 'Opción sin texto'}</span>
+              </div>
+            </label>
+            ${
+              answer.bText
+                ? `
+              <div class="option-text-input" style="display: none;">
+                <textarea placeholder="Proporciona detalles adicionales..." maxlength="500" class="additional-text" data-answer-id="${answer.iAnswerId}"></textarea>
+              </div>`
+                : ''
+            }
+          </div>`,
+          )
+          .join('')}
+      </div>`;
   }
 
   _renderTextQuestion(question) {
     return `
       <div class="text-input-container">
-        <textarea 
-          id="textAnswer_${question.iQuestionId}"
-          placeholder="Escribe tu respuesta aquí..."
-          maxlength="1024"
-          class="text-answer-input"
-          rows="4"
-        ></textarea>
-        <div class="text-counter">
-          <span class="current">0</span>/<span class="max">1024</span> caracteres
-        </div>
-      </div>
-    `;
+        <textarea id="textAnswer_${question.iQuestionId}" placeholder="Escribe tu respuesta aquí..." maxlength="1024" class="text-answer-input" rows="4"></textarea>
+        <div class="text-counter"><span class="current">0</span>/<span class="max">1024</span> caracteres</div>
+      </div>`;
   }
 
   _renderNumericQuestion(question) {
@@ -475,46 +413,37 @@ export default class SurveyDetailView {
     const max = question.iMax || 10;
     const range = max - min;
     const initialValue = Math.round((min + max) / 2);
-
     let marks = [];
     if (range <= 10) {
       for (let i = min; i <= max; i++) marks.push(i);
     } else {
       marks = [min, Math.round((min + max) / 2), max];
     }
-
-    const marksHTML = marks
-      .map(
-        mark => `
-      <div class="slider-mark" style="left: ${
-        ((mark - min) / range) * 100
-      }%;"><div class="mark-line"></div><div class="mark-label">${mark}</div></div>
-    `,
-      )
-      .join('');
-
     return `
       <div class="numeric-input-container">
         <div class="slider-container">
           <div class="slider-track">
             <div class="slider-fill" id="sliderFill_${question.iQuestionId}"></div>
-            <div class="slider-marks">${marksHTML}</div>
+            <div class="slider-marks">${marks
+              .map(
+                mark =>
+                  `<div class="slider-mark" style="left: ${
+                    ((mark - min) / range) * 100
+                  }%;"><div class="mark-line"></div><div class="mark-label">${mark}</div></div>`,
+              )
+              .join('')}</div>
           </div>
-          <input 
-            type="range" 
-            id="numericSlider_${question.iQuestionId}"
-            min="${min}" 
-            max="${max}" 
-            value="${initialValue}"
-            class="numeric-slider"
-          >
+          <input type="range" id="numericSlider_${
+            question.iQuestionId
+          }" min="${min}" max="${max}" value="${initialValue}" class="numeric-slider">
         </div>
         <div class="slider-value">
           <span class="value-label">Valor seleccionado:</span>
-          <span class="value-display" id="valueDisplay_${question.iQuestionId}">${initialValue}</span>
+          <span class="value-display" id="valueDisplay_${
+            question.iQuestionId
+          }">${initialValue}</span>
         </div>
-      </div>
-    `;
+      </div>`;
   }
 
   // =======================
@@ -542,25 +471,20 @@ export default class SurveyDetailView {
     const radioInputs = document.querySelectorAll(
       `input[name="question_${question.iQuestionId}"][type="radio"]`,
     );
-
     radioInputs.forEach(input => {
       input.addEventListener('change', async () => {
         await hapticsService.light();
-
         const needsText = input.dataset.needsText === 'true';
         const answerId = parseInt(input.value);
-
-        // Ocultar todos los campos de texto de esta pregunta
-        const allTextInputs = document.querySelectorAll(
-          `.question-wrapper[data-question-id="${question.iQuestionId}"] .option-text-input`,
-        );
-        allTextInputs.forEach(container => {
-          container.style.display = 'none';
-          const textarea = container.querySelector('textarea');
-          if (textarea) textarea.value = '';
-        });
-
-        // Mostrar campo de texto si se requiere
+        document
+          .querySelectorAll(
+            `.question-wrapper[data-question-id="${question.iQuestionId}"] .option-text-input`,
+          )
+          .forEach(container => {
+            container.style.display = 'none';
+            const textarea = container.querySelector('textarea');
+            if (textarea) textarea.value = '';
+          });
         if (needsText) {
           const textContainer = document.querySelector(
             `.option-text-input textarea[data-answer-id="${answerId}"]`,
@@ -570,20 +494,15 @@ export default class SurveyDetailView {
             textContainer.querySelector('textarea')?.focus();
           }
         }
-
-        // Guardar respuesta
         this._saveResponse(question.iQuestionId, {
           typeId: 1,
           questionId: question.iQuestionId,
           answerId,
           extraText: needsText ? '' : undefined,
         });
-
         this._updateNavigationButtons();
       });
     });
-
-    // input de texto extra (radio)
     const textareas = document.querySelectorAll('.radio-container .additional-text');
     textareas.forEach(textarea => {
       textarea.addEventListener('input', () => {
@@ -608,18 +527,14 @@ export default class SurveyDetailView {
     const checkboxInputs = document.querySelectorAll(
       `input[name="question_${question.iQuestionId}"][type="checkbox"]`,
     );
-
     checkboxInputs.forEach(input => {
       input.addEventListener('change', async () => {
         await hapticsService.light();
-
         const answerId = parseInt(input.value);
         const needsText = input.dataset.needsText === 'true';
-
         const textContainer = document.querySelector(
           `.option-text-input textarea[data-answer-id="${answerId}"]`,
         )?.parentElement;
-
         if (input.checked && needsText && textContainer) {
           textContainer.style.display = 'block';
           textContainer.querySelector('textarea')?.focus();
@@ -628,12 +543,10 @@ export default class SurveyDetailView {
           const textarea = textContainer.querySelector('textarea');
           if (textarea) textarea.value = '';
         }
-
         this._updateCheckboxResponse(question);
         this._updateNavigationButtons();
       });
     });
-
     const textareas = document.querySelectorAll('.checkbox-container .additional-text');
     textareas.forEach(textarea => {
       textarea.addEventListener('input', () => {
@@ -648,7 +561,6 @@ export default class SurveyDetailView {
       `input[name="question_${question.iQuestionId}"][type="checkbox"]`,
     );
     const selectedAnswers = [];
-
     checkboxInputs.forEach(input => {
       if (input.checked) {
         const answerId = parseInt(input.value);
@@ -664,7 +576,6 @@ export default class SurveyDetailView {
         });
       }
     });
-
     this._saveResponse(question.iQuestionId, {
       typeId: 2,
       questionId: question.iQuestionId,
@@ -675,12 +586,10 @@ export default class SurveyDetailView {
   _attachTextEvents(question) {
     const textarea = $(`#textAnswer_${question.iQuestionId}`);
     const counter = document.querySelector('.text-counter .current');
-
     if (textarea) {
       textarea.addEventListener('input', () => {
         const text = textarea.value;
         if (counter) counter.textContent = text.length;
-
         this._saveResponse(question.iQuestionId, {
           typeId: 3,
           questionId: question.iQuestionId,
@@ -695,19 +604,15 @@ export default class SurveyDetailView {
     const slider = $(`#numericSlider_${question.iQuestionId}`);
     const valueDisplay = $(`#valueDisplay_${question.iQuestionId}`);
     const sliderFill = $(`#sliderFill_${question.iQuestionId}`);
-
     if (slider) {
       slider.addEventListener('input', async () => {
         await hapticsService.light();
-
         const value = parseInt(slider.value);
         const min = parseInt(slider.min);
         const max = parseInt(slider.max);
         const percentage = ((value - min) / (max - min)) * 100;
-
         if (valueDisplay) valueDisplay.textContent = value;
         if (sliderFill) sliderFill.style.width = `${percentage}%`;
-
         this._saveResponse(question.iQuestionId, {
           typeId: 4,
           questionId: question.iQuestionId,
@@ -736,7 +641,6 @@ export default class SurveyDetailView {
       await this._warnRequired(current);
       return;
     }
-
     if (this.currentQuestionIndex < this.questions.length - 1) {
       await hapticsService.light();
       this.currentQuestionIndex++;
@@ -750,16 +654,13 @@ export default class SurveyDetailView {
     const prevBtn = $('#prevBtn');
     const nextBtn = $('#nextBtn');
     const submitBtn = $('#submitBtn');
-
     if (prevBtn) {
       prevBtn.disabled = this.currentQuestionIndex === 0;
       prevBtn.style.display = this.currentQuestionIndex === 0 ? 'none' : 'flex';
     }
-
     const isLast = this.currentQuestionIndex === this.questions.length - 1;
     if (nextBtn) nextBtn.style.display = isLast ? 'none' : 'flex';
     if (submitBtn) submitBtn.style.display = isLast ? 'flex' : 'none';
-
     const current = this.questions[this.currentQuestionIndex];
     const answered = this._isQuestionAnswered(current);
     if (nextBtn && !isLast) nextBtn.disabled = !answered;
@@ -769,11 +670,9 @@ export default class SurveyDetailView {
   _isQuestionAnswered(question) {
     const resp = this.responses.get(question.iQuestionId);
     if (!resp) return false;
-
     switch (question.iTypeId) {
       case 1: {
-        const has = typeof resp.answerId === 'number';
-        if (!has) return false;
+        if (typeof resp.answerId !== 'number') return false;
         const ans = (question.answers || []).find(a => a.iAnswerId === resp.answerId);
         if (ans?.bText) return !!resp.extraText && resp.extraText.trim().length > 0;
         return true;
@@ -782,9 +681,7 @@ export default class SurveyDetailView {
         if (!resp.selectedAnswers || resp.selectedAnswers.length === 0) return false;
         for (const sel of resp.selectedAnswers) {
           const ans = (question.answers || []).find(a => a.iAnswerId === sel.answerId);
-          if (ans?.bText) {
-            if (!sel.extraText || !sel.extraText.trim()) return false;
-          }
+          if (ans?.bText && (!sel.extraText || !sel.extraText.trim())) return false;
         }
         return true;
       }
@@ -820,7 +717,6 @@ export default class SurveyDetailView {
   _restoreQuestionResponse(question) {
     const response = this.responses.get(question.iQuestionId);
     if (!response) return;
-
     switch (question.iTypeId) {
       case 1: {
         const radio = document.querySelector(
@@ -910,10 +806,9 @@ export default class SurveyDetailView {
     this._clearTimer();
     this.isTimeUp = true;
     await hapticsService.error();
-
-    const inputs = document.querySelectorAll('input, textarea, button:not(#backBtn)');
-    inputs.forEach(input => (input.disabled = true));
-
+    document
+      .querySelectorAll('input, textarea, button:not(#backBtn)')
+      .forEach(input => (input.disabled = true));
     const overlay = document.createElement('div');
     overlay.className = 'time-up-overlay';
     overlay.innerHTML = `
@@ -922,8 +817,7 @@ export default class SurveyDetailView {
         <h3>Tiempo Finalizado</h3>
         <p>El tiempo para completar esta encuesta ha terminado.</p>
         <button class="finish-btn" onclick="this.parentElement.parentElement.remove()">Entendido</button>
-      </div>
-    `;
+      </div>`;
     document.body.appendChild(overlay);
   }
 
@@ -945,7 +839,6 @@ export default class SurveyDetailView {
   // =======================
 
   async _showSummary() {
-    // Validación final
     if (this.responses.size < this.questions.length) {
       const firstMissingIdx = this.questions.findIndex(q => !this._isQuestionAnswered(q));
       if (firstMissingIdx !== -1) {
@@ -956,44 +849,31 @@ export default class SurveyDetailView {
       }
     }
 
-    const payloadPreview = this._buildSubmissionPayload();
-    console.log('📦 Payload para envío (preview):', payloadPreview);
-    console.log('📦 Payload JSON string:', JSON.stringify(payloadPreview));
-
     const questionContainer = $('#questionContainer');
     if (!questionContainer) return;
 
     const totalQuestions = this.questions.length;
     const answeredQuestions = this.responses.size;
     const completionPercentage = Math.round((answeredQuestions / totalQuestions) * 100);
-
     const refVal = this.reference || '';
 
-    const summaryHTML = `
+    questionContainer.innerHTML = `
       <div class="survey-summary">
         <div class="summary-header">
           <div class="summary-icon">📊</div>
           <h2>Resumen de Respuestas</h2>
           <p>Revisa tus respuestas antes de enviar</p>
         </div>
-
-        <!-- Referencia editable en Resumen -->
         <div class="reference-summary">
           <label for="referenceSummaryInput" class="reference-label">Referencia (opcional)</label>
-          <input 
-            id="referenceSummaryInput"
-            class="reference-input"
-            type="text"
-            maxlength="80"
-            aria-label="Referencia"
-            placeholder="Ej. nombre, folio o nota breve"
-            value="${refVal.replace(/"/g, '&quot;')}"
-          />
+          <input id="referenceSummaryInput" class="reference-input" type="text" maxlength="80" aria-label="Referencia" placeholder="Ej. nombre, folio o nota breve" value="${refVal.replace(
+            /"/g,
+            '&quot;',
+          )}"/>
           <div class="reference-hint"><small id="referenceSummaryCounter">${
             refVal.length
           }/80</small></div>
         </div>
-        
         <div class="completion-stats">
           <div class="completion-bar"><div class="completion-fill" style="width: ${completionPercentage}%"></div></div>
           <div class="completion-text">${answeredQuestions} de ${totalQuestions} preguntas respondidas (${completionPercentage}%)</div>
@@ -1003,27 +883,20 @@ export default class SurveyDetailView {
           <button class="review-btn" id="reviewBtn">📝 Revisar Respuestas</button>
           <button class="submit-btn" id="finalSubmitBtn">${this._getSubmitIcon()}<span>Enviar Encuesta</span></button>
         </div>
-      </div>
-    `;
+      </div>`;
 
-    questionContainer.innerHTML = summaryHTML;
-
-    // Listeners resumen
     $('#reviewBtn')?.addEventListener('click', () => {
       this.currentQuestionIndex = 0;
       this._renderCurrentQuestion();
     });
-
     $('#finalSubmitBtn')?.addEventListener('click', () => this._submitSurvey());
 
-    // Sync referencia (resumen -> header)
     const refSum = $('#referenceSummaryInput');
     if (refSum) {
       refSum.addEventListener('input', () => {
         this.reference = refSum.value;
         const cnt = $('#referenceSummaryCounter');
         if (cnt) cnt.textContent = `${this.reference.length}/80`;
-
         const headerRef = $('#referenceInput');
         if (headerRef && headerRef.value !== this.reference) {
           headerRef.value = this.reference;
@@ -1033,7 +906,6 @@ export default class SurveyDetailView {
       });
     }
 
-    // Ocultar navegación
     ['#prevBtn', '#nextBtn', '#submitBtn'].forEach(sel => {
       const btn = document.querySelector(sel);
       if (btn) btn.style.display = 'none';
@@ -1045,15 +917,13 @@ export default class SurveyDetailView {
       .map((question, index) => {
         const response = this.responses.get(question.iQuestionId);
         let responseText = '<span class="no-response">Sin respuesta</span>';
-
         if (response) {
           switch (question.iTypeId) {
             case 1: {
               const ans = question.answers?.find(a => a.iAnswerId === response.answerId);
               responseText = ans ? ans.vcAnswer : 'Respuesta no válida';
-              if (response.extraText) {
+              if (response.extraText)
                 responseText += `<br><small class="extra-text">"${response.extraText}"</small>`;
-              }
               break;
             }
             case 2: {
@@ -1079,34 +949,26 @@ export default class SurveyDetailView {
               break;
           }
         }
-
         return `
-          <div class="response-item ${!response ? 'unanswered' : ''}">
-            <div class="response-header">
-              <span class="question-number">${index + 1}</span>
-              <span class="question-type">${question.vcType || 'Sin tipo'}</span>
-            </div>
-            <div class="response-content">
-              <h4 class="response-question">${question.vcQuestion || 'Pregunta sin texto'}</h4>
-              <div class="response-answer">${responseText}</div>
-            </div>
+        <div class="response-item ${!response ? 'unanswered' : ''}">
+          <div class="response-header">
+            <span class="question-number">${index + 1}</span>
+            <span class="question-type">${question.vcType || 'Sin tipo'}</span>
           </div>
-        `;
+          <div class="response-content">
+            <h4 class="response-question">${question.vcQuestion || 'Pregunta sin texto'}</h4>
+            <div class="response-answer">${responseText}</div>
+          </div>
+        </div>`;
       })
       .join('');
   }
 
-  /**
-   * Construir payload final para /api/survey/Answer
-   * @returns {{surveyId:number, reference: (string|null), answers:Array}}
-   * @private
-   */
   _buildSubmissionPayload() {
     const answers = this.questions.map((q, idx) => {
       const resp = this.responses.get(q.iQuestionId) || null;
       return this._mapAnswerForSubmit(q, resp, idx);
     });
-
     return {
       surveyId: this.surveyId,
       reference: this.reference && this.reference.trim() ? this.reference.trim() : null,
@@ -1114,10 +976,6 @@ export default class SurveyDetailView {
     };
   }
 
-  /**
-   * Normaliza una respuesta según iTypeId
-   * @private
-   */
   _mapAnswerForSubmit(question, response, index) {
     const base = {
       questionId: question.iQuestionId,
@@ -1126,13 +984,9 @@ export default class SurveyDetailView {
       type: question.vcType || '',
       questionText: question.vcQuestion || '',
     };
-
-    if (!response) {
-      return { ...base, unanswered: true, response: null };
-    }
-
+    if (!response) return { ...base, unanswered: true, response: null };
     switch (question.iTypeId) {
-      case 1: // Opción única
+      case 1:
         return {
           ...base,
           unanswered: false,
@@ -1146,8 +1000,7 @@ export default class SurveyDetailView {
             ],
           },
         };
-
-      case 2: // Opción múltiple
+      case 2:
         return {
           ...base,
           unanswered: false,
@@ -1159,73 +1012,51 @@ export default class SurveyDetailView {
             })),
           },
         };
-
-      case 3: // Texto
+      case 3:
         return {
           ...base,
           unanswered: !response.text || response.text.trim() === '',
-          response: {
-            typeId: 3,
-            text: response.text || '',
-          },
+          response: { typeId: 3, text: response.text || '' },
         };
-
-      case 4: // Numérico
+      case 4:
         return {
           ...base,
           unanswered: typeof response.value !== 'number',
-          response: {
-            typeId: 4,
-            value: response.value,
-          },
+          response: { typeId: 4, value: response.value },
         };
-
       default:
         return { ...base, unanswered: true, response: null };
     }
   }
 
-  /**
-   * Enviar encuesta (usa surveysService.submitAnswers)
-   * @private
-   */
   async _submitSurvey() {
     if (this.isSubmitting) return;
-
     try {
-      // Validación final
-      const unanswered = this.questions.filter(q => !this.responses.has(q.iQuestionId));
-      if (unanswered.length > 0) {
+      if (this.questions.filter(q => !this.responses.has(q.iQuestionId)).length > 0) {
         await dialogService.alert(
           'Preguntas pendientes',
           'Debes responder todas las preguntas antes de enviar.',
         );
         return;
       }
-
       this.isSubmitting = true;
       const finalBtn = document.getElementById('finalSubmitBtn') || this.submitBtn;
       if (finalBtn) {
         finalBtn.disabled = true;
         finalBtn.innerHTML = `<div class="loading-spinner"></div><span>Enviando...</span>`;
       }
-
       const payload = this._buildSubmissionPayload();
       console.log('📦 [SurveyDetailView] Payload a enviar (Answer):', payload);
-
       const result = await surveysService.submitAnswers(payload);
       if (!result.success) throw new Error(result.error || 'Error enviando encuesta');
-
       await dialogService.alert(
         'Encuesta enviada',
         '¡Gracias por tu participación! Tu encuesta fue registrada correctamente.',
       );
-
       navigateTo('/surveys');
     } catch (error) {
       console.error('❌ [SurveyDetailView] Error enviando encuesta:', error);
       await hapticsService.error();
-
       const finalBtn = document.getElementById('finalSubmitBtn') || this.submitBtn;
       if (finalBtn) {
         finalBtn.disabled = false;
@@ -1257,7 +1088,6 @@ export default class SurveyDetailView {
     if (this.backBtn) {
       this.backBtn.addEventListener('click', async e => {
         e.preventDefault();
-
         if (this.responses.size > 0) {
           const confirmed = await dialogService.confirm(
             'Salir de la Encuesta',
@@ -1265,26 +1095,20 @@ export default class SurveyDetailView {
           );
           if (!confirmed) return;
         }
-
         await hapticsService.light();
         navigateTo('/surveys');
       });
     }
-
-    if (this.prevBtn) {
+    if (this.prevBtn)
       this.prevBtn.addEventListener('click', e => {
         e.preventDefault();
         this._previousQuestion();
       });
-    }
-
-    if (this.nextBtn) {
+    if (this.nextBtn)
       this.nextBtn.addEventListener('click', e => {
         e.preventDefault();
         this._nextQuestion();
       });
-    }
-
     if (this.submitBtn) {
       this.submitBtn.addEventListener('click', async e => {
         e.preventDefault();
@@ -1304,9 +1128,7 @@ export default class SurveyDetailView {
       const loadingText = this.loadingContainer.querySelector('.loading-text');
       if (loadingText) loadingText.textContent = message;
     }
-    if (this.contentContainer) {
-      this.contentContainer.style.display = isLoading ? 'none' : 'block';
-    }
+    if (this.contentContainer) this.contentContainer.style.display = isLoading ? 'none' : 'block';
   }
 
   _showError(message) {
@@ -1318,11 +1140,8 @@ export default class SurveyDetailView {
           <p>${message}</p>
           <p><strong>Survey ID:</strong> ${this.surveyId}</p>
           <p><strong>URL:</strong> ${window.location.hash}</p>
-          <button class="back-to-surveys-btn" onclick="window.location.hash='#/surveys'">
-            Volver a Encuestas
-          </button>
-        </div>
-      `;
+          <button class="back-to-surveys-btn" onclick="window.location.hash='#/surveys'">Volver a Encuestas</button>
+        </div>`;
       this.errorContainer.style.display = 'flex';
     }
     this._updateLoadingState(false);
@@ -1330,27 +1149,46 @@ export default class SurveyDetailView {
   }
 
   // =======================
+  // HELPERS
+  // =======================
+
+  _extractSurveyId(context) {
+    const tryParse = val => {
+      if (val === undefined || val === null) return null;
+      const s = String(val);
+      const m = s.match(/(?:^|\/)(\d+)(?:[\/\?]|$)/);
+      if (!m) return null;
+      const n = parseInt(m[1], 10);
+      return Number.isFinite(n) ? n : null;
+    };
+    return (
+      tryParse(context?.params?.data?.id) ||
+      tryParse(context?.data?.id) ||
+      tryParse(context?.id) ||
+      tryParse(context?.params?.url) ||
+      tryParse(context?.url) ||
+      tryParse(window.location.hash) ||
+      tryParse(history?.state?.surveyId) ||
+      tryParse(sessionStorage.getItem('currentSurveyId')) ||
+      tryParse(sessionStorage.getItem('lastSurveyId')) ||
+      null
+    );
+  }
+
+  // =======================
   // ICONOS
   // =======================
 
   _getBackIcon() {
-    return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
+    return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   }
   _getPrevIcon() {
-    return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
+    return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   }
   _getNextIcon() {
-    return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
+    return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   }
   _getSubmitIcon() {
-    return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
+    return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   }
 }

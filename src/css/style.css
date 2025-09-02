@@ -967,6 +967,158 @@ select.loading {
     transform: translateY(0);
   }
 }
+:root {
+  --kb-height: 0px;
+  --kb-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --kb-scroll-padding-top: 88px;
+}
+.keyboard-aware-container {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: padding-bottom 0.3s ease-out;
+}
+.keyboard-aware-container .alta-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  transform: none !important;
+}
+.keyboard-aware-container .alta-header.scrolled {
+  transform: none !important;
+}
+.keyboard-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-bottom: 20px;
+  scroll-padding-top: var(--kb-scroll-padding-top);
+}
+.keyboard-scrollable.keyboard-active {
+  padding-bottom: calc(max(var(--kb-height, 0px), 260px) + var(--kb-safe-bottom));
+}
+input[type='text'],
+input[type='email'],
+input[type='tel'],
+input[type='number'],
+input[type='password'],
+input[type='date'],
+textarea,
+select {
+  font-size: 16px !important;
+}
+@media (max-width: 768px) {
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='number'],
+  input[type='password'],
+  input[type='date'],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+.form-control {
+  transition: all 0.2s ease-out;
+}
+.form-control.keyboard-focused {
+  background-color: #ffffff;
+  border-color: #37a6a6;
+  box-shadow: 0 0 0 3px rgba(55, 166, 166, 0.15);
+  transform: scale(1.02);
+  position: relative;
+  z-index: 1;
+}
+.keyboard-toolbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44px;
+  background: #f0f0f0;
+  border-top: 1px solid #d1d5db;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+  z-index: 1000;
+}
+.keyboard-toolbar.visible {
+  display: flex;
+  transform: translateY(0);
+}
+.keyboard-toolbar .toolbar-nav {
+  display: flex;
+  gap: 20px;
+}
+.keyboard-toolbar .toolbar-nav button {
+  background: none;
+  border: none;
+  color: #37a6a6;
+  font-size: 14px;
+  padding: 8px;
+}
+.keyboard-toolbar .toolbar-nav button:disabled {
+  color: #d1d5db;
+}
+.keyboard-toolbar .toolbar-action button {
+  background: none;
+  border: none;
+  color: #37a6a6;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 8px 12px;
+}
+@supports (-webkit-touch-callout: none) {
+  .keyboard-scrollable {
+    -webkit-overflow-scrolling: touch;
+  }
+  .keyboard-scrollable.keyboard-active {
+    padding-bottom: calc(max(var(--kb-height, 0px), 260px) + env(safe-area-inset-bottom, 0px));
+  }
+}
+.platform-android.keyboard-visible .keyboard-aware-container {
+  height: calc(100vh - var(--kb-height, 0px));
+}
+.kb-bottom-gap {
+  margin-bottom: 100px;
+}
+.kb-sticky-actions {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, #ffffff 80%, transparent);
+  padding: 20px 0 calc(var(--kb-safe-bottom) + 20px);
+  margin-top: 20px;
+}
+.kb-sticky-actions::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
+}
+@keyframes slideUpInput {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.slide-up-on-focus:focus {
+  animation: slideUpInput 0.3s ease-out;
+}
 /*========================================
   1. PALETA CORPORATIVA
 ========================================*/
@@ -1220,11 +1372,6 @@ select.form-control {
 /* ---------------------- */
 /* Signature Section Enhanced */
 /* ---------------------- */
-.signature-section {
-  /* El área de dibujo de la firma */
-  /* Botones mejorados */
-  /* Texto de ayuda */
-}
 .signature-section .signature-box {
   position: relative;
   display: flex;
@@ -1237,12 +1384,6 @@ select.form-control {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: crosshair;
   overflow: hidden;
-  /* Estado cuando se está firmando */
-  /* Estado cuando tiene firma escaneada */
-  /* El canvas propiamente dicho */
-  /* Imagen de firma escaneada */
-  /* Placeholder animado */
-  /* Indicador de presión (opcional) */
 }
 .signature-section .signature-box:hover {
   border-color: #37a6a6;
@@ -1300,7 +1441,6 @@ select.form-control {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 1;
   z-index: 1;
-  /* Animación de pulso suave */
   animation: pulse 2s ease-in-out infinite;
 }
 .signature-section .signature-box #signaturePlaceholder.hover {
@@ -1347,10 +1487,6 @@ select.form-control {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  /* Efecto ripple */
-  /* Botón "Limpiar" */
-  /* Botón "Deshacer" */
-  /* Estado deshabilitado */
 }
 .signature-section .signature-controls button::after {
   content: '';
@@ -1477,9 +1613,9 @@ select.form-control {
   display: flex;
   align-items: center;
   gap: 15px;
-  padding: 15px;
   background: #f0f2f2;
   border-radius: 10px;
+  padding: 15px;
 }
 .audio-controls {
   display: flex;
@@ -1504,7 +1640,7 @@ select.form-control {
   background: #246d6d;
 }
 .audio-button.recording {
-  background: #ff3b30;
+  background: #ef4444;
   animation: pulse 1.5s infinite;
 }
 .audio-info {
@@ -1522,7 +1658,7 @@ select.form-control {
 .audio-delete {
   background: none;
   border: none;
-  color: #ff3b30;
+  color: #ef4444;
   cursor: pointer;
   font-size: 24px;
   padding: 8px;
@@ -1668,13 +1804,8 @@ select.form-control {
 .loading-hidden {
   visibility: hidden;
   height: 0;
-  /* opcional, si quieres colapsar espacio */
   overflow: hidden;
-  /* opcional */
   transition: none;
-  /* evita animaciones indeseadas */
   padding: 0 !important;
-  /* evita padding extra */
   margin: 0 !important;
-  /* evita margen extra */
 }

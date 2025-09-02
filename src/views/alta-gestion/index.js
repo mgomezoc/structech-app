@@ -6,6 +6,7 @@ import { router } from '../../routes/index.js';
 import { apiService } from '../../services/api.service.js';
 import { dialogService } from '../../services/dialog.service.js';
 import { hapticsService } from '../../services/haptics.service.js';
+import { keyboardService } from '../../services/keyboard.service.js';
 import { ROUTES } from '../../utils/constants.js';
 import { $, dom } from '../../utils/dom.helper.js';
 import './style.less';
@@ -46,6 +47,9 @@ export default class AltaGestionView {
     this.types = [];
     this.classifications = [];
     this.selectedFile = null;
+
+    // unsub teclado
+    this._keyboardUnsub = null;
   }
 
   render() {
@@ -99,6 +103,10 @@ export default class AltaGestionView {
     }
 
     this._attachEventListeners();
+
+    // Soporte básico de teclado móvil (simple y seguro)
+    await this._setupKeyboardSupport();
+
     await this._loadInitialData();
   }
 
@@ -214,6 +222,66 @@ export default class AltaGestionView {
     dom(this.form).on('submit', e => this._handleSubmit(e));
   }
 
+  // ==========================
+  // Teclado móvil (simple)
+  // ==========================
+  async _setupKeyboardSupport() {
+    try {
+      await keyboardService.init();
+
+      // contenedor para clases reactivas
+      const container = document.querySelector('.form-container');
+
+      // optimizar campos
+      const inputs = document.querySelectorAll(
+        '.form-container input:not([type="file"]), .form-container select, .form-container textarea, #citizen-search-input',
+      );
+      inputs.forEach(input => this._optimizeKeyboardType(input));
+
+      // suscripción
+      this._keyboardUnsub = keyboardService.subscribe((event, data) => {
+        if (event === 'focus') {
+          container?.classList.add('keyboard-active');
+          keyboardService.scrollToInput(data);
+        } else if (event === 'blur') {
+          container?.classList.remove('keyboard-active');
+        }
+      });
+    } catch (e) {
+      // si falla, no rompe la vista
+      console.warn('keyboardService no disponible:', e);
+    }
+  }
+
+  _optimizeKeyboardType(input) {
+    const map = {
+      description: {
+        autocapitalize: 'sentences',
+        autocorrect: 'on',
+        spellcheck: 'true',
+        enterkeyhint: 'done',
+      },
+      'citizen-search-input': {
+        inputmode: 'text',
+        autocapitalize: 'words',
+        autocorrect: 'off',
+        spellcheck: 'false',
+        enterkeyhint: 'search',
+      },
+      typeSelect: { enterkeyhint: 'next' },
+      classificationSelect: { enterkeyhint: 'next' },
+    };
+
+    const conf = map[input.id] || { enterkeyhint: 'next' };
+    Object.entries(conf).forEach(([k, v]) => input.setAttribute(k, v));
+
+    // Evitar zoom en iOS
+    if (input.tagName === 'INPUT' || input.tagName === 'SELECT' || input.tagName === 'TEXTAREA') {
+      input.style.fontSize = '16px';
+    }
+  }
+  // ====== Fin teclado ======
+
   async _loadInitialData() {
     try {
       const [citizensOk, typesOk] = await Promise.all([this._loadCitizens(), this._loadTypes()]);
@@ -240,8 +308,11 @@ export default class AltaGestionView {
         longitude: loc.longitude.toString(),
       });
 
-      this.citizens = resp.data || [];
-      this._renderCitizensList(this.citizens); // Renderiza la lista en la modal
+      // Orden descendente por iCitizenId (más recientes primero)
+      this.citizens = (resp.data || [])
+        .slice()
+        .sort((a, b) => (b.iCitizenId || 0) - (a.iCitizenId || 0));
+      this._renderCitizensList(this.citizens);
 
       dom(trigger).css('pointer-events', 'auto');
       return true;
@@ -258,7 +329,7 @@ export default class AltaGestionView {
   _openCitizenModal() {
     dom(this.citizenSelector.modal).removeClass('hidden').addClass('visible');
     document.body.classList.add('modal-open'); // bloquea scroll fondo en iOS
-    this.citizenSelector.searchInput.focus();
+    // ❌ Sin auto-focus para evitar teclado inmediato
   }
 
   _closeCitizenModal() {
@@ -275,17 +346,17 @@ export default class AltaGestionView {
     list.innerHTML = citizens
       .map(
         c => `
-        <li data-id="${c.iCitizenId}">
-            <img src="${
-              c.vcFace ||
-              'https://ui-avatars.com/api/?name=' +
-                c.vcNames.charAt(0) +
-                '&background=e0e0e0&color=a0a0a0'
-            }" 
-                 alt="${c.vcNames}" class="citizen-avatar">
-            <span>${c.vcNames}</span>
+        <li data-id="${c.iCitizenId}" role="option" tabindex="-1" class="selector-modal-item">
+          <img src="${
+            c.vcFace ||
+            'https://ui-avatars.com/api/?name=' +
+              (c.vcNames?.charAt(0) || '?') +
+              '&background=e0e0e0&color=a0a0a0'
+          }" 
+            alt="${c.vcNames}" class="citizen-avatar">
+          <span>${c.vcNames}</span>
         </li>
-    `,
+      `,
       )
       .join('');
   }
@@ -320,8 +391,6 @@ export default class AltaGestionView {
     this._closeCitizenModal();
     this._validateForm();
   }
-
-  // --- RESTO DE MÉTODOS DE LA CLASE (sin cambios) ---
 
   async _loadTypes() {
     const loader = $('#typeLoader');
@@ -682,7 +751,11 @@ export default class AltaGestionView {
   }
 
   cleanup() {
-    // Aquí puedes desuscribir listeners si lo deseas
+    // limpiar keyboardService
+    if (this._keyboardUnsub) this._keyboardUnsub();
+    keyboardService.cleanup?.();
+
+    // Aquí puedes desuscribir otros listeners si lo deseas
     console.log('🧹 Limpieza Alta Gestión');
   }
 }

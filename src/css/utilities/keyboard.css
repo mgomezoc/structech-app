@@ -1,3 +1,8 @@
+:root {
+  --kb-height: 0px;
+  --kb-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --kb-scroll-padding-top: 88px;
+}
 .keyboard-aware-container {
   height: 100vh;
   height: 100dvh;
@@ -6,12 +11,26 @@
   flex-direction: column;
   transition: padding-bottom 0.3s ease-out;
 }
+.keyboard-aware-container .alta-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  transform: none !important;
+}
+.keyboard-aware-container .alta-header.scrolled {
+  transform: none !important;
+}
 .keyboard-scrollable {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   padding-bottom: 20px;
+  scroll-padding-top: var(--kb-scroll-padding-top);
+}
+.keyboard-scrollable.keyboard-active {
+  padding-bottom: calc(max(var(--kb-height, 0px), 260px) + var(--kb-safe-bottom));
 }
 input[type='text'],
 input[type='email'],
@@ -43,45 +62,14 @@ select {
   border-color: #37a6a6;
   box-shadow: 0 0 0 3px rgba(55, 166, 166, 0.15);
   transform: scale(1.02);
-}
-.form-view-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-.form-view-container .alta-header {
-  flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: #ffffff;
-}
-.form-view-container .progress-indicator {
-  flex-shrink: 0;
-  position: sticky;
-  top: 60px;
-  z-index: 99;
-  background: #ffffff;
-  padding-bottom: 10px;
-}
-.form-view-container .form-container {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-  padding-bottom: env(keyboard-inset-height, 50px);
-}
-.form-section {
-  margin-bottom: 24px;
-}
-.form-section:last-child {
-  margin-bottom: 100px;
+  position: relative;
+  z-index: 1;
 }
 .keyboard-toolbar {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
+  bottom: 0;
   height: 44px;
   background: #f0f0f0;
   border-top: 1px solid #d1d5db;
@@ -119,17 +107,35 @@ select {
   font-size: 16px;
   padding: 8px 12px;
 }
-.platform-ios .form-container {
-  padding-bottom: calc(env(safe-area-inset-bottom) + 50px);
+@supports (-webkit-touch-callout: none) {
+  .keyboard-scrollable {
+    -webkit-overflow-scrolling: touch;
+  }
+  .keyboard-scrollable.keyboard-active {
+    padding-bottom: calc(max(var(--kb-height, 0px), 260px) + env(safe-area-inset-bottom, 0px));
+  }
 }
-.platform-ios .form-control {
-  min-height: 44px;
+.platform-android.keyboard-visible .keyboard-aware-container {
+  height: calc(100vh - var(--kb-height, 0px));
 }
-.platform-android .form-container {
-  padding-bottom: 50px;
+.kb-bottom-gap {
+  margin-bottom: 100px;
 }
-.platform-android.keyboard-visible .form-view-container {
-  height: calc(100vh - var(--keyboard-height, 0px));
+.kb-sticky-actions {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, #ffffff 80%, transparent);
+  padding: 20px 0 calc(var(--kb-safe-bottom) + 20px);
+  margin-top: 20px;
+}
+.kb-sticky-actions::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
 }
 @keyframes slideUpInput {
   from {
@@ -143,27 +149,4 @@ select {
 }
 .slide-up-on-focus:focus {
   animation: slideUpInput 0.3s ease-out;
-}
-.form-actions {
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(to top, #ffffff 80%, transparent);
-  padding: 20px 0 calc(env(safe-area-inset-bottom) + 20px);
-  margin-top: 20px;
-}
-.form-actions::before {
-  content: '';
-  position: absolute;
-  top: -20px;
-  left: 0;
-  right: 0;
-  height: 20px;
-  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
-}
-.focus-trap:focus-within .form-section {
-  opacity: 0.5;
-  transition: opacity 0.2s;
-}
-.focus-trap:focus-within .form-section:focus-within {
-  opacity: 1;
 }

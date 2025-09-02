@@ -19,58 +19,6 @@
 @radius-lg: 12px;
 
 // ----------------------
-// Header
-// ----------------------
-.header {
-  background: @white;
-  box-shadow: @shadow-sm;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  padding: 16px 20px;
-
-  .header-nav {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-
-    .btn-back {
-      background: none;
-      border: none;
-      font-size: 18px;
-      padding: 8px;
-      border-radius: @radius-sm;
-      cursor: pointer;
-      color: @text-secondary;
-      transition: background 0.2s, color 0.2s;
-
-      &:hover {
-        background: @bg-hover;
-        color: @primary-color;
-      }
-      &:active {
-        transform: scale(0.95);
-      }
-    }
-
-    h1 {
-      font-size: 20px;
-      font-weight: 600;
-      color: @text-primary;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-
-      .logo {
-        width: 32px;
-        height: 32px;
-      }
-    }
-  }
-}
-
-// ----------------------
 // Container
 // ----------------------
 .enrollment-manual-container {
@@ -79,20 +27,11 @@
   padding: 20px 16px 40px;
 }
 
-#altaHeader {
-  will-change: transform;
-  &.scrolled {
-    position: absolute;
-    transform: translateY(-100%);
-  }
-  &.scrolled-top {
-    transform: translateY(0);
-  }
-}
-
 .form-container {
   height: 100vh;
   overflow-y: auto;
+  // iOS momentum scroll
+  -webkit-overflow-scrolling: touch;
 }
 
 // ----------------------
@@ -146,12 +85,10 @@
     font-weight: 500;
     color: @text-primary;
 
-    &.required {
-      &::after {
-        content: '*';
-        margin-left: 4px;
-        color: @danger-color;
-      }
+    &.required::after {
+      content: '*';
+      margin-left: 4px;
+      color: @danger-color;
     }
   }
 
@@ -184,6 +121,10 @@
 
   &.error {
     border-color: @danger-color;
+
+    &:focus {
+      box-shadow: 0 0 0 3px fade(@danger-color, 15%);
+    }
   }
 
   &[disabled] {
@@ -191,6 +132,45 @@
     cursor: not-allowed;
     opacity: 0.7;
   }
+}
+
+// Mejor UX para selects
+.select-wrapper {
+  position: relative;
+
+  select {
+    min-height: 48px;
+    -webkit-appearance: none;
+    background-color: #ffffff;
+
+    &:focus {
+      background-color: #f0f9ff;
+    }
+  }
+}
+
+// Evitar zoom en iOS al enfocar
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+// Suave realce en foco (opcional)
+@keyframes fieldFocusIn {
+  from {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.01);
+  }
+}
+.form-control:focus {
+  animation: fieldFocusIn 0.18s ease-out forwards;
 }
 
 // ----------------------
@@ -424,7 +404,6 @@
 //----------------------------------------
 // Document Upload Section
 //----------------------------------------
-
 .document-upload-section {
   .document-upload-area {
     position: relative;
@@ -433,6 +412,7 @@
     background: #fafbfc;
     transition: all 0.3s ease;
     overflow: hidden;
+    min-height: 180px;
 
     &:hover {
       border-color: @primary-color;
@@ -455,7 +435,7 @@
     }
   }
 
-  // Estado inicial - placeholder
+  // Placeholder inicial
   .upload-placeholder {
     display: flex;
     flex-direction: column;
@@ -468,7 +448,6 @@
     .upload-icon {
       margin-bottom: 16px;
       color: @text-hint;
-      transition: color 0.3s ease;
 
       svg {
         width: 48px;
@@ -493,15 +472,13 @@
         line-height: 1.4;
       }
 
-      .upload-formats {
-        span {
-          font-size: 12px;
-          color: @text-hint;
-          background: fade(@text-hint, 8%);
-          padding: 4px 8px;
-          border-radius: @radius-sm;
-          display: inline-block;
-        }
+      .upload-formats span {
+        font-size: 12px;
+        color: @text-hint;
+        background: fade(@text-hint, 8%);
+        padding: 4px 8px;
+        border-radius: @radius-sm;
+        display: inline-block;
       }
     }
 
@@ -509,26 +486,30 @@
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 16px;
-    }
 
-    .upload-button {
-      background: @primary-color;
-      color: @white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: @radius-md;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      .upload-button {
+        background: @primary-color;
+        color: @white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: @radius-md;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
 
-      &:hover {
-        background: darken(@primary-color, 8%);
-        transform: translateY(-1px);
-      }
+        &:hover {
+          background: darken(@primary-color, 8%);
+          transform: translateY(-1px);
+        }
 
-      &:active {
-        transform: translateY(0);
+        &:active {
+          transform: translateY(0);
+        }
+
+        // Mejor toque en móvil
+        min-height: 44px;
+        font-size: 16px;
       }
     }
   }
@@ -573,7 +554,6 @@
             font-weight: 600;
             color: @text-primary;
           }
-
           .file-size {
             font-size: 12px;
             color: @text-hint;
@@ -617,22 +597,18 @@
   }
 
   // Estados de validación
-  &.has-error {
-    .document-upload-area {
-      border-color: @danger-color;
-      background: fade(@danger-color, 5%);
-    }
+  &.has-error .document-upload-area {
+    border-color: @danger-color;
+    background: fade(@danger-color, 5%);
   }
 
-  &.has-success {
-    .document-upload-area {
-      border-color: @success-color;
-      background: fade(@success-color, 5%);
-    }
+  &.has-success .document-upload-area {
+    border-color: @success-color;
+    background: fade(@success-color, 5%);
   }
 }
 
-// Mejoras en la sección header
+// Mejoras en la sección header de tarjetas
 .section-header {
   display: flex;
   flex-direction: column;
@@ -648,16 +624,23 @@
     margin: 0;
   }
 
-  .section-subtitle {
-    span {
-      font-size: 13px;
-      color: @text-secondary;
-      font-weight: 400;
-    }
+  .section-subtitle span {
+    font-size: 13px;
+    color: @text-secondary;
+    font-weight: 400;
   }
 }
 
-// Responsive
+// Gender options optimizados para touch
+.gender-option label {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+// Responsive para upload preview
 @media (max-width: 640px) {
   .document-upload-section {
     .upload-placeholder {
@@ -673,7 +656,6 @@
         h3 {
           font-size: 16px;
         }
-
         p {
           font-size: 13px;
         }
@@ -704,163 +686,4 @@
       }
     }
   }
-}
-
-// ============================================
-// OPTIMIZACIONES PARA TECLADO
-// ============================================
-
-// Asegurar que el contenedor principal use el sistema de keyboard-aware
-.form-view-container {
-  &.keyboard-aware-container {
-    // Se ajustará dinámicamente cuando aparezca el teclado
-    transition: padding-bottom 0.3s ease-out;
-  }
-}
-
-// Mejorar la experiencia con selects en móvil
-.select-wrapper {
-  position: relative;
-
-  select {
-    // Altura mínima para mejor toque
-    min-height: 48px;
-
-    // Mejorar la apariencia en iOS
-    -webkit-appearance: none;
-    background-color: #ffffff;
-
-    &:focus {
-      // Resaltar cuando tiene focus
-      background-color: #f0f9ff;
-    }
-  }
-}
-
-// Estados de focus mejorados para campos
-.form-control {
-  transition: all 0.2s ease-out;
-
-  &:focus {
-    transform: scale(1.02);
-    box-shadow: 0 0 0 3px rgba(55, 166, 166, 0.15);
-    background-color: #ffffff;
-    z-index: 10;
-    position: relative;
-  }
-
-  // Prevenir zoom en iOS
-  @media (max-width: 768px) {
-    font-size: 16px !important;
-  }
-}
-
-// Mejorar espaciado cuando el teclado está activo
-.keyboard-active {
-  .form-section {
-    // Más padding inferior para dar espacio
-    padding-bottom: 24px;
-
-    &:last-child {
-      padding-bottom: 300px; // Espacio extra para el último section
-    }
-  }
-}
-
-// Gender options optimizados para touch
-.gender-option {
-  label {
-    min-height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-  }
-}
-
-// Toolbar del teclado (opcional)
-.keyboard-toolbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #f8f9fa;
-  border-top: 1px solid #e5e7eb;
-  padding: 8px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transform: translateY(100%);
-  transition: transform 0.3s ease-out;
-  z-index: 1001;
-
-  &.visible {
-    transform: translateY(0);
-  }
-
-  .toolbar-info {
-    font-size: 14px;
-    color: #6b7280;
-  }
-
-  .toolbar-btn {
-    background: #37a6a6;
-    color: white;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 16px;
-  }
-}
-
-// Optimización para el documento upload en móvil
-.document-upload-area {
-  // Mejorar el área táctil
-  min-height: 180px;
-
-  .upload-button {
-    min-height: 44px;
-    font-size: 16px;
-  }
-}
-
-// Fix para el scroll en iOS cuando hay teclado
-@supports (-webkit-touch-callout: none) {
-  .form-container {
-    // iOS specific
-    -webkit-overflow-scrolling: touch;
-
-    &.keyboard-active {
-      // Ajuste específico para iOS
-      padding-bottom: calc(300px + env(safe-area-inset-bottom));
-    }
-  }
-}
-
-// Mejora visual para campos con error cuando hay teclado
-.form-control {
-  &.error {
-    border-color: #ef4444;
-
-    &:focus {
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
-    }
-  }
-}
-
-// Animación suave al cambiar de campo
-@keyframes fieldFocusIn {
-  from {
-    opacity: 0.8;
-    transform: scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1.02);
-  }
-}
-
-.form-control:focus {
-  animation: fieldFocusIn 0.2s ease-out forwards;
 }

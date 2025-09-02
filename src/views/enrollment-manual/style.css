@@ -1,64 +1,12 @@
-.header {
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  padding: 16px 20px;
-}
-.header .header-nav {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.header .header-nav .btn-back {
-  background: none;
-  border: none;
-  font-size: 18px;
-  padding: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  color: #6b7280;
-  transition: background 0.2s, color 0.2s;
-}
-.header .header-nav .btn-back:hover {
-  background: #f3f4f6;
-  color: #0ea5e9;
-}
-.header .header-nav .btn-back:active {
-  transform: scale(0.95);
-}
-.header .header-nav h1 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #374151;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.header .header-nav h1 .logo {
-  width: 32px;
-  height: 32px;
-}
 .enrollment-manual-container {
   max-width: 720px;
   margin: 0 auto;
   padding: 20px 16px 40px;
 }
-#altaHeader {
-  will-change: transform;
-}
-#altaHeader.scrolled {
-  position: absolute;
-  transform: translateY(-100%);
-}
-#altaHeader.scrolled-top {
-  transform: translateY(0);
-}
 .form-container {
   height: 100vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .form-section {
   background: #ffffff;
@@ -127,10 +75,44 @@
 .form-control.error {
   border-color: #ef4444;
 }
+.form-control.error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
 .form-control[disabled] {
   background: #f3f4f6;
   cursor: not-allowed;
   opacity: 0.7;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  min-height: 48px;
+  -webkit-appearance: none;
+  background-color: #ffffff;
+}
+.select-wrapper select:focus {
+  background-color: #f0f9ff;
+}
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+@keyframes fieldFocusIn {
+  from {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.01);
+  }
+}
+.form-control:focus {
+  animation: fieldFocusIn 0.18s ease-out forwards;
 }
 .curp-group .curp-wrapper {
   position: relative;
@@ -331,6 +313,7 @@
   background: #fafbfc;
   transition: all 0.3s ease;
   overflow: hidden;
+  min-height: 180px;
 }
 .document-upload-section .document-upload-area:hover {
   border-color: #0ea5e9;
@@ -361,7 +344,6 @@
 .document-upload-section .upload-placeholder .upload-icon {
   margin-bottom: 16px;
   color: #9ca3af;
-  transition: color 0.3s ease;
 }
 .document-upload-section .upload-placeholder .upload-icon svg {
   width: 48px;
@@ -395,7 +377,7 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
-.document-upload-section .upload-placeholder .upload-button {
+.document-upload-section .upload-placeholder .upload-actions .upload-button {
   background: #0ea5e9;
   color: #ffffff;
   border: none;
@@ -405,12 +387,14 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 44px;
+  font-size: 16px;
 }
-.document-upload-section .upload-placeholder .upload-button:hover {
+.document-upload-section .upload-placeholder .upload-actions .upload-button:hover {
   background: #0c8ac3;
   transform: translateY(-1px);
 }
-.document-upload-section .upload-placeholder .upload-button:active {
+.document-upload-section .upload-placeholder .upload-actions .upload-button:active {
   transform: translateY(0);
 }
 .document-upload-section .document-preview {
@@ -510,6 +494,13 @@
   color: #6b7280;
   font-weight: 400;
 }
+.gender-option label {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
 @media (max-width: 640px) {
   .document-upload-section .upload-placeholder {
     padding: 32px 16px;
@@ -542,111 +533,4 @@
   .document-upload-section .document-preview .preview-content img {
     max-height: 200px;
   }
-}
-.form-view-container.keyboard-aware-container {
-  transition: padding-bottom 0.3s ease-out;
-}
-.select-wrapper {
-  position: relative;
-}
-.select-wrapper select {
-  min-height: 48px;
-  -webkit-appearance: none;
-  background-color: #ffffff;
-}
-.select-wrapper select:focus {
-  background-color: #f0f9ff;
-}
-.form-control {
-  transition: all 0.2s ease-out;
-}
-.form-control:focus {
-  transform: scale(1.02);
-  box-shadow: 0 0 0 3px rgba(55, 166, 166, 0.15);
-  background-color: #ffffff;
-  z-index: 10;
-  position: relative;
-}
-@media (max-width: 768px) {
-  .form-control {
-    font-size: 16px !important;
-  }
-}
-.keyboard-active .form-section {
-  padding-bottom: 24px;
-}
-.keyboard-active .form-section:last-child {
-  padding-bottom: 300px;
-}
-.gender-option label {
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-}
-.keyboard-toolbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #f8f9fa;
-  border-top: 1px solid #e5e7eb;
-  padding: 8px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transform: translateY(100%);
-  transition: transform 0.3s ease-out;
-  z-index: 1001;
-}
-.keyboard-toolbar.visible {
-  transform: translateY(0);
-}
-.keyboard-toolbar .toolbar-info {
-  font-size: 14px;
-  color: #6b7280;
-}
-.keyboard-toolbar .toolbar-btn {
-  background: #37a6a6;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 16px;
-}
-.document-upload-area {
-  min-height: 180px;
-}
-.document-upload-area .upload-button {
-  min-height: 44px;
-  font-size: 16px;
-}
-@supports (-webkit-touch-callout: none) {
-  .form-container {
-    -webkit-overflow-scrolling: touch;
-  }
-  .form-container.keyboard-active {
-    padding-bottom: calc(300px + env(safe-area-inset-bottom));
-  }
-}
-.form-control.error {
-  border-color: #ef4444;
-}
-.form-control.error:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
-}
-@keyframes fieldFocusIn {
-  from {
-    opacity: 0.8;
-    transform: scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1.02);
-  }
-}
-.form-control:focus {
-  animation: fieldFocusIn 0.2s ease-out forwards;
 }

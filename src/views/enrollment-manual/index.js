@@ -37,33 +37,30 @@ export default class EnrollmentManualView {
   }
 
   async afterRender() {
-    // 1. Inicializar referencias DOM (necesarias antes de usarlas)
+    // 1) Referencias DOM
     this._initializeDOMReferences();
 
-    // 2. Mejorar comportamiento del header (usa elementos DOM ya referenciados)
-    this.enhanceHeader();
-
-    // 3. Configurar eventos (formulario, inputs, botones, etc.)
+    // 2) Eventos
     this._setupEventListeners();
 
-    // 4. Inicializar firma y grabadora
+    // 3) Firma y audio
     signatureManager.init();
     await audioRecorder.init();
 
-    // 5. Cargar opciones iniciales del formulario (estructuras, colonias, etc.)
+    // 4) Datos iniciales (estructuras, etc.)
     await this._loadInitialData();
 
-    // 6. Configurar progreso visual y mensaje
+    // 5) Progreso
     this._attachProgressListeners();
     this._updateProgress();
 
-    // 7. Calcular CURP inicial (con campos si ya hay valores precargados)
+    // 6) CURP inicial
     this._actualizarCurp();
 
-    // 8. Activar soporte para teclado móvil
-    await this.initKeyboard();
+    // 7) Teclado (versión minimal)
+    this._initKeyboardMinimal();
 
-    // 9. ** PREGUNTAS DINÁMICAS **
+    // 8) Preguntas dinámicas
     await this._initializeDynamicQuestions();
   }
 
@@ -72,15 +69,13 @@ export default class EnrollmentManualView {
       const resp = await datosService.obtenerPreguntas();
       if (resp.success && Array.isArray(resp.data) && resp.data.length) {
         this.questionsData = resp.data;
-        // Mostrar la sección (debe existir <section id="questionsSection"> en tu template)
         dom('#questionsSection').get().style.display = 'block';
-        // Inicializar el componente
+
         this.dynamicQuestions = new DynamicQuestions(
-          'dynamicQuestionsContainer', // id del <div> donde renderiza
+          'dynamicQuestionsContainer',
           this.questionsData,
         );
         this.dynamicQuestions.init();
-        // Actualizar progreso cuando cambien
         this.dynamicQuestions.onChange(() => this._updateProgress());
       }
     } catch (err) {
@@ -124,194 +119,22 @@ export default class EnrollmentManualView {
     this.takePhotoBtn = dom('#takePhotoBtn');
   }
 
-  enhanceHeader() {
-    const header = document.getElementById('altaHeader');
-    const formContainer = document.querySelector('.form-container');
-    const progressText = document.getElementById('progressText');
+  // --- Integración de teclado (minimal) ---
+  _initKeyboardMinimal() {
+    // Contenedor que scrollea tu formulario
+    const scroller = document.querySelector('.form-container');
+    // Si el servicio lo soporta, define el contenedor de scroll
+    keyboardService.setScrollContainer?.(scroller);
 
-    if (!header || !formContainer) return;
-
-    let lastScrollTop = 0;
-    let ticking = false;
-
-    // Detectar scroll para agregar sombra
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const scrollTop = formContainer.scrollTop;
-
-          // Agregar clase cuando hay scroll
-          if (scrollTop > 10) {
-            header.classList.remove('scrolled-top');
-          } else {
-            header.classList.add('scrolled-top');
-          }
-
-          // Ocultar header al hacer scroll down en móvil (opcional)
-          if (window.innerWidth < 768) {
-            if (scrollTop > lastScrollTop && scrollTop > 100) {
-              header.classList.add('scrolled');
-            } else {
-              header.classList.remove('scrolled');
-            }
-          }
-
-          lastScrollTop = scrollTop;
-          ticking = false;
-        });
-        ticking = true;
+    // Suscríbete a eventos básicos para auto-scroll en focus
+    this.keyboardUnsubscribe = keyboardService.subscribe?.((event, data) => {
+      if (event === 'focus') {
+        keyboardService.scrollToInput?.(data);
       }
-    };
-
-    // Throttled scroll listener
-    formContainer.addEventListener('scroll', handleScroll, { passive: true });
-
-    // Actualizar texto de progreso con animación
-    this.updateProgressText = percentage => {
-      if (!progressText) return;
-
-      const isComplete = percentage === 100;
-
-      // Cambiar texto con fade
-      progressText.style.opacity = '0';
-
-      setTimeout(() => {
-        if (isComplete) {
-          progressText.textContent = '¡Formulario completo!';
-          progressText.classList.add('complete');
-        } else {
-          progressText.textContent = `${percentage}% completado`;
-          progressText.classList.remove('complete');
-        }
-        progressText.style.opacity = '1';
-      }, 150);
-    };
-  }
-
-  // --- Métodos para keyboardService ---
-  async initKeyboard() {
-    // Inicializar el servicio
-    await keyboardService.init();
-
-    // Añadir clases para estilos reactivos al teclado
-    const container = document.querySelector('.form-view-container');
-    container?.classList.add('keyboard-aware-container');
-
-    const formContainer = document.querySelector('.form-container');
-    formContainer?.classList.add('keyboard-scrollable');
-
-    // Suscribirse a eventos del teclado
-    this.keyboardUnsubscribe = keyboardService.subscribe((event, data) => {
-      this.handleKeyboardEvent(event, data);
-    });
-
-    // Configurar navegación entre campos
-    this.setupKeyboardNavigation();
-  }
-
-  handleKeyboardEvent(event, data) {
-    const formContainer = document.querySelector('.form-container');
-
-    if (event === 'focus') {
-      formContainer?.classList.add('keyboard-active');
-
-      // Para selects, dar más tiempo
-      if (data.id === 'estadoNacimiento' || data.id === 'colonia') {
-        setTimeout(() => {
-          keyboardService.scrollToInput(data);
-        }, 400);
-      }
-    } else if (event === 'blur') {
-      formContainer?.classList.remove('keyboard-active');
-    }
-  }
-
-  setupKeyboardNavigation() {
-    const formEl = this.form.get();
-    if (!formEl) return;
-
-    const inputs = formEl.querySelectorAll(
-      'input:not([type="hidden"]):not([type="file"]), select, textarea',
-    );
-
-    inputs.forEach((input, index) => {
-      this.optimizeKeyboardType(input);
-
-      input.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-          e.preventDefault();
-
-          let nextIndex = index + 1;
-          let nextInput = inputs[nextIndex];
-          while (nextInput && nextInput.disabled) {
-            nextIndex++;
-            nextInput = inputs[nextIndex];
-          }
-
-          if (nextInput) {
-            nextInput.focus();
-            if (nextInput.tagName === 'SELECT') {
-              nextInput.click();
-            }
-          } else {
-            keyboardService.hide();
-            this.submitBtn.get().scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }
-      });
     });
   }
+  // --- Fin teclado ---
 
-  optimizeKeyboardType(input) {
-    const fieldOptimizations = {
-      nombre: {
-        autocapitalize: 'words',
-        autocorrect: 'off',
-        spellcheck: 'false',
-        enterkeyhint: 'next',
-      },
-      apellidoPaterno: {
-        autocapitalize: 'words',
-        autocorrect: 'off',
-        spellcheck: 'false',
-        enterkeyhint: 'next',
-      },
-      apellidoMaterno: {
-        autocapitalize: 'words',
-        autocorrect: 'off',
-        spellcheck: 'false',
-        enterkeyhint: 'next',
-      },
-      curp: {
-        autocapitalize: 'characters',
-        autocorrect: 'off',
-        spellcheck: 'false',
-        inputmode: 'text',
-        enterkeyhint: 'next',
-      },
-      codigoPostal: { inputmode: 'numeric', pattern: '[0-9]*', enterkeyhint: 'next' },
-      telefono: { inputmode: 'tel', pattern: '[0-9]*', enterkeyhint: 'next' },
-      email: {
-        inputmode: 'email',
-        autocapitalize: 'off',
-        autocorrect: 'off',
-        enterkeyhint: 'next',
-      },
-      calleNumero: { autocapitalize: 'sentences', autocorrect: 'off', enterkeyhint: 'next' },
-      observacion: {
-        autocapitalize: 'sentences',
-        autocorrect: 'on',
-        spellcheck: 'true',
-        enterkeyhint: 'done',
-      },
-    };
-    const opts = fieldOptimizations[input.id] || { enterkeyhint: 'next' };
-    Object.entries(opts).forEach(([k, v]) => input.setAttribute(k, v));
-    if (input.tagName === 'INPUT' || input.tagName === 'SELECT') {
-      input.style.fontSize = '16px';
-    }
-  }
-  // --- Fin keyboardService ---
   _setupEventListeners() {
     this.backBtn.on('click', async () => {
       const ok = await this._confirmBackWithData();
@@ -320,6 +143,7 @@ export default class EnrollmentManualView {
         navigateTo(ROUTES.DASHBOARD);
       }
     });
+
     this.form.on('submit', e => this.handleSubmit(e));
     this.clearSigBtn.on('click', () => signatureManager.clear());
     this.undoSigBtn.on('click', () => signatureManager.undo());
@@ -391,6 +215,95 @@ export default class EnrollmentManualView {
 
     // documentos
     this._setupDocumentHandlers();
+
+    // navegación con Enter entre campos
+    this.setupKeyboardNavigation();
+  }
+
+  setupKeyboardNavigation() {
+    const formEl = this.form.get();
+    if (!formEl) return;
+
+    const inputs = formEl.querySelectorAll(
+      'input:not([type="hidden"]):not([type="file"]), select, textarea',
+    );
+
+    inputs.forEach((input, index) => {
+      this.optimizeKeyboardType(input);
+
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+
+          let nextIndex = index + 1;
+          let nextInput = inputs[nextIndex];
+          while (nextInput && nextInput.disabled) {
+            nextIndex++;
+            nextInput = inputs[nextIndex];
+          }
+
+          if (nextInput) {
+            nextInput.focus();
+            if (nextInput.tagName === 'SELECT') {
+              nextInput.click();
+            }
+          } else {
+            keyboardService.hide?.();
+            this.submitBtn.get().scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      });
+    });
+  }
+
+  optimizeKeyboardType(input) {
+    const fieldOptimizations = {
+      nombre: {
+        autocapitalize: 'words',
+        autocorrect: 'off',
+        spellcheck: 'false',
+        enterkeyhint: 'next',
+      },
+      apellidoPaterno: {
+        autocapitalize: 'words',
+        autocorrect: 'off',
+        spellcheck: 'false',
+        enterkeyhint: 'next',
+      },
+      apellidoMaterno: {
+        autocapitalize: 'words',
+        autocorrect: 'off',
+        spellcheck: 'false',
+        enterkeyhint: 'next',
+      },
+      curp: {
+        autocapitalize: 'characters',
+        autocorrect: 'off',
+        spellcheck: 'false',
+        inputmode: 'text',
+        enterkeyhint: 'next',
+      },
+      codigoPostal: { inputmode: 'numeric', pattern: '[0-9]*', enterkeyhint: 'next' },
+      telefono: { inputmode: 'tel', pattern: '[0-9]*', enterkeyhint: 'next' },
+      email: {
+        inputmode: 'email',
+        autocapitalize: 'off',
+        autocorrect: 'off',
+        enterkeyhint: 'next',
+      },
+      calleNumero: { autocapitalize: 'sentences', autocorrect: 'off', enterkeyhint: 'next' },
+      observacion: {
+        autocapitalize: 'sentences',
+        autocorrect: 'on',
+        spellcheck: 'true',
+        enterkeyhint: 'done',
+      },
+    };
+    const opts = fieldOptimizations[input.id] || { enterkeyhint: 'next' };
+    Object.entries(opts).forEach(([k, v]) => input.setAttribute(k, v));
+    if (input.tagName === 'INPUT' || input.tagName === 'SELECT') {
+      input.style.fontSize = '16px';
+    }
   }
 
   _setupDocumentHandlers() {
@@ -511,13 +424,12 @@ export default class EnrollmentManualView {
     this.progressText.get().textContent =
       pct === 100 ? '¡Listo para enviar!' : `${pct}% completado`;
 
+    // Si alguna vez definimos updateProgressText en otra parte, respétalo
     if (this.updateProgressText) {
       this.updateProgressText(pct);
     }
 
-    // habilitar botón solo si todo OK
-    const hasSig = signatureManager.hasSignature();
-    const curp18 = this.curpField.val().length === 18;
+    // habilitar botón sólo si todo OK
     if (pct === 100) {
       this.submitBtn.removeAttr('disabled');
     } else {
@@ -596,7 +508,6 @@ export default class EnrollmentManualView {
     }
   }
 
-  // Método helper para convertir archivo a base64
   _fileToBase64(file) {
     return new Promise((res, rej) => {
       const reader = new FileReader();
@@ -658,7 +569,7 @@ export default class EnrollmentManualView {
     btn.addClass('loading').attr('disabled', 'true');
 
     try {
-      // Validar preguntas dinámicas (nuevo comportamiento)
+      // Validar preguntas dinámicas
       if (this.dynamicQuestions) {
         const { isValid, unanswered } = this.dynamicQuestions.validate();
         if (!isValid) {
@@ -671,7 +582,7 @@ export default class EnrollmentManualView {
         }
       }
 
-      // Valida que exista otherData  (Documento de identificación)
+      // Documento requerido
       if (!this.hiddenOtherData.exists() || !this.hiddenOtherData.val()) {
         await hapticsService.error();
         await dialogService.alert(
@@ -681,7 +592,7 @@ export default class EnrollmentManualView {
         return;
       }
 
-      // Validar firma con diálogo
+      // Firma requerida
       if (!signatureManager.hasSignature()) {
         await hapticsService.error();
         await dialogService.alert(
@@ -690,7 +601,8 @@ export default class EnrollmentManualView {
         );
         return;
       }
-      /// Validar firma con diálogo
+
+      // Audio requerido
       if (!audioRecorder.hasRecording()) {
         await hapticsService.error();
         await dialogService.alert(
@@ -700,14 +612,14 @@ export default class EnrollmentManualView {
         return;
       }
 
-      // Validar longitud del CURP
+      // CURP de 18
       if (this.curpField.val().length !== 18) {
         await hapticsService.error();
         await dialogService.alert('CURP inválido', 'El CURP debe tener exactamente 18 caracteres.');
         return;
       }
 
-      // 4. Confirmación antes de enviar
+      // Confirmación
       const shouldSubmit = await dialogService.confirm(
         'Confirmar Registro',
         '¿Estás seguro que deseas guardar este registro? Verifica que toda la información sea correcta.',
@@ -722,7 +634,7 @@ export default class EnrollmentManualView {
 
       await hapticsService.medium();
 
-      // 5. Recoger datos del formulario
+      // Datos del formulario
       const formData = new FormData(this.form.get());
       const data = Object.fromEntries(formData.entries());
 
@@ -746,13 +658,13 @@ export default class EnrollmentManualView {
           .join(', ');
       }
 
-      // Enviar datos al servidor
+      // Enviar
       const result = await enrollmentService.enrollManual(data);
       if (!result.success) throw new Error(result.error || 'Error en enrolamiento');
 
       await hapticsService.success();
 
-      // Mostrar diálogo de éxito con opciones (nuevo comportamiento)
+      // Éxito con opciones
       const cont = await dialogService.successWithContinue(
         '¡Registro Guardado!',
         'Los datos se han guardado correctamente en el sistema.',
@@ -804,10 +716,9 @@ export default class EnrollmentManualView {
     this.estrSelect?.off('change');
     this.cpInput?.off('blur');
 
-    // limpiar keyboardService
-    if (this.keyboardUnsubscribe) {
-      this.keyboardUnsubscribe();
-    }
-    keyboardService.cleanup();
+    // teclado: desuscribir y limpiar
+    this.keyboardUnsubscribe?.();
+    keyboardService.setScrollContainer?.(null);
+    keyboardService.cleanup?.();
   }
 }

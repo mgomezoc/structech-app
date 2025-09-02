@@ -1356,3 +1356,15 @@
   text-align: right;
   color: #64748b;
 }
+.keyboard-visible .survey-detail-container {
+  padding-bottom: calc(var(--keyboard-height) + env(safe-area-inset-bottom));
+  transition: padding-bottom 0.2s ease-out;
+}
+.keyboard-visible .survey-navigation {
+  width: 100%;
+  left: 0;
+  right: 0;
+}
+.keyboard-visible .survey-progress {
+  display: none;
+}

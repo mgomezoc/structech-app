@@ -1735,3 +1735,35 @@
     color: #64748b;
   }
 }
+
+// ==========================================
+// ESTILOS PARA MANEJO DE TECLADO MÓVIL
+// Usan las clases y variables que provee keyboardService.js
+// ==========================================
+
+// Cuando el teclado es visible...
+.keyboard-visible {
+  // 1. Empujamos el contenedor principal hacia arriba para hacer espacio.
+  // Usamos calc() para sumar la altura del teclado a la 'safe area' del iPhone.
+  .survey-detail-container {
+    padding-bottom: calc(var(--keyboard-height) + env(safe-area-inset-bottom));
+    transition: padding-bottom 0.2s ease-out; // Animación suave
+  }
+
+  // 2. La barra de navegación inferior se mantiene fija abajo, pero ahora
+  // se posicionará correctamente sobre el espacio creado por el teclado.
+  .survey-navigation {
+    // No es necesario cambiar nada aquí si ya es parte del flujo normal,
+    // pero si fuera fija (position: fixed), esta sería la clave.
+    // Por seguridad, nos aseguramos que no se salga de la pantalla.
+    width: 100%;
+    left: 0;
+    right: 0;
+  }
+
+  // 3. Opcional: Ocultamos la barra de progreso para dar más espacio.
+  // Es mejor ocultarla que tenerla flotando en un lugar extraño.
+  .survey-progress {
+    display: none;
+  }
+}

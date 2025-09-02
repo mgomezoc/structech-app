@@ -668,3 +668,43 @@
   gap: 6px;
   align-items: center;
 }
+
+/* =========================
+   Fix refresh button loading
+   ========================= */
+.surveys-header .refresh-button {
+  position: relative; /* ancla ::before/::after al botón */
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* No gires TODO el botón; sólo el ícono */
+.surveys-header .refresh-button.loading {
+  animation: none; /* cancela el spin aplicado al botón */
+  pointer-events: none;
+}
+
+/* Bloquea el skeleton genérico `.loading::before` aquí */
+.surveys-header .refresh-button.loading::before {
+  content: none !important;
+}
+
+/* Anima el SVG (el ícono de refrescar) */
+.surveys-header .refresh-button.loading svg {
+  animation: spin 1s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+/* Fallback: si por alguna razón no hay SVG, muestra un spinner */
+.surveys-header .refresh-button.loading:not(:has(svg))::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}

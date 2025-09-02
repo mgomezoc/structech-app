@@ -1,55 +1,61 @@
 // src/views/alta-gestion/style.less
 
-// Variables
+// ====================
+// Tokens
+// ====================
 @primary-color: #37a6a6;
 @primary-dark: #2d8a8a;
 @secondary-color: #d96b2b;
 @error-color: #ef4444;
 @success-color: #10b981;
+
 @text-primary: #111827;
 @text-secondary: #6b7280;
 @text-hint: #9ca3af;
+
 @border-color: #d1d5db;
 @bg-primary: #f0f2f2;
 @bg-card: #ffffff;
 @bg-hover: #f3f4f6;
+
 @shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
 @shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
 @shadow-lg: 0 8px 32px rgba(55, 166, 166, 0.15);
+
 @radius-sm: 8px;
 @radius-md: 12px;
 @radius-lg: 16px;
 
+// ====================
 // Mixins
+// ====================
 .transition(@property: all, @duration: 0.2s, @timing: ease) {
   transition: @property @duration @timing;
 }
-
 .flex-center() {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
 .card-shadow() {
   box-shadow: @shadow-md;
   border: 1px solid rgba(55, 166, 166, 0.1);
 }
 
-// Container
+// ====================
+// Layout básico
+// ====================
 .alta-gestion-container {
   padding-bottom: 10vh;
   background: @bg-primary;
   animation: fadeIn 0.3s ease-out;
 }
 
-/* Header pegajoso pero por debajo del modal */
 .alta-header {
   position: sticky;
   top: 0;
   z-index: 10;
 }
-/* iOS: evita stacking context extra */
 @supports (-webkit-touch-callout: none) {
   .alta-header {
     will-change: auto;
@@ -57,7 +63,15 @@
   }
 }
 
-// Progress Indicator
+.form-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+// ====================
+// Indicador de progreso
+// ====================
 .progress-indicator {
   background: @bg-card;
   padding: 16px 20px;
@@ -92,14 +106,9 @@
   }
 }
 
-// Form Container
-.form-container {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 24px 20px 40px;
-}
-
-// Form Sections
+// ====================
+// Secciones / tarjetas
+// ====================
 .form-section {
   background: @bg-card;
   border-radius: @radius-lg;
@@ -130,7 +139,16 @@
   }
 }
 
-// Form Groups
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
 .form-group {
   margin-bottom: 20px;
   position: relative;
@@ -151,7 +169,6 @@
       align-items: center;
       gap: 4px;
     }
-
     .required-mark {
       color: @error-color;
       font-weight: 400;
@@ -166,18 +183,9 @@
   }
 }
 
-// Form Row (for two columns)
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-// Select Wrapper
+// ====================
+// Select
+// ====================
 .select-wrapper {
   position: relative;
 
@@ -198,15 +206,10 @@
       border-color: @primary-color;
       box-shadow: 0 0 0 3px fade(@primary-color, 10%);
     }
-
     &:disabled {
       background: @bg-hover;
       cursor: not-allowed;
       opacity: 0.7;
-    }
-
-    option {
-      padding: 8px;
     }
   }
 
@@ -232,7 +235,9 @@
   }
 }
 
+// ====================
 // Textarea
+// ====================
 .textarea-wrapper {
   position: relative;
 
@@ -273,7 +278,9 @@
   }
 }
 
-// File Upload
+// ====================
+// Upload de archivo
+// ====================
 .file-upload-area {
   border: 2px dashed @border-color;
   border-radius: @radius-md;
@@ -287,7 +294,6 @@
     border-color: @primary-color;
     background: fade(@primary-color, 2%);
   }
-
   &.drag-over {
     border-color: @primary-color;
     background: fade(@primary-color, 5%);
@@ -298,7 +304,6 @@
     color: @text-hint;
     margin-bottom: 16px;
   }
-
   .upload-text {
     font-size: 14px;
     color: @text-secondary;
@@ -323,7 +328,6 @@
       background: @border-color;
       transform: translateY(-1px);
     }
-
     &:active {
       transform: translateY(0);
     }
@@ -336,7 +340,6 @@
   }
 }
 
-// File Preview
 .file-preview {
   display: flex;
   align-items: center;
@@ -355,7 +358,7 @@
     align-items: center;
     gap: 12px;
     flex: 1;
-    min-width: 0; // Allow text truncation
+    min-width: 0;
 
     .file-icon {
       color: @primary-color;
@@ -364,7 +367,7 @@
 
     .file-details {
       text-align: left;
-      min-width: 0; // Allow text truncation
+      min-width: 0;
 
       .file-name {
         font-size: 14px;
@@ -397,14 +400,32 @@
     &:hover {
       background: fade(@error-color, 10%);
     }
-
     &:active {
       transform: scale(0.95);
     }
   }
 }
 
-// Form Actions
+// Miniatura cuando es imagen
+.file-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: @radius-sm;
+  margin-right: 12px;
+  border: 1px solid @border-color;
+}
+.file-info {
+  &:has(.file-thumbnail) {
+    .file-icon {
+      display: none;
+    }
+  }
+}
+
+// ====================
+// Acciones / botón enviar
+// ====================
 .form-actions {
   margin-top: 32px;
   padding: 24px;
@@ -456,16 +477,13 @@
       background: @primary-dark;
       transform: translateY(-2px);
       box-shadow: 0 4px 12px fade(@primary-color, 30%);
-
       &::before {
         left: 100%;
       }
     }
-
     &:active:not(:disabled) {
       transform: translateY(0);
     }
-
     &:disabled {
       background: @border-color;
       cursor: not-allowed;
@@ -477,17 +495,14 @@
       position: relative;
       z-index: 1;
       .transition(opacity);
-
       &.hidden {
         opacity: 0;
         display: none;
       }
     }
-
     .btn-loader {
       position: absolute;
       .flex-center();
-
       &.hidden {
         display: none;
       }
@@ -495,7 +510,9 @@
   }
 }
 
-// Mini Spinner
+// ====================
+// Mini spinner
+// ====================
 .mini-spinner {
   width: 16px;
   height: 16px;
@@ -510,13 +527,12 @@
   }
 }
 
-// Success Overlay
+// ====================
+// Overlay de éxito
+// ====================
 .success-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: fade(@text-primary, 80%);
   backdrop-filter: blur(4px);
   z-index: 1000;
@@ -541,7 +557,6 @@
       color: @success-color;
       margin: 16px 0 8px 0;
     }
-
     p {
       font-size: 14px;
       color: @text-secondary;
@@ -550,119 +565,23 @@
   }
 }
 
-// Animations
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-// Hidden helper
-.hidden {
-  display: none !important;
-}
-
-// Responsive adjustments
-@media (max-width: 640px) {
-  .form-container {
-    padding: 16px 16px 32px;
-  }
-
-  .form-section {
-    padding: 20px 16px;
-    margin-bottom: 16px;
-
-    .section-header {
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-
-      h2 {
-        font-size: 15px;
-      }
-    }
-  }
-
-  .form-group {
-    margin-bottom: 16px;
-  }
-
-  .file-upload-area {
-    padding: 24px 16px;
-
-    .upload-icon {
-      width: 40px;
-      height: 40px;
-    }
-  }
-
-  .form-actions {
-    padding: 20px 16px;
-
-    .btn-submit {
-      padding: 14px;
-      font-size: 15px;
-    }
-  }
-
-  .success-content {
-    padding: 32px 24px;
-    margin: 20px;
-
-    h3 {
-      font-size: 18px;
-    }
-  }
-}
-
-// Focus visible for accessibility
-.back-button:focus-visible,
-.btn-add-file:focus-visible,
-.btn-remove-file:focus-visible,
-.btn-submit:focus-visible {
-  outline: 2px solid @primary-color;
-  outline-offset: 2px;
-}
-
-// Estilos para el Custom Selector
+// ====================
+// Modal selector de ciudadano
+// ====================
 .custom-selector-trigger {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #ccc; // Usa tus variables @border-color
-  border-radius: 8px; // Usa tu variable @border-radius
-  background-color: #f8f8f8; // Usa tu variable @bg-secondary
+  border: 1px solid @border-color;
+  border-radius: 8px;
+  background-color: @bg-hover;
   cursor: pointer;
-  transition: all 0.2s;
+  .transition();
 
   &:hover {
-    border-color: #888;
+    border-color: darken(@border-color, 10%);
   }
 
   .trigger-content {
@@ -670,40 +589,36 @@
     align-items: center;
     gap: 12px;
   }
-
   .citizen-avatar {
     width: 32px;
     height: 32px;
     border-radius: 50%;
     object-fit: cover;
   }
-
   .trigger-text {
     font-size: 16px;
-    color: #333;
+    color: @text-primary;
   }
-
   .select-icon {
-    // Reutilizamos el ícono de chevron
-    color: #888;
+    color: @text-secondary;
   }
 }
 
-// Estilos para la Modal
 .selector-modal-overlay {
   position: fixed;
-  inset: 0; /* top/right/bottom/left: 0 */
+  inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000; /* por encima del header */
+  z-index: 10000;
   opacity: 0;
-  pointer-events: none; /* no captura clicks mientras esté oculta */
+  pointer-events: none;
   transition: opacity 0.3s ease;
+
   &.visible {
     opacity: 1;
-    pointer-events: auto; /* activa interacción */
+    pointer-events: auto;
   }
 }
 
@@ -730,7 +645,6 @@
     margin: 0;
     font-size: 18px;
   }
-
   .modal-close-btn {
     background: none;
     border: none;
@@ -759,7 +673,7 @@
   margin: 0;
   overflow-y: auto;
   flex-grow: 1;
-  -webkit-overflow-scrolling: touch; /* scroll fluido en iOS */
+  -webkit-overflow-scrolling: touch;
 
   li {
     display: flex;
@@ -772,14 +686,12 @@
     &:not(:last-child) {
       border-bottom: 1px solid #f0f0f0;
     }
-
     &:hover {
       background-color: #f5f5f5;
     }
   }
 }
 
-/* Cuando hay modal abierta, bloquea scroll del fondo */
 body.modal-open {
   overflow: hidden;
   overscroll-behavior: contain;
@@ -796,13 +708,11 @@ body.modal-open {
   transition: background-color 0.2s;
   outline: none;
 }
-
 .selector-modal-item:hover,
 .selector-modal-item:focus,
 .selector-modal-item.selected {
   background-color: lighten(@bg-hover, 5%);
 }
-
 .selector-modal-item.selected {
   border: 2px solid @primary-color;
 }
@@ -815,14 +725,12 @@ body.modal-open {
   object-fit: cover;
   background: @bg-hover;
 }
-
 .citizen-info {
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-width: 0;
 }
-
 .citizen-name {
   font-size: 16px;
   font-weight: 500;
@@ -831,7 +739,6 @@ body.modal-open {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .citizen-phone {
   font-size: 14px;
   color: @text-secondary;
@@ -861,7 +768,120 @@ body.modal-open {
   }
 }
 
-// Contenedor de botones
+// ====================
+// Utils / accesibilidad
+// ====================
+.hidden {
+  display: none !important;
+}
+
+.back-button:focus-visible,
+.btn-add-file:focus-visible,
+.btn-remove-file:focus-visible,
+.btn-submit:focus-visible {
+  outline: 2px solid @primary-color;
+  outline-offset: 2px;
+}
+
+// ====================
+// Animaciones básicas
+// ====================
+@keyframes spin {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// ====================
+// Responsive
+// ====================
+@media (max-width: 640px) {
+  .form-container {
+    padding: 16px 16px 32px;
+  }
+
+  .form-section {
+    padding: 20px 16px;
+    margin-bottom: 16px;
+
+    .section-header {
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      h2 {
+        font-size: 15px;
+      }
+    }
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .file-upload-area {
+    padding: 24px 16px;
+    .upload-icon {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  .form-actions {
+    padding: 20px 16px;
+    .btn-submit {
+      padding: 14px;
+      font-size: 15px;
+    }
+  }
+
+  .file-thumbnail {
+    width: 48px;
+    height: 48px;
+  }
+
+  .upload-buttons {
+    flex-direction: column;
+    width: 100%;
+
+    .btn-add-file,
+    .btn-take-photo {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .success-content {
+    padding: 32px 24px;
+    margin: 20px;
+    h3 {
+      font-size: 18px;
+    }
+  }
+}
+
+// Botón “tomar foto”
 .upload-buttons {
   display: flex;
   gap: 12px;
@@ -870,8 +890,6 @@ body.modal-open {
   flex-wrap: wrap;
   margin: 12px 0;
 }
-
-// Botón de tomar foto
 .btn-take-photo {
   background: @bg-hover;
   border: 1px solid @border-color;
@@ -892,7 +910,6 @@ body.modal-open {
     color: @primary-color;
     transform: translateY(-1px);
   }
-
   &:active {
     transform: translateY(0);
   }
@@ -902,73 +919,7 @@ body.modal-open {
     height: 20px;
   }
 }
-
-// Miniatura de imagen en el preview
-.file-thumbnail {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: @radius-sm;
-  margin-right: 12px;
-  border: 1px solid @border-color;
-}
-
-// Ajuste para el file-info cuando hay thumbnail
-.file-info {
-  &:has(.file-thumbnail) {
-    .file-icon {
-      display: none; // Ocultar el icono cuando hay miniatura
-    }
-  }
-}
-
-// Responsive para móviles
-@media (max-width: 640px) {
-  .upload-buttons {
-    flex-direction: column;
-    width: 100%;
-
-    .btn-add-file,
-    .btn-take-photo {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-
-  .file-thumbnail {
-    width: 48px;
-    height: 48px;
-  }
-}
-
-// Estados de focus para accesibilidad
 .btn-take-photo:focus-visible {
   outline: 2px solid @primary-color;
   outline-offset: 2px;
-}
-
-// Animación de captura (opcional)
-@keyframes cameraFlash {
-  0% {
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-    background: white;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-.camera-flash {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: white;
-  z-index: 9999;
-  pointer-events: none;
-  animation: cameraFlash 0.3s ease-out;
 }

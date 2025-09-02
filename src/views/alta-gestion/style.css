@@ -3,18 +3,21 @@
   background: #f0f2f2;
   animation: fadeIn 0.3s ease-out;
 }
-/* Header pegajoso pero por debajo del modal */
 .alta-header {
   position: sticky;
   top: 0;
   z-index: 10;
 }
-/* iOS: evita stacking context extra */
 @supports (-webkit-touch-callout: none) {
   .alta-header {
     will-change: auto;
     transform: none;
   }
+}
+.form-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
 }
 .progress-indicator {
   background: #ffffff;
@@ -46,11 +49,6 @@
   display: block;
   text-align: center;
 }
-.form-container {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 24px 20px 40px;
-}
 .form-section {
   background: #ffffff;
   border-radius: 16px;
@@ -77,6 +75,16 @@
   font-weight: 600;
   color: #111827;
   margin: 0;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 .form-group {
   margin-bottom: 20px;
@@ -107,16 +115,6 @@
   color: #9ca3af;
   margin-top: 6px;
 }
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-@media (max-width: 640px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-}
 .select-wrapper {
   position: relative;
 }
@@ -141,9 +139,6 @@
   background: #f3f4f6;
   cursor: not-allowed;
   opacity: 0.7;
-}
-.select-wrapper select option {
-  padding: 8px;
 }
 .select-wrapper .select-icon {
   position: absolute;
@@ -310,6 +305,17 @@
 .file-preview .btn-remove-file:active {
   transform: scale(0.95);
 }
+.file-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-right: 12px;
+  border: 1px solid #d1d5db;
+}
+.file-info:has(.file-thumbnail) .file-icon {
+  display: none;
+}
 .form-actions {
   margin-top: 32px;
   padding: 24px;
@@ -406,10 +412,7 @@
 }
 .success-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(17, 24, 39, 0.8);
   backdrop-filter: blur(4px);
   z-index: 1000;
@@ -441,98 +444,20 @@
   color: #6b7280;
   margin: 0;
 }
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-.hidden {
-  display: none !important;
-}
-@media (max-width: 640px) {
-  .form-container {
-    padding: 16px 16px 32px;
-  }
-  .form-section {
-    padding: 20px 16px;
-    margin-bottom: 16px;
-  }
-  .form-section .section-header {
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-  }
-  .form-section .section-header h2 {
-    font-size: 15px;
-  }
-  .form-group {
-    margin-bottom: 16px;
-  }
-  .file-upload-area {
-    padding: 24px 16px;
-  }
-  .file-upload-area .upload-icon {
-    width: 40px;
-    height: 40px;
-  }
-  .form-actions {
-    padding: 20px 16px;
-  }
-  .form-actions .btn-submit {
-    padding: 14px;
-    font-size: 15px;
-  }
-  .success-content {
-    padding: 32px 24px;
-    margin: 20px;
-  }
-  .success-content h3 {
-    font-size: 18px;
-  }
-}
-.back-button:focus-visible,
-.btn-add-file:focus-visible,
-.btn-remove-file:focus-visible,
-.btn-submit:focus-visible {
-  outline: 2px solid #37a6a6;
-  outline-offset: 2px;
-}
 .custom-selector-trigger {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #ccc;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  background-color: #f8f8f8;
+  background-color: #f3f4f6;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 .custom-selector-trigger:hover {
-  border-color: #888;
+  border-color: #b4bbc5;
 }
 .custom-selector-trigger .trigger-content {
   display: flex;
@@ -547,30 +472,26 @@
 }
 .custom-selector-trigger .trigger-text {
   font-size: 16px;
-  color: #333;
+  color: #111827;
 }
 .custom-selector-trigger .select-icon {
-  color: #888;
+  color: #6b7280;
 }
 .selector-modal-overlay {
   position: fixed;
   inset: 0;
-  /* top/right/bottom/left: 0 */
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  /* por encima del header */
   opacity: 0;
   pointer-events: none;
-  /* no captura clicks mientras esté oculta */
   transition: opacity 0.3s ease;
 }
 .selector-modal-overlay.visible {
   opacity: 1;
   pointer-events: auto;
-  /* activa interacción */
 }
 .selector-modal-content {
   background: #fff;
@@ -619,7 +540,6 @@
   overflow-y: auto;
   flex-grow: 1;
   -webkit-overflow-scrolling: touch;
-  /* scroll fluido en iOS */
 }
 .selector-modal-list li {
   display: flex;
@@ -635,7 +555,6 @@
 .selector-modal-list li:hover {
   background-color: #f5f5f5;
 }
-/* Cuando hay modal abierta, bloquea scroll del fondo */
 body.modal-open {
   overflow: hidden;
   overscroll-behavior: contain;
@@ -702,6 +621,97 @@ body.modal-open {
     background-position: 200% 0;
   }
 }
+.hidden {
+  display: none !important;
+}
+.back-button:focus-visible,
+.btn-add-file:focus-visible,
+.btn-remove-file:focus-visible,
+.btn-submit:focus-visible {
+  outline: 2px solid #37a6a6;
+  outline-offset: 2px;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (max-width: 640px) {
+  .form-container {
+    padding: 16px 16px 32px;
+  }
+  .form-section {
+    padding: 20px 16px;
+    margin-bottom: 16px;
+  }
+  .form-section .section-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+  .form-section .section-header h2 {
+    font-size: 15px;
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .file-upload-area {
+    padding: 24px 16px;
+  }
+  .file-upload-area .upload-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .form-actions {
+    padding: 20px 16px;
+  }
+  .form-actions .btn-submit {
+    padding: 14px;
+    font-size: 15px;
+  }
+  .file-thumbnail {
+    width: 48px;
+    height: 48px;
+  }
+  .upload-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  .upload-buttons .btn-add-file,
+  .upload-buttons .btn-take-photo {
+    width: 100%;
+    justify-content: center;
+  }
+  .success-content {
+    padding: 32px 24px;
+    margin: 20px;
+  }
+  .success-content h3 {
+    font-size: 18px;
+  }
+}
 .upload-buttons {
   display: flex;
   gap: 12px;
@@ -737,56 +747,7 @@ body.modal-open {
   width: 20px;
   height: 20px;
 }
-.file-thumbnail {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-right: 12px;
-  border: 1px solid #d1d5db;
-}
-.file-info:has(.file-thumbnail) .file-icon {
-  display: none;
-}
-@media (max-width: 640px) {
-  .upload-buttons {
-    flex-direction: column;
-    width: 100%;
-  }
-  .upload-buttons .btn-add-file,
-  .upload-buttons .btn-take-photo {
-    width: 100%;
-    justify-content: center;
-  }
-  .file-thumbnail {
-    width: 48px;
-    height: 48px;
-  }
-}
 .btn-take-photo:focus-visible {
   outline: 2px solid #37a6a6;
   outline-offset: 2px;
-}
-@keyframes cameraFlash {
-  0% {
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-    background: white;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-.camera-flash {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: white;
-  z-index: 9999;
-  pointer-events: none;
-  animation: cameraFlash 0.3s ease-out;
 }

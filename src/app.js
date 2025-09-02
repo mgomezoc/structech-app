@@ -1,7 +1,6 @@
 // src/app.js
 // Punto de entrada principal - Optimizado para carga rápida
 import { Capacitor } from '@capacitor/core';
-import { Keyboard } from '@capacitor/keyboard';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Toast } from '@capacitor/toast';
@@ -11,6 +10,7 @@ import { eventBus } from './services/api.service.js';
 import { authService } from './services/auth.service.js';
 import { dialogService } from './services/dialog.service.js';
 import { hapticsService } from './services/haptics.service.js';
+import { keyboardService } from './services/keyboard.service.js';
 import { notificationService } from './services/notification.service.js';
 import { $, dom } from './utils/dom.helper.js';
 
@@ -40,7 +40,8 @@ async function initializeApp() {
     const configPromises = [];
 
     if (Capacitor.isNativePlatform()) {
-      configPromises.push(configurePlatform(), configureKeyboard());
+      configPromises.push(configurePlatform());
+      keyboardService.init();
     }
 
     // 5. Cargar dependencias pesadas de forma diferida
@@ -133,37 +134,6 @@ async function configurePlatform() {
     ]);
   } catch (error) {
     console.error('Error configurando plataforma:', error);
-  }
-}
-
-/**
- * Configurar teclado de forma optimizada
- */
-async function configureKeyboard() {
-  try {
-    // Configuraciones básicas primero
-    await Promise.all([
-      Keyboard.setAccessoryBarVisible({ isVisible: true }),
-      Keyboard.setResizeMode({ mode: 'ionic' }),
-      Keyboard.setStyle({ style: 'light' }),
-    ]);
-
-    // Listeners después (no bloqueante)
-    Keyboard.addListener('keyboardWillShow', info => {
-      requestAnimationFrame(() => {
-        document.body.classList.add('keyboard-visible');
-        document.body.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
-      });
-    });
-
-    Keyboard.addListener('keyboardWillHide', () => {
-      requestAnimationFrame(() => {
-        document.body.classList.remove('keyboard-visible');
-        document.body.style.removeProperty('--keyboard-height');
-      });
-    });
-  } catch (error) {
-    console.error('Error configurando teclado:', error);
   }
 }
 
